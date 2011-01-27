@@ -1,0 +1,10 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: libsord
+Version: @SORD_VERSION@
+Description: Lightweight RDF triple store based on Tokyo Cabinet
+Libs: -L${libdir} -lsord
+Cflags: -I${includedir}

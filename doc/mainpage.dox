@@ -1,0 +1,8 @@
+/** @mainpage
+ * @section Overview
+ * 
+ * <a href="http://drobilla.net/software/qure">Qure</a> is a lightweight
+ * RDF store based on Tokyo Cabinet.
+ * 
+ * \li \link qure Public Interface \endlink - C API
+ */

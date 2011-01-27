@@ -147,14 +147,14 @@ struct _SordNode {
 	void*        user_data;  ///< Opaque user data
 	SordNode     datatype;   ///< Literal data type (ID of a URI node, or 0)
 	const char*  lang;       ///< Literal language (interned string)
-	char*        data;       ///< String value
+	char*        buf;        ///< Value (string)
 };
 
 static unsigned
 sord_literal_hash(const void* n)
 {
 	SordNode node = (SordNode)n;
-	return g_str_hash(node->data) + g_str_hash(node->lang);
+	return g_str_hash(node->buf) + g_str_hash(node->lang);
 }
 		
 static gboolean
@@ -176,7 +176,7 @@ sord_node_compare(Sord sord, const SordNode a, const SordNode b)
 	switch ((SordNodeType)a->type) {
 	case SORD_URI:
 	case SORD_BLANK:
-		return strcmp(a->data, b->data);
+		return strcmp(a->buf, b->buf);
 	case SORD_LITERAL:
 		// TODO: lang, type
 		return strcmp(sord_node_get_string(a), sord_node_get_string(b));
@@ -760,7 +760,7 @@ sord_new_node(SordNodeType type, const char* data, size_t n_bytes)
 	node->user_data = 0;
 	node->datatype  = 0;
 	node->lang      = 0;
-	node->data      = g_strdup(data); // TODO: add no-copy option
+	node->buf       = g_strdup(data); // TODO: add no-copy option
 	return node;
 }
 
@@ -805,7 +805,7 @@ sord_node_get_type(SordNode ref)
 const char*
 sord_node_get_string(SordNode ref)
 {
-	return ref->data;
+	return ref->buf;
 }
 
 void

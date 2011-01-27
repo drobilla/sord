@@ -139,37 +139,22 @@ struct _SordIter {
 	bool           skip_graphs;       ///< True iff iteration should ignore graphs
 };
 
-#define PACKED __attribute__((__packed__))
-
-/** Node (value in `nodes' hash table) */
+/** Node */
 struct _SordNode {
-	uint8_t   type;   ///< SordNodeType
-	SordCount refs;
-	int       size;   ///< Size of node's data (not including type)
-	void*     user_data; ///< Opaque user data
-	char      data[]; ///< String for URI or BLANK, Literal for LITERAL
-} PACKED;
-
-/** Literal value (possibly with type and/or language) */
-typedef struct _SordLiteral {
-	SordNode type;      ///< Literal data type (ID of a URI node, or 0)
-	uint8_t  lang_size; ///< Length of language, including terminator (or 0)
-	char     data[];    ///< Language (terminated), followed by value string
-} PACKED Literal;
-
-static char*
-sord_literal_node_get_value(SordNode node)
-{
-	assert(node->type == SORD_LITERAL);
-	Literal* lit = (Literal*)node->data;
-	return lit->data + lit->lang_size;
-}
+	SordNodeType type;       ///< SordNodeType
+	size_t       n_bytes;    ///< Length of data in bytes (including terminator)
+	SordCount    refs;       ///< Reference count (i.e. number of containing tuples)
+	void*        user_data;  ///< Opaque user data
+	SordNode     datatype;   ///< Literal data type (ID of a URI node, or 0)
+	const char*  lang;       ///< Literal language (interned string)
+	char*        data;       ///< String value
+};
 
 static unsigned
 sord_literal_hash(const void* n)
 {
 	SordNode node = (SordNode)n;
-	return g_str_hash(sord_literal_node_get_value(node));
+	return g_str_hash(node->data) + g_str_hash(node->lang);
 }
 		
 static gboolean
@@ -178,8 +163,8 @@ sord_literal_equal(const void* a, const void* b)
 	SordNode a_node = (SordNode)a;
 	SordNode b_node = (SordNode)b;
 	// FIXME: type, lang
-	return g_str_equal(sord_literal_node_get_value(a_node),
-	                   sord_literal_node_get_value(b_node));
+	return g_str_equal(sord_node_get_string(a_node),
+	                   sord_node_get_string(b_node));
 }
 
 static inline int
@@ -188,17 +173,13 @@ sord_node_compare(Sord sord, const SordNode a, const SordNode b)
 	if (a->type != b->type)
 		return a->type - b->type;
 
-	Literal* lit_a;
-	Literal* lit_b;
 	switch ((SordNodeType)a->type) {
 	case SORD_URI:
 	case SORD_BLANK:
 		return strcmp(a->data, b->data);
 	case SORD_LITERAL:
 		// TODO: lang, type
-		lit_a = (Literal*)a->data;
-		lit_b = (Literal*)b->data;
-		return strcmp(sord_literal_node_get_value(a), sord_literal_node_get_value(b));
+		return strcmp(sord_node_get_string(a), sord_node_get_string(b));
 	}
 	assert(false);
 	return 0;
@@ -770,22 +751,27 @@ sord_lookup_name(Sord sord, const char* str, int str_len)
 }
 
 static SordNode
-sord_new_literal_node(Sord sord, SordNode type,
-                      const char* str,  int str_len,
-                      const char* lang, uint8_t lang_len,
-                      int* node_size)
+sord_new_node(SordNodeType type, const char* data, size_t n_bytes)
 {
-	const uint8_t lang_size = lang ? lang_len + 1 : lang_len;
-	*node_size = sizeof(struct _SordNode) + sizeof(struct _SordLiteral) + str_len + 1 + lang_size;
-	SordNode node = malloc(*node_size);
-	node->type = SORD_LITERAL;
-	Literal* lit = (Literal*)node->data;
-	lit->type = type;
-	lit->lang_size = lang_size;
-	if (lang)
-		memcpy(lit->data, lang, lang_size);
+	SordNode node = malloc(sizeof(struct _SordNode));
+	node->type      = type;
+	node->n_bytes   = n_bytes;
+	node->refs      = 0;
+	node->user_data = 0;
+	node->datatype  = 0;
+	node->lang      = 0;
+	node->data      = g_strdup(data); // TODO: add no-copy option
+	return node;
+}
 
-	memcpy(lit->data + lang_size, str, str_len + 1);
+static SordNode
+sord_new_literal_node(Sord sord, SordNode datatype,
+                      const char* str,  int str_len,
+                      const char* lang, uint8_t lang_len)
+{
+	SordNode node = sord_new_node(SORD_LITERAL, str, str_len + 1);
+	node->datatype = datatype;
+	node->lang     = g_intern_string(str);
 	return node;
 }
 
@@ -794,10 +780,8 @@ sord_lookup_literal(Sord sord, SordNode type,
                     const char* str,  int     str_len,
                     const char* lang, uint8_t lang_len)
 {
-	int node_size;
-	SordNode node = sord_new_literal_node(sord, type, str, str_len, lang, lang_len, &node_size);
-
-	SordNode id = g_hash_table_lookup(sord->literals, node);
+	SordNode node = sord_new_literal_node(sord, type, str, str_len, lang, lang_len);
+	SordNode id   = g_hash_table_lookup(sord->literals, node);
 	free(node);
 	if (id) {
 		return id;
@@ -812,16 +796,6 @@ sord_node_load(Sord sord, SordID id)
 	return (SordNode)id;
 }
 
-static SordNode
-sord_new_node(Sord sord, SordNodeType type, const char* buf, int buf_len, int* node_size)
-{
-	*node_size = sizeof(struct _SordNode) + buf_len;
-	SordNode node = malloc(*node_size);
-	node->type = type;
-	memcpy(node->data, buf, buf_len);
-	return node;
-}
-
 SordNodeType
 sord_node_get_type(SordNode ref)
 {
@@ -831,17 +805,7 @@ sord_node_get_type(SordNode ref)
 const char*
 sord_node_get_string(SordNode ref)
 {
-	switch (ref->type) {
-	case SORD_URI:
-	case SORD_BLANK:
-		return ref->data;
-		break;
-	case SORD_LITERAL:
-		return ((Literal*)&ref->data)->data;
-		break;
-	}
-	assert(false);
-	return NULL;
+	return ref->data;
 }
 
 void
@@ -859,22 +823,17 @@ sord_node_get_user_data(SordNode ref)
 const char*
 sord_literal_get_lang(SordNode ref)
 {
-	Literal* lit = (Literal*)&ref->data;
-	if (lit->lang_size > 0)
-		return lit->data;
-	else
-		return NULL;
+	return ref->lang;
 }
 
 SordNode
 sord_literal_get_datatype(SordNode ref)
 {
-	Literal* lit = (Literal*)&ref->data;
-	return lit->type;
+	return ref->datatype;
 }
 
 static void
-sord_add_node(Sord sord, SordNode node, int node_size)
+sord_add_node(Sord sord, SordNode node)
 {
 	node->refs = 0;
 	++sord->n_nodes;
@@ -887,12 +846,11 @@ sord_get_uri_counted(Sord sord, bool create, const char* str, int str_len)
 	if (id || !create)
 		return id;
 
-	int node_size;
-	id = sord_new_node(sord, SORD_URI, str, str_len + 1, &node_size);
+	id = sord_new_node(SORD_URI, str, str_len + 1);
 
 	assert(id);
 	g_hash_table_insert(sord->names, (void*)g_strdup(str), (void*)id);
-	sord_add_node(sord, id, node_size);
+	sord_add_node(sord, id);
 	
 	return id;
 }
@@ -910,12 +868,11 @@ sord_get_blank_counted(Sord sord, bool create, const char* str, int str_len)
 	if (id || !create)
 		return id;
 
-	int node_size;
-	id = sord_new_node(sord, SORD_BLANK, str, str_len + 1, &node_size);
+	id = sord_new_node(SORD_BLANK, str, str_len + 1);
 
 	assert(id);
 	g_hash_table_insert(sord->names, (void*)g_strdup(str), (void*)id);
-	sord_add_node(sord, id, node_size);
+	sord_add_node(sord, id);
 	
 	return id;
 }
@@ -935,11 +892,10 @@ sord_get_literal_counted(Sord sord, bool create, SordID type,
 	if (id || !create)
 		return id;
 
-	int node_size;
-	id = sord_new_literal_node(sord, type, str, str_len, lang, lang_len, &node_size);
+	id = sord_new_literal_node(sord, type, str, str_len, lang, lang_len);
 
 	g_hash_table_insert(sord->literals, (void*)id, id);
-	sord_add_node(sord, id, node_size);
+	sord_add_node(sord, id);
 	
 	return id;
 }

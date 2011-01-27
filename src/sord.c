@@ -545,12 +545,6 @@ sord_best_index(Sord sord, const SordTuple pat, SearchMode* mode, int* n_prefix)
 	}
 }
 
-static GSequence*
-sord_new_btree()
-{
-	return g_sequence_new(NULL);
-}
-
 Sord
 sord_new()
 {
@@ -595,12 +589,12 @@ sord_set_option(Sord sord, const char* key, const char* value,
 	const bool  value_is_true = !strcmp(value, "true") || !strcmp(value, "1") || !strcmp(value, "yes");
 	if (!strcmp(option, "index-all")) {
 		for (int i = 0; i < NUM_ORDERS; ++i) {
-			sord->indices[i] = sord_new_btree();
+			sord->indices[i] = g_sequence_new(NULL);
 		}
 	} else if (!strncmp(option, "index-", 6) && value_is_true) {
 		for (int i = 0; i < NUM_ORDERS; ++i) {
 			if (!strcmp(option + 6, order_names[i])) {
-				sord->indices[i] = sord_new_btree();
+				sord->indices[i] = g_sequence_new(NULL);
 				return;
 			}
 		}
@@ -624,14 +618,14 @@ sord_open(Sord sord)
 
 	if (no_indices) {
 		// Use default indexing, avoids O(n) in all cases
-		sord->indices[SPO]  = sord_new_btree();
-		sord->indices[OPS]  = sord_new_btree();
-		sord->indices[PSO]  = sord_new_btree();
-		sord->indices[GSPO] = sord_new_btree(); // XXX: default?  do on demand?
+		sord->indices[SPO]  = g_sequence_new(NULL);
+		sord->indices[OPS]  = g_sequence_new(NULL);
+		sord->indices[PSO]  = g_sequence_new(NULL);
+		sord->indices[GSPO] = g_sequence_new(NULL); // XXX: default?  do on demand?
 	}
 
 	if (!sord->indices[DEFAULT_ORDER])
-		sord->indices[DEFAULT_ORDER] = sord_new_btree();
+		sord->indices[DEFAULT_ORDER] = g_sequence_new(NULL);
 
 	return true;
 }

@@ -139,10 +139,7 @@ SORD_API
 SordNode
 sord_node_load(Sord sord, SordID id);
 
-/** Set @a s, @a p, and @a o to the nodes in @a tup.
- * The actual node values will be loaded from the database into memory
- * as necessary, and remain in memory until @ref sord_clear_cache is called.
- */
+/** Set @a s, @a p, and @a o to the nodes in @a tup. */
 SORD_API
 void
 sord_tuple_load(Sord      sord,
@@ -150,11 +147,6 @@ sord_tuple_load(Sord      sord,
                 SordNode* s,
                 SordNode* p,
                 SordNode* o);
-
-/** Clear in-memory node cache (possibly removing unused nodes on disk). */
-SORD_API
-void
-sord_clear_cache(Sord write);
 
 /** Find a URI, creating a new one if necessary iff @a create is true.
  * Use sord_get_uri_counted instead if the length of @a str is known.

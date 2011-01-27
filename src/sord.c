@@ -101,12 +101,6 @@ static const int orderings[NUM_ORDERS][TUP_LEN] = {
 	{3,0,1,2  }, {3,0,2,1  }, {3,2,1,0  }, {3,2,0,1  }, {3,1,0,2  }, {3,1,2,0  }
 };
 
-/** Store Metadata */
-typedef struct {
-	SordCount n_tuples;
-	SordCount n_nodes;
-} SordMeta;
-
 /** Store */
 struct _Sord {
 	GHashTable* names;    ///< URI or blank node identifier string => ID
@@ -120,7 +114,8 @@ struct _Sord {
 
 	void (*user_data_free)(void*); ///< Destructor for node user data
 
-	SordMeta* meta;
+	SordCount n_tuples;
+	SordCount n_nodes;
 };
 
 /** Mode for searching or iteration */
@@ -576,7 +571,6 @@ sord_free(Sord sord)
 	if (!sord)
 		return;
 
-	free(sord->meta);
 	g_hash_table_unref(sord->names);
 	g_hash_table_unref(sord->literals);
 	for (unsigned i = 0; i < NUM_ORDERS; ++i)
@@ -618,8 +612,7 @@ sord_set_option(Sord sord, const char* key, const char* value,
 bool
 sord_open(Sord sord)
 {
-	sord->meta = malloc(sizeof(SordMeta));
-	memset(sord->meta, 0, sizeof(SordMeta));
+	sord->n_tuples = sord->n_nodes = 0;
 
 	bool no_indices = true;
 	for (unsigned i = 0; i < NUM_ORDERS; ++i) {
@@ -652,13 +645,13 @@ sord_drop_node(Sord sord, SordID id)
 int
 sord_num_tuples(Sord sord)
 {
-	return sord->meta->n_tuples;
+	return sord->n_tuples;
 }
 
 int
 sord_num_nodes(Sord sord)
 {
-	return sord->meta->n_nodes;
+	return sord->n_nodes;
 }
 
 void
@@ -890,7 +883,7 @@ static void
 sord_add_node(Sord sord, SordNode node, int node_size)
 {
 	node->refs = 0;
-	++sord->meta->n_nodes;
+	++sord->n_nodes;
 }
 
 SordID
@@ -1023,8 +1016,8 @@ sord_add(Sord sord, const SordTuple tup)
 	for (int i = 0; i < TUP_LEN; ++i)
 		sord_add_tuple_ref(sord, tup[i]);
 
-	++sord->meta->n_tuples;
-	assert(sord->meta->n_tuples == g_sequence_get_length(sord->indices[SPO]));
+	++sord->n_tuples;
+	assert(sord->n_tuples == g_sequence_get_length(sord->indices[SPO]));
 }
 
 void
@@ -1051,7 +1044,7 @@ sord_remove(Sord sord, const SordTuple tup)
 	for (int i = 0; i < TUP_LEN; ++i)
 		sord_drop_tuple_ref(sord, tup[i]);
 
-	--sord->meta->n_tuples;
+	--sord->n_tuples;
 }
 
 void
@@ -1082,7 +1075,7 @@ sord_remove_iter(Sord sord, SordIter iter)
 	for (int i = 0; i < TUP_LEN; ++i)
 		sord_drop_tuple_ref(sord, tup[i]);
 
-	--sord->meta->n_tuples;
+	--sord->n_tuples;
 
 	iter->end = g_sequence_iter_is_end(iter->cur);
 }
@@ -1116,7 +1109,7 @@ sord_remove_graph(Sord sord, SordID graph)
 			}
 		}
 
-		--sord->meta->n_tuples;
+		--sord->n_tuples;
 	} while (tcbdbcurnext(cur));
 
 	// Remove all tuples in graph from graph indices

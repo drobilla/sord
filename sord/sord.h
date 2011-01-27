@@ -15,6 +15,10 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+/** @file
+ * Public Sord API.
+ */
+
 #ifndef SORD_SORD_H
 #define SORD_SORD_H
 
@@ -22,7 +26,6 @@
 #include <stdint.h>
 #include <stdio.h>
 
-/** @cond */
 #if defined _WIN32 || defined __CYGWIN__
 	#define SORD_LIB_IMPORT __declspec(dllimport)
 	#define SORD_LIB_EXPORT __declspec(dllexport)
@@ -40,10 +43,9 @@
 #else // Building a static library
 	#define SORD_API
 #endif
-/** @endcond */
 
-/** @defgroup sord Public Sord API
- * Sord is an RDF tuple store implemented in C.
+/** @defgroup sord Sord
+ * A lightweight RDF model library.
  * Sord stores RDF (subject object predicate) triples, where triples may
  * have an added "context" field, i.e. (subject object predicate context).
  * @{
@@ -69,10 +71,11 @@ typedef enum {
 	SORD_LITERAL = 3  ///< Literal (string with optional lang and/or type)
 } SordNodeType;
 
-/** @name Initialisation and Cleanup */
-//@{
+/** @name Initialisation and Cleanup
+ * @{
+ */
 
-/** Create a new store for the given @a path */
+/** Create a new store. */
 SORD_API
 Sord
 sord_new();
@@ -117,13 +120,11 @@ SORD_API
 void
 sord_free(Sord sord);
 
-//@}
-
+/** @} */
 /** @name Node Loading
  * Searching for node IDs by value and loading nodes from disk by ID.
+ * @{
  */
-
-//@{
 
 /** Set the free function for node opaque user data. */
 SORD_API
@@ -194,12 +195,12 @@ sord_get_literal_counted(Sord sord, bool create, SordID type,
                          const char* str,  int     str_len,
                          const char* lang, uint8_t lang_len);
 
-//@}
 
+/** @} */
 /** @name Node Values
  * Investigating loaded (in-memory) node values.
+ * @{
  */
-//@{
 
 /** Return the type of a node (SORD_URI, SORD_BLANK, or SORD_LITERAL). */
 SORD_API
@@ -234,10 +235,11 @@ SORD_API
 SordNode
 sord_literal_get_datatype(SordNode node);
 
-//@}
 
-/** @name Read Operations */
-//@{
+/** @} */
+/** @name Read Operations
+ * @{
+ */
 
 /** Return the number of nodes stored in @a sord.
  * Nodes are included in this count iff they are a part of a tuple in @a sord.
@@ -268,11 +270,11 @@ SORD_API
 SordIter
 sord_find(Sord sord, const SordTuple pat);
 
-//@}
 
-
-/** @name Write Operations */
-//@{
+/** @} */
+/** @name Write Operations
+ * @{
+ */
 
 /** Add a tuple to the store. */
 SORD_API
@@ -299,10 +301,10 @@ SORD_API
 void
 sord_remove_graph(Sord sord, SordID graph);
 
-//@}
-
-/** @name Iteration */
-//@{
+/** @} */
+/** @name Iteration
+ * @{
+ */
 
 /** Set @a id to the tuple pointed to by @a iter. */
 SORD_API
@@ -329,10 +331,10 @@ SORD_API
 void
 sord_iter_free(SordIter iter);
 
-//@}
-
-/** @name Utilities */
-//@{
+/** @} */
+/** @name Utilities
+ * @{
+ */
 
 /** Match two tuples (using ID comparison only).
  * This function is a straightforward and fast equivalence match with wildcard
@@ -343,7 +345,7 @@ SORD_API
 bool
 sord_tuple_match(const SordTuple x, const SordTuple y);
 
-//@}
+/** @} */
 
 /** @} */
 

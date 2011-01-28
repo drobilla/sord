@@ -266,7 +266,7 @@ main(int argc, char** argv)
 	sord_free(NULL); // Shouldn't crash
 
 	// Create with default options
-	Sord sord = sord_new("testdb");
+	Sord sord = sord_new();
 	sord_set_option(sord, "http://unknown", "something", SORD_LITERAL, NULL, NULL);
 	sord_open(sord);
 	generate(sord, n_tuples, n_objects_per);
@@ -321,7 +321,7 @@ main(int argc, char** argv)
 	const size_t option_len = strlen(option);
 	for (int i = 0; i < 6; ++i) {
 		strncpy(option + option_len - 3, index_names[i], 3);
-		sord = sord_new("testdb");
+		sord = sord_new();
 		sord_set_option(sord, option, "true", SORD_LITERAL, NULL, NULL);
 		printf("Testing Index `%s'\n", index_names[i]);
 		sord_open(sord);
@@ -332,7 +332,7 @@ main(int argc, char** argv)
 	}
 	free(option);
 
-	sord = sord_new("testdb");
+	sord = sord_new();
 	sord_open(sord);
 	if (test_write(sord, n_tuples, n_objects_per))
 	  goto fail;

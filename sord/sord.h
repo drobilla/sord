@@ -78,7 +78,7 @@ typedef enum {
 /** Create a new store. */
 SORD_API
 Sord
-sord_new();
+sord_new(void);
 
 /** Set a store option.
  * Options are RDF properties (with the store as the subject), with the
@@ -203,6 +203,10 @@ sord_node_get_type(SordNode node);
 SORD_API
 const char*
 sord_node_get_string(SordNode node);
+
+SORD_API
+const char*
+sord_node_get_string_counted(SordNode node, size_t* len);
 
 /** Set an opaque user pointer on a node.
  * Sord does not interpret the user pointer in any way, but it will be
@@ -336,6 +340,15 @@ sord_iter_free(SordIter iter);
 SORD_API
 bool
 sord_tuple_match(const SordTuple x, const SordTuple y);
+
+/** @} */
+/** @name Serialisation
+ * @{
+ */
+
+SORD_API
+bool
+sord_read_file(Sord sord, const uint8_t* uri);
 
 /** @} */
 

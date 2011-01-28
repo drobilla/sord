@@ -808,6 +808,13 @@ sord_node_get_string(SordNode ref)
 	return ref->buf;
 }
 
+const char*
+sord_node_get_string_counted(SordNode ref, size_t* n_bytes)
+{
+	*n_bytes = ref->n_bytes;
+	return ref->buf;
+}
+
 void
 sord_node_set_user_data(SordNode ref, void* user_data)
 {

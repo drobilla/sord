@@ -93,7 +93,38 @@ event_prefix(void*           handle,
 static inline SordID
 sord_node_from_serd_node(ReadState* state, const SerdNode* sn)
 {
-	return sord_get_uri_counted(state->sord, true, (const char*)sn->buf, sn->n_chars);
+	switch (sn->type) {
+	case SERD_NOTHING:
+		return NULL;
+	case SERD_LITERAL:
+		return sord_get_literal(state->sord, true, NULL,
+		                        (const char*)sn->buf, NULL);
+	case SERD_URI:
+		return sord_get_uri_counted(state->sord, true,
+		                            (const char*)sn->buf, sn->n_chars);
+	case SERD_CURIE: {
+		SerdURI uri;
+		if (!serd_uri_parse(sn->buf, &uri)) {
+			return false;
+		}
+		SerdURI abs_uri;
+		if (!serd_uri_resolve(&uri, &state->base_uri, &abs_uri)) {
+			return false;
+		}
+		SerdURI ignored;
+		SerdNode serd_uri = serd_node_new_uri(&abs_uri, &ignored);
+		SordNode sord_uri = sord_get_uri_counted(state->sord, true,
+		                                         (const char*)serd_uri.buf,
+		                                         serd_uri.n_chars);
+		serd_node_free(&serd_uri);
+		return sord_uri;
+	}
+	case SERD_BLANK_ID:
+	case SERD_ANON_BEGIN:
+	case SERD_ANON:
+		return sord_get_blank(state->sord, true, (const char*)sn->buf);
+	}
+	return NULL;
 }
 
 static bool

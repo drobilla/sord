@@ -103,21 +103,18 @@ sord_node_from_serd_node(ReadState* state, const SerdNode* sn)
 		return sord_get_uri_counted(state->sord, true,
 		                            (const char*)sn->buf, sn->n_chars);
 	case SERD_CURIE: {
-		SerdURI uri;
-		if (!serd_uri_parse(sn->buf, &uri)) {
-			return false;
+		SerdChunk uri_prefix;
+		SerdChunk uri_suffix;
+		if (!serd_env_expand(state->env, sn, &uri_prefix, &uri_suffix)) {
+			return NULL;
 		}
-		SerdURI abs_uri;
-		if (!serd_uri_resolve(&uri, &state->base_uri, &abs_uri)) {
-			return false;
-		}
-		SerdURI ignored;
-		SerdNode serd_uri = serd_node_new_uri(&abs_uri, &ignored);
-		SordNode sord_uri = sord_get_uri_counted(state->sord, true,
-		                                         (const char*)serd_uri.buf,
-		                                         serd_uri.n_chars);
-		serd_node_free(&serd_uri);
-		return sord_uri;
+		const size_t uri_len = uri_prefix.len + uri_suffix.len;
+		char* buf = malloc(uri_len + 1);
+		memcpy(buf,                  uri_prefix.buf, uri_prefix.len);
+		memcpy(buf + uri_prefix.len, uri_suffix.buf, uri_suffix.len);
+		buf[uri_len] = '\0';
+		return sord_get_uri_counted(state->sord, true,
+		                            buf, uri_prefix.len + uri_suffix.len);
 	}
 	case SERD_BLANK_ID:
 	case SERD_ANON_BEGIN:

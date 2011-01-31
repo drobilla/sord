@@ -5,6 +5,6 @@ includedir=@includedir@
 
 Name: libsord
 Version: @SORD_VERSION@
-Description: Lightweight RDF triple store based on Tokyo Cabinet
+Description: A lightweight C library for storing RDF statements in memory.
 Libs: -L${libdir} -lsord
 Cflags: -I${includedir}

@@ -138,7 +138,7 @@ main(int argc, char** argv)
 	// Query
 	SordTuple pat = { 0, 0, 0, 0 };
 	SordIter  iter = sord_find(sord, pat);
-	for (; !sord_iter_is_end(iter); sord_iter_increment(iter)) {
+	for (; !sord_iter_end(iter); sord_iter_next(iter)) {
 		SordTuple tup;
 		sord_iter_get(iter, tup);
 		SordNode s, p, o;

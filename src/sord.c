@@ -256,7 +256,7 @@ sord_tuple_compare(const void* x_ptr, const void* y_ptr, void* user_data)
 }
 
 static inline bool
-sord_iter_next(SordIter iter)
+sord_iter_forward(SordIter iter)
 {
 	if (!iter->skip_graphs) {
 		iter->cur = g_sequence_iter_next(iter->cur);
@@ -286,7 +286,7 @@ sord_iter_seek_match(SordIter iter)
 {
 	for (iter->end = true;
 	     !g_sequence_iter_is_end(iter->cur);
-	     sord_iter_next(iter)) {
+	     sord_iter_forward(iter)) {
 		const SordID* const key = (const SordID*)g_sequence_get(iter->cur);
 		if (sord_tuple_match_inline(key, iter->pat))
 			return (iter->end = false);
@@ -316,7 +316,7 @@ sord_iter_seek_match_range(SordIter iter)
 				return true;
 			}
 		}
-	} while (!sord_iter_next(iter));
+	} while (!sord_iter_forward(iter));
 
 	return (iter->end = true); // Reached end
 }
@@ -381,13 +381,13 @@ sord_iter_get(SordIter iter, SordTuple id)
 }
 
 bool
-sord_iter_increment(SordIter iter)
+sord_iter_next(SordIter iter)
 {
 	if (iter->end)
 		return true;
 
 	const SordID* key;
-	iter->end = sord_iter_next(iter);
+	iter->end = sord_iter_forward(iter);
 	if (!iter->end) {
 		switch (iter->mode) {
 		case ALL:
@@ -432,7 +432,7 @@ sord_iter_increment(SordIter iter)
 }
 
 bool
-sord_iter_is_end(SordIter iter)
+sord_iter_end(SordIter iter)
 {
 	return !iter || iter->end;
 }

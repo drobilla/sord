@@ -118,11 +118,11 @@ test_read(Sord sord, const size_t n_tuples, const int n_objects_per)
 		return test_fail();
 	}
 
-	for (; !sord_iter_is_end(iter); sord_iter_increment(iter))
+	for (; !sord_iter_end(iter); sord_iter_next(iter))
 		sord_iter_get(iter, id);
 
 	// Attempt to increment past end
-	if (!sord_iter_increment(iter)) {
+	if (!sord_iter_next(iter)) {
 		fprintf(stderr, "Fail: Successfully incremented past end\n");
 		return test_fail();
 	}
@@ -149,7 +149,7 @@ test_read(Sord sord, const size_t n_tuples, const int n_objects_per)
 
 		iter = sord_find(sord, pat);
 		int num_results = 0;
-		for (; !sord_iter_is_end(iter); sord_iter_increment(iter)) {
+		for (; !sord_iter_end(iter); sord_iter_next(iter)) {
 			sord_iter_get(iter, id);
 			++num_results;
 			if (!sord_tuple_match(pat, id)) {
@@ -177,7 +177,7 @@ test_read(Sord sord, const size_t n_tuples, const int n_objects_per)
 	fprintf(stderr, "Query " TUP_FMT "... ", TUP_FMT_ARGS(pat));
 	iter = sord_find(sord, pat);
 	int num_results = 0;
-	for (; !sord_iter_is_end(iter); sord_iter_increment(iter)) {
+	for (; !sord_iter_end(iter); sord_iter_next(iter)) {
 		sord_iter_get(iter, id);
 		++num_results;
 		if (!sord_tuple_match(pat, id)) {
@@ -199,7 +199,7 @@ test_read(Sord sord, const size_t n_tuples, const int n_objects_per)
 	pat[0] = pat[1] = pat[2] = 0;
 	SordID last_subject = 0;
 	iter = sord_find(sord, pat);
-	for (; !sord_iter_is_end(iter); sord_iter_increment(iter)) {
+	for (; !sord_iter_end(iter); sord_iter_next(iter)) {
 		sord_iter_get(iter, id);
 		if (id[0] == last_subject)
 			continue;
@@ -207,7 +207,7 @@ test_read(Sord sord, const size_t n_tuples, const int n_objects_per)
 		SordTuple subpat = { id[0], 0, 0 };
 		SordIter subiter = sord_find(sord, subpat);
 		int num_sub_results = 0;
-		for (; !sord_iter_is_end(subiter); sord_iter_increment(subiter)) {
+		for (; !sord_iter_end(subiter); sord_iter_next(subiter)) {
 			SordTuple subid;
 			sord_iter_get(subiter, subid);
 			if (!sord_tuple_match(subpat, subid)) {
@@ -241,7 +241,7 @@ test_write(Sord sord, const size_t n_tuples, const int n_objects_per)
 	
 	// Remove statements
 	SordIter iter;
-	for (iter = sord_begin(sord); !sord_iter_is_end(iter);) {
+	for (iter = sord_begin(sord); !sord_iter_end(iter);) {
 		sord_remove_iter(sord, iter);
 	}
 	sord_iter_free(iter);

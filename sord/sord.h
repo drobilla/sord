@@ -315,12 +315,12 @@ sord_iter_get_sord(SordIter iter);
 /** Increment @a iter to point to the next statement. */
 SORD_API
 bool
-sord_iter_increment(SordIter iter);
+sord_iter_next(SordIter iter);
 
 /** Return true iff @a iter is at the end of its range. */
 SORD_API
 bool
-sord_iter_is_end(SordIter iter);
+sord_iter_end(SordIter iter);
 
 /** Free @a iter. */
 SORD_API

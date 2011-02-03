@@ -180,7 +180,8 @@ SORD_API
 bool
 sord_read_file(Sord           sord,
                const uint8_t* input,
-               const SordNode graph)
+               const SordNode graph,
+               const uint8_t* blank_prefix)
 {
 	const uint8_t* filename = NULL;
 	if (serd_uri_string_has_scheme(input)) {
@@ -203,7 +204,8 @@ sord_read_file(Sord           sord,
 		return 1;
 	}
 
-	const bool success = sord_read_file_handle(sord, in_fd, input, graph);
+	const bool success = sord_read_file_handle(
+		sord, in_fd, input, graph, blank_prefix);
 
 	fclose(in_fd);
 	return success;
@@ -214,7 +216,8 @@ bool
 sord_read_file_handle(Sord           sord,
                       FILE*          fd,
                       const uint8_t* base_uri_str_in,
-                      const SordNode graph)
+                      const SordNode graph,
+                      const uint8_t* blank_prefix)
 {
 	size_t   base_uri_n_bytes = 0;
 	uint8_t* base_uri_str     = copy_string(base_uri_str_in, &base_uri_n_bytes);
@@ -235,6 +238,10 @@ sord_read_file_handle(Sord           sord,
 	state.reader = serd_reader_new(
 		SERD_TURTLE, &state,
 		event_base, event_prefix, event_statement, NULL);
+
+	if (blank_prefix) {
+		serd_reader_set_blank_prefix(state.reader, blank_prefix);
+	}
 
 	const bool success = serd_reader_read_file(state.reader, fd, base_uri_str);
 

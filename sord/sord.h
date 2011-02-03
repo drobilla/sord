@@ -360,14 +360,16 @@ SORD_API
 bool
 sord_read_file(Sord           sord,
                const uint8_t* uri,
-               const SordNode graph);
+               const SordNode graph,
+               const uint8_t* blank_prefix);
 
 SORD_API
 bool
 sord_read_file_handle(Sord           sord,
                       FILE*          fd,
                       const uint8_t* base_uri,
-                      const SordNode graph);
+                      const SordNode graph,
+                      const uint8_t* blank_prefix);
 
 /** @} */
 

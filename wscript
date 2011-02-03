@@ -41,7 +41,7 @@ def configure(conf):
 	                  atleast_version='0.1.0', mandatory=False)
 
 	conf.env['BUILD_TESTS'] = Options.options.build_tests
-	conf.env['BUILD_UTILS'] = conf.env['HAVE_SERD'] != 0
+	conf.env['BUILD_UTILS'] = True
 
 	dump = Options.options.dump.split(',')
 	all = 'all' in dump
@@ -69,15 +69,16 @@ def build(bld):
 
 	# Library
 	obj = bld(features = 'c cshlib')
-	obj.source       = 'src/sord.c src/syntax.c'
-	obj.includes     = ['.', './src']
-	obj.name         = 'libsord'
-	obj.target       = 'sord'
-	obj.vnum         = SORD_LIB_VERSION
-	obj.install_path = '${LIBDIR}'
-	obj.cflags       = [ '-fvisibility=hidden', '-DSORD_SHARED', '-DSORD_INTERNAL' ]
-	obj.libs         = [ 'm' ]
-	autowaf.use_lib(bld, obj, 'GLIB')
+	obj.source          = 'src/sord.c src/syntax.c'
+	obj.includes        = ['.', './src']
+	obj.export_includes = ['.']
+	obj.name            = 'libsord'
+	obj.target          = 'sord'
+	obj.vnum            = SORD_LIB_VERSION
+	obj.install_path    = '${LIBDIR}'
+	obj.cflags          = [ '-fvisibility=hidden', '-DSORD_SHARED', '-DSORD_INTERNAL' ]
+	obj.libs            = [ 'm' ]
+	autowaf.use_lib(bld, obj, 'GLIB SERD')
 	
 	if bld.env['BUILD_TESTS']:
 		# Static library (for unit test code coverage)
@@ -89,7 +90,7 @@ def build(bld):
 		obj.install_path = ''
 		obj.cflags       = [ '-fprofile-arcs',  '-ftest-coverage' ]
 		obj.libs         = [ 'm' ]
-		autowaf.use_lib(bld, obj, 'GLIB')
+		autowaf.use_lib(bld, obj, 'GLIB SERD')
 
 		# Unit test program
 		obj = bld(features = 'c cprogram')
@@ -100,7 +101,7 @@ def build(bld):
 		obj.target       = 'sord_test'
 		obj.install_path = ''
 		obj.cflags       = [ '-fprofile-arcs',  '-ftest-coverage' ]
-		autowaf.use_lib(bld, obj, 'GLIB')
+		autowaf.use_lib(bld, obj, 'GLIB SERD')
 
 		# Unit test programa
 		if bld.env['BUILD_UTILS']:
@@ -112,7 +113,6 @@ def build(bld):
 			obj.target       = 'sordi_static'
 			obj.install_path = ''
 			obj.cflags       = [ '-fprofile-arcs',  '-ftest-coverage' ]
-			autowaf.use_lib(bld, obj, 'SERD')
 
 	# Documentation
 	autowaf.build_dox(bld, 'SORD', SORD_VERSION, top, out)

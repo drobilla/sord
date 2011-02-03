@@ -121,7 +121,7 @@ main(int argc, char** argv)
 	Sord sord = sord_new();
 	sord_open(sord);
 
-	bool success = sord_read_file(sord, input);
+	bool success = sord_read_file(sord, input, NULL);
 
 	printf("loaded %u statements\n", sord_num_nodes(sord));
 

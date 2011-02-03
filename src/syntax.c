@@ -18,14 +18,17 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <glib.h>
+
 #include "serd/serd.h"
 
 #include "sord-config.h"
-#include "sord/sord.h"
+#include "sord_internal.h"
 
 typedef struct {
 	SerdReader reader;
 	SerdEnv    env;
+	SordNode   graph_uri_node;
 	SerdNode   base_uri_node;
 	SerdURI    base_uri;
 	Sord       sord;
@@ -99,13 +102,24 @@ sord_node_from_serd_node(ReadState* state, const SerdNode* sn)
 	case SERD_LITERAL:
 		return sord_get_literal(state->sord, true, NULL,
 		                        (const char*)sn->buf, NULL);
-	case SERD_URI:
-		return sord_get_uri_counted(state->sord, true,
-		                            (const char*)sn->buf, sn->n_chars);
+	case SERD_URI: {
+		SerdURI uri;
+		if (!serd_uri_parse(sn->buf, &uri)) {
+			return NULL;
+		}
+		SerdURI abs_uri;
+		if (!serd_uri_resolve(&uri, &state->base_uri, &abs_uri)) {
+			return false;
+		}
+		SerdURI ignored;
+		SerdNode abs_uri_node = serd_node_new_uri(&abs_uri, &ignored);
+		return sord_get_uri(state->sord, true, (const char*)abs_uri_node.buf);
+	}
 	case SERD_CURIE: {
 		SerdChunk uri_prefix;
 		SerdChunk uri_suffix;
 		if (!serd_env_expand(state->env, sn, &uri_prefix, &uri_suffix)) {
+			fprintf(stderr, "ERROR: failed to expand qname `%s'\n", sn->buf);
 			return NULL;
 		}
 		const size_t uri_len = uri_prefix.len + uri_suffix.len;
@@ -138,11 +152,25 @@ event_statement(void*           handle,
 	SordTuple tup;
 	tup[0] = sord_node_from_serd_node(state, subject);
 	tup[1] = sord_node_from_serd_node(state, predicate);
-	tup[2] = sord_node_from_serd_node(state, object);
-	tup[3] = (graph && graph->buf)
-		? sord_node_from_serd_node(state, graph)
-		: NULL;
-	
+
+	SordNode object_node = sord_node_from_serd_node(state, object);
+
+	if (object_datatype) {
+		object_node->datatype = sord_node_from_serd_node(state, object_datatype);
+	}
+	if (object_lang) {
+		object_node->lang = g_intern_string((const char*)object_lang->buf);
+	}
+	tup[2] = object_node;
+
+	if (state->graph_uri_node) {
+		tup[3] = state->graph_uri_node;
+	} else {
+		tup[3] = (graph && graph->buf)
+			? sord_node_from_serd_node(state, graph)
+			: NULL;
+	}
+
 	sord_add(state->sord, tup);
 
 	return true;
@@ -150,7 +178,9 @@ event_statement(void*           handle,
 
 SORD_API
 bool
-sord_read_file(Sord sord, const uint8_t* input)
+sord_read_file(Sord           sord,
+               const uint8_t* input,
+               const SordNode graph)
 {
 	const uint8_t* filename = NULL;
 	if (serd_uri_string_has_scheme(input)) {
@@ -167,14 +197,27 @@ sord_read_file(Sord sord, const uint8_t* input)
 		filename = input;
 	}
 
-	FILE* in_fd = fopen((const char*)input,  "r");
+	FILE* in_fd = fopen((const char*)filename,  "r");
 	if (!in_fd) {
-		fprintf(stderr, "failed to open file %s\n", input);
+		fprintf(stderr, "failed to open file %s\n", filename);
 		return 1;
 	}
 
+	const bool success = sord_read_file_handle(sord, in_fd, input, graph);
+
+	fclose(in_fd);
+	return success;
+}
+
+SORD_API
+bool
+sord_read_file_handle(Sord           sord,
+                      FILE*          fd,
+                      const uint8_t* base_uri_str_in,
+                      const SordNode graph)
+{
 	size_t   base_uri_n_bytes = 0;
-	uint8_t* base_uri_str     = copy_string(input, &base_uri_n_bytes);
+	uint8_t* base_uri_str     = copy_string(base_uri_str_in, &base_uri_n_bytes);
 	SerdURI  base_uri;
 	if (!serd_uri_parse(base_uri_str, &base_uri)) {
 		fprintf(stderr, "invalid base URI `%s'\n", base_uri_str);
@@ -187,18 +230,17 @@ sord_read_file(Sord sord, const uint8_t* input)
 	                                 base_uri_n_bytes - 1,  // FIXME: UTF-8
 	                                 base_uri_str };
 
-	ReadState state = { NULL, env, base_uri_node, base_uri, sord };
+	ReadState state = { NULL, env, graph, base_uri_node, base_uri, sord };
 
 	state.reader = serd_reader_new(
 		SERD_TURTLE, &state,
 		event_base, event_prefix, event_statement, NULL);
 
-	const bool success = serd_reader_read_file(state.reader, in_fd, input);
+	const bool success = serd_reader_read_file(state.reader, fd, base_uri_str);
 
 	serd_reader_free(state.reader);
 	serd_env_free(state.env);
 	serd_node_free(&state.base_uri_node);
-	fclose(in_fd);
 
 	return success;
 }

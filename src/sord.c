@@ -37,7 +37,7 @@
 #include <glib.h>
 
 #include "sord-config.h"
-#include "sord/sord.h"
+#include "sord_internal.h"
 
 #define SORD_LOG(prefix, ...) fprintf(stderr, "[Sord::" prefix "] " __VA_ARGS__)
 
@@ -63,8 +63,13 @@
 #define DEFAULT_ORDER       SPO
 #define DEFAULT_GRAPH_ORDER GSPO
 
-#define TUP_FMT         "(%d %d %d %d)"
-#define TUP_FMT_ARGS(t) ((t)[0]), ((t)[1]), ((t)[2]), ((t)[3])
+#define TUP_FMT         "(%s %s %s %s)"
+#define TUP_FMT_ELEM(e) ((e) ? sord_node_get_string(e) : "*")
+#define TUP_FMT_ARGS(t) \
+	TUP_FMT_ELEM((t)[0]), \
+	TUP_FMT_ELEM((t)[1]), \
+	TUP_FMT_ELEM((t)[2]), \
+	TUP_FMT_ELEM((t)[3])
 
 #define TUP_S 0
 #define TUP_P 1
@@ -139,17 +144,6 @@ struct _SordIter {
 	bool           skip_graphs;       ///< True iff iteration should ignore graphs
 };
 
-/** Node */
-struct _SordNode {
-	SordNodeType type;       ///< SordNodeType
-	size_t       n_bytes;    ///< Length of data in bytes (including terminator)
-	SordCount    refs;       ///< Reference count (i.e. number of containing tuples)
-	void*        user_data;  ///< Opaque user data
-	SordNode     datatype;   ///< Literal data type (ID of a URI node, or 0)
-	const char*  lang;       ///< Literal language (interned string)
-	char*        buf;        ///< Value (string)
-};
-
 static unsigned
 sord_literal_hash(const void* n)
 {
@@ -168,7 +162,7 @@ sord_literal_equal(const void* a, const void* b)
 }
 
 static inline int
-sord_node_compare(Sord sord, const SordNode a, const SordNode b)
+sord_node_compare(const SordNode a, const SordNode b)
 {
 	if (a->type != b->type)
 		return a->type - b->type;
@@ -183,6 +177,13 @@ sord_node_compare(Sord sord, const SordNode a, const SordNode b)
 	}
 	assert(false);
 	return 0;
+}
+
+bool
+sord_node_equals(const SordNode a, const SordNode b)
+{
+	// FIXME: nodes are interned, this can be much faster
+	return sord_node_compare(a, b) == 0;
 }
 
 /** Compare two IDs (dereferencing if necessary).
@@ -200,7 +201,7 @@ sord_id_compare(Sord sord, const SordID a, const SordID b)
 	} else {
 		SordNode a_node = sord_node_load(sord, a);
 		SordNode b_node = sord_node_load(sord, b);
-		const int ret = sord_node_compare(sord, a_node, b_node);
+		const int ret = sord_node_compare(a_node, b_node);
 		return ret;
 	}
 }
@@ -601,8 +602,9 @@ sord_open(Sord sord)
 		// Use default indexing, avoids O(n) in all cases
 		sord->indices[SPO]  = g_sequence_new(NULL);
 		sord->indices[OPS]  = g_sequence_new(NULL);
-		sord->indices[PSO]  = g_sequence_new(NULL);
+		//sord->indices[PSO]  = g_sequence_new(NULL);
 		sord->indices[GSPO] = g_sequence_new(NULL); // XXX: default?  do on demand?
+		sord->indices[GOPS] = g_sequence_new(NULL); // XXX: default?  do on demand?
 	}
 
 	if (!sord->indices[DEFAULT_ORDER])
@@ -734,6 +736,10 @@ sord_find(Sord sord, const SordTuple pat)
 	SordTuple            search_key = { a, b, c, d };
 	GSequence* const     db         = sord->indices[index_order];
 	GSequenceIter* const cur        = index_lower_bound(sord, db, search_key);
+	if (g_sequence_iter_is_end(cur)) {
+		SORD_FIND_LOG("No match found\n");
+		return NULL;
+	}
 	const SordID* const  key        = (const SordID*)g_sequence_get(cur);
 	if (!key || ( (mode == RANGE || mode == SINGLE)
 	              && !sord_tuple_match_inline(search_key, key) )) {

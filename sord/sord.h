@@ -64,6 +64,13 @@ typedef int   SordCount; ///< Count of nodes or triples
  */
 typedef SordID SordTuple[4];
 
+typedef enum {
+	SORD_SUBJECT   = 0,
+	SORD_PREDICATE = 1,
+	SORD_OBJECT    = 2,
+	SORD_GRAPH     = 3
+} SordTupleIndex;
+
 /** Type of a node */
 typedef enum {
 	SORD_URI     = 1, ///< URI
@@ -231,6 +238,9 @@ SORD_API
 SordNode
 sord_literal_get_datatype(SordNode node);
 
+SORD_API
+bool
+sord_node_equals(const SordNode a, const SordNode b);
 
 /** @} */
 /** @name Read Operations
@@ -348,7 +358,16 @@ sord_tuple_match(const SordTuple x, const SordTuple y);
 
 SORD_API
 bool
-sord_read_file(Sord sord, const uint8_t* uri);
+sord_read_file(Sord           sord,
+               const uint8_t* uri,
+               const SordNode graph);
+
+SORD_API
+bool
+sord_read_file_handle(Sord           sord,
+                      FILE*          fd,
+                      const uint8_t* base_uri,
+                      const SordNode graph);
 
 /** @} */
 

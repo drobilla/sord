@@ -101,8 +101,7 @@ sord_node_from_serd_node(ReadState* state, const SerdNode* sn)
 	case SERD_NOTHING:
 		return NULL;
 	case SERD_LITERAL:
-		return sord_get_literal(state->sord, true, NULL,
-		                        (const char*)sn->buf, NULL);
+		return sord_get_literal(state->sord, true, NULL, sn->buf, NULL);
 	case SERD_URI: {
 		SerdURI uri;
 		if (!serd_uri_parse(sn->buf, &uri)) {
@@ -114,7 +113,7 @@ sord_node_from_serd_node(ReadState* state, const SerdNode* sn)
 		}
 		SerdURI ignored;
 		SerdNode abs_uri_node = serd_node_new_uri(&abs_uri, &ignored);
-		SordID ret = sord_get_uri(state->sord, true, (const char*)abs_uri_node.buf);
+		SordID ret = sord_get_uri(state->sord, true, abs_uri_node.buf);
 		serd_node_free(&abs_uri_node);
 		return ret;
 	}
@@ -126,7 +125,7 @@ sord_node_from_serd_node(ReadState* state, const SerdNode* sn)
 			return NULL;
 		}
 		const size_t uri_len = uri_prefix.len + uri_suffix.len;
-		char*        buf     = malloc(uri_len + 1);
+		uint8_t*     buf     = malloc(uri_len + 1);
 		memcpy(buf,                  uri_prefix.buf, uri_prefix.len);
 		memcpy(buf + uri_prefix.len, uri_suffix.buf, uri_suffix.len);
 		buf[uri_len] = '\0';
@@ -138,7 +137,7 @@ sord_node_from_serd_node(ReadState* state, const SerdNode* sn)
 	case SERD_BLANK_ID:
 	case SERD_ANON_BEGIN:
 	case SERD_ANON:
-		return sord_get_blank(state->sord, true, (const char*)sn->buf);
+		return sord_get_blank(state->sord, true, sn->buf);
 	}
 	return NULL;
 }

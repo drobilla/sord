@@ -65,9 +65,9 @@ file_sink(const void* buf, size_t len, void* stream)
 static inline SerdNode
 serd_node_from_sord_node(const SordNode n)
 {
-	size_t      n_bytes = 0;
-	const char* buf     = sord_node_get_string_counted(n, &n_bytes);
-	SerdNode    sn      = { SERD_NOTHING, n_bytes, n_bytes - 1, (const uint8_t*)buf };
+	size_t         n_bytes = 0;
+	const uint8_t* buf     = sord_node_get_string_counted(n, &n_bytes);
+	SerdNode       sn      = { SERD_NOTHING, n_bytes, n_bytes - 1, (const uint8_t*)buf };
 	// FIXME: UTF-8
 	switch (sord_node_get_type(n)) {
 	case SORD_URI:

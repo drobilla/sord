@@ -160,24 +160,24 @@ sord_tuple_load(Sord      sord,
  */
 SORD_API
 SordID
-sord_get_uri(Sord sord, bool create, const char* str);
+sord_get_uri(Sord sord, bool create, const uint8_t* str);
 
 /** Find a URI, creating a new one if necessary iff @a create is true. */
 SORD_API
 SordID
-sord_get_uri_counted(Sord sord, bool create, const char* str, int str_len);
+sord_get_uri_counted(Sord sord, bool create, const uint8_t* str, int str_len);
 
 /** Find a blank, creating a new one if necessary iff @a create is true
  * Use sord_get_blank_counted instead if the length of @a str is known.
  */
 SORD_API
 SordID
-sord_get_blank(Sord sord, bool create, const char* str);
+sord_get_blank(Sord sord, bool create, const uint8_t* str);
 
 /** Find a blank, creating a new one if necessary iff @a create is true. */
 SORD_API
 SordID
-sord_get_blank_counted(Sord sord, bool create, const char* str, int str_len);
+sord_get_blank_counted(Sord sord, bool create, const uint8_t* str, int str_len);
 
 /** Find a literal, creating a new one if necessary iff @a create is true.
  * Use sord_get_literal_counted instead if the length of @a str is known.
@@ -185,14 +185,14 @@ sord_get_blank_counted(Sord sord, bool create, const char* str, int str_len);
 SORD_API
 SordID
 sord_get_literal(Sord sord, bool create, SordID type,
-                 const char* str, const char* lang);
+                 const uint8_t* str, const char* lang);
 
 /** Find a literal, creating a new one if necessary iff @a create is true. */
 SORD_API
 SordID
 sord_get_literal_counted(Sord sord, bool create, SordID type,
-                         const char* str,  int     str_len,
-                         const char* lang, uint8_t lang_len);
+                         const uint8_t* str,  int     str_len,
+                         const char*    lang, uint8_t lang_len);
 
 
 /** @} */
@@ -208,11 +208,11 @@ sord_node_get_type(SordNode node);
 
 /** Return the string value of a node. */
 SORD_API
-const char*
+const uint8_t*
 sord_node_get_string(SordNode node);
 
 SORD_API
-const char*
+const uint8_t*
 sord_node_get_string_counted(SordNode node, size_t* len);
 
 /** Set an opaque user pointer on a node.

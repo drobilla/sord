@@ -18,6 +18,9 @@
 #ifndef SORD_INTERNAL_H
 #define SORD_INTERNAL_H
 
+#include <stddef.h>
+#include <stdint.h>
+
 #include "sord/sord.h"
 
 /** Node */
@@ -28,7 +31,7 @@ struct _SordNode {
 	void*        user_data;  ///< Opaque user data
 	SordNode     datatype;   ///< Literal data type (ID of a URI node, or 0)
 	const char*  lang;       ///< Literal language (interned string)
-	char*        buf;        ///< Value (string)
+	uint8_t*     buf;        ///< Value (string)
 };
 
 #endif // SORD_INTERNAL_H

@@ -261,7 +261,7 @@ sord_iter_forward(SordIter iter)
 {
 	if (!iter->skip_graphs) {
 		iter->cur = g_sequence_iter_next(iter->cur);
-		return !g_sequence_iter_is_end(iter->cur);
+		return g_sequence_iter_is_end(iter->cur);
 	}
 
 	const SordID*   key     = (const SordID*)g_sequence_get(iter->cur);
@@ -359,8 +359,9 @@ sord_iter_new(Sord sord, GSequenceIter* cur, const SordTuple pat,
 #ifdef SORD_DEBUG_ITER
 	SordTuple value;
 	sord_iter_get(iter, value);
-	SORD_ITER_LOG("New %p pat=" TUP_FMT " cur=" TUP_FMT " end=%d\n", (void*)iter,
-	              TUP_FMT_ARGS(pat), TUP_FMT_ARGS(value), iter->end);
+	SORD_ITER_LOG("New %p pat=" TUP_FMT " cur=" TUP_FMT " end=%d skipgraphs=%d\n",
+	              (void*)iter, TUP_FMT_ARGS(pat), TUP_FMT_ARGS(value),
+	              iter->end, iter->skip_graphs);
 #endif
 	return iter;
 }
@@ -396,14 +397,17 @@ sord_iter_next(SordIter iter)
 			break;
 		case SINGLE:
 			iter->end = true;
+			SORD_ITER_LOG("%p reached single end\n", (void*)iter);
 			break;
 		case RANGE:
-			// At the end if the MSN no longer matches
+			SORD_ITER_LOG("%p range next\n", (void*)iter);
+			// At the end if the MSNs no longer match
 			key = (const SordID*)g_sequence_get(iter->cur);
 			assert(key);
 			for (int i = 0; i < iter->n_prefix; ++i) {
 				if (!sord_id_match(key[i], iter->pat[i])) {
 					iter->end = true;
+					SORD_ITER_LOG("%p reached non-match end\n", (void*)iter);
 					break;
 				}
 			}
@@ -417,6 +421,8 @@ sord_iter_next(SordIter iter)
 			sord_iter_seek_match(iter);
 			break;
 		}
+	} else {
+		SORD_ITER_LOG("%p reached index end\n", (void*)iter);
 	}
 
 	if (iter->end) {
@@ -730,7 +736,7 @@ sord_find(Sord sord, const SordTuple pat)
 	const SordID c = pat[ordering[2]]; // ...
 	const SordID d = pat[ordering[3]]; // Least Significant Node (LSN)
 
-	if (a && b && c)
+	if (a && b && c && d)
 		mode = SINGLE; // No duplicate tuples (Sord is a set)
 
 	SordTuple            search_key = { a, b, c, d };

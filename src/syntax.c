@@ -15,6 +15,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -164,6 +165,7 @@ event_statement(void*           handle,
 	tup[2] = object_node;
 
 	if (state->graph_uri_node) {
+		assert(graph->type == SERD_NOTHING);
 		tup[3] = state->graph_uri_node;
 	} else {
 		tup[3] = (graph && graph->buf)

@@ -38,7 +38,7 @@ def configure(conf):
 	                  atleast_version='2.0.0', mandatory=True)
 
 	autowaf.check_pkg(conf, 'serd', uselib_store='SERD',
-	                  atleast_version='0.1.0', mandatory=False)
+	                  atleast_version='0.1.0', mandatory=True)
 
 	conf.env['BUILD_TESTS'] = Options.options.build_tests
 	conf.env['BUILD_UTILS'] = True

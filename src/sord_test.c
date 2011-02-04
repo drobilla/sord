@@ -25,7 +25,7 @@
 static const int DIGITS  = 3;
 static const int MAX_NUM = 999;
 
-typedef struct { SordTuple query; int expected_num_results; } QueryTest;
+typedef struct { SordQuad query; int expected_num_results; } QueryTest;
 
 #define USTR(s) ((const uint8_t*)(s))
 
@@ -43,12 +43,12 @@ uri(Sord sord, int num)
 }
 
 void
-generate(Sord sord, size_t n_tuples, size_t n_objects_per)
+generate(Sord sord, size_t n_quads, size_t n_objects_per)
 {
-	fprintf(stderr, "Generating %zu (S P *) tuples with %zu objects each\n",
-			n_tuples, n_objects_per);
+	fprintf(stderr, "Generating %zu (S P *) quads with %zu objects each\n",
+			n_quads, n_objects_per);
 
-	for (size_t i = 0; i < n_tuples; ++i) {
+	for (size_t i = 0; i < n_quads; ++i) {
 		int num = (i * n_objects_per) + 1;
 
 		SordID ids[2 + n_objects_per];
@@ -57,13 +57,13 @@ generate(Sord sord, size_t n_tuples, size_t n_objects_per)
 		}
 
 		for (size_t j = 0; j < n_objects_per; ++j) {
-			SordTuple tup = { ids[0], ids[1], ids[2 + j] };
+			SordQuad tup = { ids[0], ids[1], ids[2 + j] };
 			sord_add(sord, tup);
 		}
 	}
 
 	// Add some literals
-	SordTuple tup;
+	SordQuad tup;
 	tup[0] = uri(sord, 98);
 	tup[1] = uri(sord, 4);
 	tup[2] = sord_get_literal(sord, true, 0, (const uint8_t*)"hello", NULL);
@@ -108,11 +108,11 @@ test_fail()
 	 ? sord_node_get_string(sord_node_load(sord, (t)[2])) : USTR("*"))
 
 int
-test_read(Sord sord, const size_t n_tuples, const int n_objects_per)
+test_read(Sord sord, const size_t n_quads, const int n_objects_per)
 {
 	int ret = EXIT_SUCCESS;
 
-	SordTuple id;
+	SordQuad id;
 
 	SordIter iter = sord_begin(sord);
 	if (sord_iter_get_sord(iter) != sord) {
@@ -134,7 +134,7 @@ test_read(Sord sord, const size_t n_tuples, const int n_objects_per)
 #define NUM_PATTERNS 9
 
 	QueryTest patterns[NUM_PATTERNS] = {
-		{ { 0, 0, 0 }, (n_tuples * n_objects_per) + 6 },
+		{ { 0, 0, 0 }, (n_quads * n_objects_per) + 6 },
 		{ { uri(sord, 9), uri(sord, 9), uri(sord, 9) }, 0 },
 		{ { uri(sord, 1), uri(sord, 2), uri(sord, 4) }, 1 },
 		{ { uri(sord, 3), uri(sord, 4), uri(sord, 0) }, 2 },
@@ -146,7 +146,7 @@ test_read(Sord sord, const size_t n_tuples, const int n_objects_per)
 
 	for (unsigned i = 0; i < NUM_PATTERNS; ++i) {
 		QueryTest test = patterns[i];
-		SordTuple pat = { test.query[0], test.query[1], test.query[2], 0 };
+		SordQuad  pat = { test.query[0], test.query[1], test.query[2], 0 };
 		fprintf(stderr, "Query " TUP_FMT "... ", TUP_FMT_ARGS(pat));
 
 		iter = sord_find(sord, pat);
@@ -154,7 +154,7 @@ test_read(Sord sord, const size_t n_tuples, const int n_objects_per)
 		for (; !sord_iter_end(iter); sord_iter_next(iter)) {
 			sord_iter_get(iter, id);
 			++num_results;
-			if (!sord_tuple_match(pat, id)) {
+			if (!sord_quad_match(pat, id)) {
 				sord_iter_free(iter);
 				fprintf(stderr, "Fail: Query result " TUP_FMT " does not match pattern\n",
 				        TUP_FMT_ARGS(id));
@@ -171,7 +171,7 @@ test_read(Sord sord, const size_t n_tuples, const int n_objects_per)
 	}
 
 	// Query blank node subject
-	SordTuple pat = { sord_get_blank(sord, true, USTR("ablank")), 0, 0 };
+	SordQuad pat = { sord_get_blank(sord, true, USTR("ablank")), 0, 0 };
 	if (!pat[0]) {
 		fprintf(stderr, "Blank node subject lost\n");
 		return test_fail();
@@ -182,7 +182,7 @@ test_read(Sord sord, const size_t n_tuples, const int n_objects_per)
 	for (; !sord_iter_end(iter); sord_iter_next(iter)) {
 		sord_iter_get(iter, id);
 		++num_results;
-		if (!sord_tuple_match(pat, id)) {
+		if (!sord_quad_match(pat, id)) {
 			sord_iter_free(iter);
 			fprintf(stderr, "Fail: Query result " TUP_FMT " does not match pattern\n",
 			        TUP_FMT_ARGS(id));
@@ -206,13 +206,13 @@ test_read(Sord sord, const size_t n_tuples, const int n_objects_per)
 		if (id[0] == last_subject)
 			continue;
 
-		SordTuple subpat = { id[0], 0, 0 };
+		SordQuad subpat  = { id[0], 0, 0 };
 		SordIter subiter = sord_find(sord, subpat);
 		int num_sub_results = 0;
 		for (; !sord_iter_end(subiter); sord_iter_next(subiter)) {
-			SordTuple subid;
+			SordQuad subid;
 			sord_iter_get(subiter, subid);
-			if (!sord_tuple_match(subpat, subid)) {
+			if (!sord_quad_match(subpat, subid)) {
 				sord_iter_free(iter);
 				sord_iter_free(subiter);
 				fprintf(stderr, "Fail: Nested query result does not match pattern\n");
@@ -235,7 +235,7 @@ test_read(Sord sord, const size_t n_tuples, const int n_objects_per)
 }
 
 int
-test_write(Sord sord, const size_t n_tuples, const int n_objects_per)
+test_write(Sord sord, const size_t n_quads, const int n_objects_per)
 {
 	int ret = EXIT_SUCCESS;
 
@@ -248,9 +248,9 @@ test_write(Sord sord, const size_t n_tuples, const int n_objects_per)
 	}
 	sord_iter_free(iter);
 
-	const int num_tuples = sord_num_tuples(sord);
-	if (num_tuples != 0) {
-		fprintf(stderr, "Fail: All tuples removed but %d tuples remain\n", num_tuples);
+	const int num_quads = sord_num_quads(sord);
+	if (num_quads != 0) {
+		fprintf(stderr, "Fail: All quads removed but %d quads remain\n", num_quads);
 		return test_fail();
 	}
 
@@ -262,7 +262,7 @@ test_write(Sord sord, const size_t n_tuples, const int n_objects_per)
 int
 main(int argc, char** argv)
 {
-	static const size_t n_tuples      = 300;
+	static const size_t n_quads      = 300;
 	static const int    n_objects_per = 2;
 
 	sord_free(NULL); // Shouldn't crash
@@ -271,9 +271,9 @@ main(int argc, char** argv)
 	Sord sord = sord_new();
 	sord_set_option(sord, "http://unknown", "something", SORD_LITERAL, NULL, NULL);
 	sord_open(sord);
-	generate(sord, n_tuples, n_objects_per);
+	generate(sord, n_quads, n_objects_per);
 
-	if (test_read(sord, n_tuples, n_objects_per)) {
+	if (test_read(sord, n_quads, n_objects_per)) {
 		sord_free(sord);
 		return EXIT_FAILURE;
 	}
@@ -327,8 +327,8 @@ main(int argc, char** argv)
 		sord_set_option(sord, option, "true", SORD_LITERAL, NULL, NULL);
 		printf("Testing Index `%s'\n", index_names[i]);
 		sord_open(sord);
-		generate(sord, n_tuples, n_objects_per);
-		if (test_read(sord, n_tuples, n_objects_per))
+		generate(sord, n_quads, n_objects_per);
+		if (test_read(sord, n_quads, n_objects_per))
 			goto fail;
 		sord_free(sord);
 	}
@@ -336,7 +336,7 @@ main(int argc, char** argv)
 
 	sord = sord_new();
 	sord_open(sord);
-	if (test_write(sord, n_tuples, n_objects_per))
+	if (test_write(sord, n_quads, n_objects_per))
 	  goto fail;
 
 	sord_free(sord);

@@ -153,7 +153,7 @@ event_statement(void*           handle,
 {
 	ReadState* const state = (ReadState*)handle;
 
-	SordTuple tup;
+	SordQuad tup;
 	tup[0] = sord_node_from_serd_node(state, subject);
 	tup[1] = sord_node_from_serd_node(state, predicate);
 

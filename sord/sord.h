@@ -51,7 +51,7 @@
  * @{
  */
 
-typedef struct _Sord*     Sord;     ///< Tuple store
+typedef struct _Sord*     Sord;     ///< Quad store
 typedef struct _SordIter* SordIter; ///< Store iterator
 typedef struct _SordNode* SordNode; ///< Node
 
@@ -59,17 +59,17 @@ typedef void* SordID;    ///< Integer ID of a Node (0 reserved for NULL)
 typedef int   SordCount; ///< Count of nodes or triples
 
 
-/** Tuple of IDs (statement), or a tuple pattern.
+/** Quad of IDs (statement), or a quad pattern.
  * Nodes are ordered (S P O G).  The ID of the default graph is 0.
  */
-typedef SordID SordTuple[4];
+typedef SordID SordQuad[4];
 
 typedef enum {
 	SORD_SUBJECT   = 0,
 	SORD_PREDICATE = 1,
 	SORD_OBJECT    = 2,
 	SORD_GRAPH     = 3
-} SordTupleIndex;
+} SordQuadIndex;
 
 /** Type of a node */
 typedef enum {
@@ -149,8 +149,8 @@ sord_node_load(Sord sord, SordID id);
 /** Set @a s, @a p, and @a o to the nodes in @a tup. */
 SORD_API
 void
-sord_tuple_load(Sord      sord,
-                SordTuple tup,
+sord_quad_load(Sord      sord,
+                SordQuad  tup,
                 SordNode* s,
                 SordNode* p,
                 SordNode* o);
@@ -248,16 +248,16 @@ sord_node_equals(const SordNode a, const SordNode b);
  */
 
 /** Return the number of nodes stored in @a sord.
- * Nodes are included in this count iff they are a part of a tuple in @a sord.
+ * Nodes are included in this count iff they are a part of a quad in @a sord.
  */
 SORD_API
 int
 sord_num_nodes(Sord read);
 
-/** Return the number of tuples stored in @a sord. */
+/** Return the number of quads stored in @a sord. */
 SORD_API
 int
-sord_num_tuples(Sord read);
+sord_num_quads(Sord read);
 
 /** Return an iterator to the start of the store. */
 SORD_API
@@ -274,7 +274,7 @@ sord_graphs_begin(Sord read);
  */
 SORD_API
 SordIter
-sord_find(Sord sord, const SordTuple pat);
+sord_find(Sord sord, const SordQuad pat);
 
 
 /** @} */
@@ -282,20 +282,20 @@ sord_find(Sord sord, const SordTuple pat);
  * @{
  */
 
-/** Add a tuple to the store. */
+/** Add a quad to the store. */
 SORD_API
 void
-sord_add(Sord sord, const SordTuple tup);
+sord_add(Sord sord, const SordQuad tup);
 
-/** Remove a tuple from the store.
+/** Remove a quad from the store.
  * This function invalidates all iterators to @a sord (use sord_remove_iter
  * if this is undesirable)
  */
 SORD_API
 void
-sord_remove(Sord sord, const SordTuple tup);
+sord_remove(Sord sord, const SordQuad tup);
 
-/** Remove a tuple from the store by iterator.
+/** Remove a quad from the store by iterator.
  * @a iter will be incremented to point at the next value.
  */
 SORD_API
@@ -312,10 +312,10 @@ sord_remove_graph(Sord sord, SordID graph);
  * @{
  */
 
-/** Set @a id to the tuple pointed to by @a iter. */
+/** Set @a id to the quad pointed to by @a iter. */
 SORD_API
 void
-sord_iter_get(SordIter iter, SordTuple tup);
+sord_iter_get(SordIter iter, SordQuad tup);
 
 /** Return the store pointed to by @a iter. */
 SORD_API
@@ -342,14 +342,14 @@ sord_iter_free(SordIter iter);
  * @{
  */
 
-/** Match two tuples (using ID comparison only).
+/** Match two quads (using ID comparison only).
  * This function is a straightforward and fast equivalence match with wildcard
  * support (ID 0 is a wildcard).  It never performs any database access.
  * @return true iff @a x and @a y match.
  */
 SORD_API
 bool
-sord_tuple_match(const SordTuple x, const SordTuple y);
+sord_quad_match(const SordQuad x, const SordQuad y);
 
 /** @} */
 /** @name Serialisation

@@ -136,13 +136,13 @@ main(int argc, char** argv)
 	                                    env, &base_uri, file_sink, stdout);
 
 	// Query
-	SordTuple pat = { 0, 0, 0, 0 };
-	SordIter  iter = sord_find(sord, pat);
+	SordQuad pat = { 0, 0, 0, 0 };
+	SordIter iter = sord_find(sord, pat);
 	for (; !sord_iter_end(iter); sord_iter_next(iter)) {
-		SordTuple tup;
+		SordQuad tup;
 		sord_iter_get(iter, tup);
 		SordNode s, p, o;
-		sord_tuple_load(sord, tup, &s, &p, &o);
+		sord_quad_load(sord, tup, &s, &p, &o);
 		SerdNode ss = serd_node_from_sord_node(s);
 		SerdNode sp = serd_node_from_sord_node(p);
 		SerdNode so = serd_node_from_sord_node(o);

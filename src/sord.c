@@ -18,7 +18,7 @@
 /** @file
  * Sord Implementation.
  *
- * Tuples are represented as simple arrays of SordID, of length 4,
+ * Quads are represented as simple arrays of SordID, of length 4,
  * which represent statements (RDF triples) with an optional
  * context.  When contexts are not used, only the first 3 elements
  * are considered.
@@ -98,7 +98,7 @@ static const char* const order_names[NUM_ORDERS] = {
 	"gspo", "gsop", "gops", "gosp", "gpso", "gpos"
 };
 
-/** Tuples of indices for each order, from most to least significant
+/** Quads of indices for each order, from most to least significant
  * (array indexed by SordOrder)
  */
 static const int orderings[NUM_ORDERS][TUP_LEN] = {
@@ -119,7 +119,7 @@ struct _Sord {
 
 	void (*user_data_free)(void*); ///< Destructor for node user data
 
-	SordCount n_tuples;
+	SordCount n_quads;
 	SordCount n_nodes;
 };
 
@@ -136,7 +136,7 @@ typedef enum {
 struct _SordIter {
 	Sord           sord;              ///< Store this is an iterator for
 	GSequenceIter* cur;               ///< Current DB cursor
-	SordTuple      pat;               ///< Iteration pattern (in ordering order)
+	SordQuad       pat;               ///< Iteration pattern (in ordering order)
 	int            ordering[TUP_LEN]; ///< Store ordering
 	SearchMode     mode;              ///< Iteration mode
 	int            n_prefix;          ///< Length of range prefix (RANGE, FILTER_RANGE)
@@ -215,7 +215,7 @@ sord_id_match(const SordID a, const SordID b)
 }
 
 static inline bool
-sord_tuple_match_inline(const SordTuple x, const SordTuple y)
+sord_quad_match_inline(const SordQuad x, const SordQuad y)
 {
 	return sord_id_match(x[0], y[0])
 		&& sord_id_match(x[1], y[1])
@@ -224,25 +224,25 @@ sord_tuple_match_inline(const SordTuple x, const SordTuple y)
 }
 
 bool
-sord_tuple_match(const SordTuple x, const SordTuple y)
+sord_quad_match(const SordQuad x, const SordQuad y)
 {
-	return sord_tuple_match_inline(x, y);
+	return sord_quad_match_inline(x, y);
 }
 
 void
-sord_tuple_load(Sord sord, SordTuple tup, SordNode* s, SordNode* p, SordNode* o)
+sord_quad_load(Sord sord, SordQuad tup, SordNode* s, SordNode* p, SordNode* o)
 {
 	*s = sord_node_load(sord, tup[TUP_S]);
 	*p = sord_node_load(sord, tup[TUP_P]);
 	*o = sord_node_load(sord, tup[TUP_O]);
 }
 
-/** Compare two tuple IDs lexicographically.
+/** Compare two quad IDs lexicographically.
  * NULL IDs (equal to 0) are treated as wildcards, always less than every
  * other possible ID, except itself.
  */
 static int
-sord_tuple_compare(const void* x_ptr, const void* y_ptr, void* user_data)
+sord_quad_compare(const void* x_ptr, const void* y_ptr, void* user_data)
 {
 	Sord    const sord = (Sord)user_data;
 	SordID* const x    = (SordID*)x_ptr;
@@ -265,8 +265,8 @@ sord_iter_forward(SordIter iter)
 		return g_sequence_iter_is_end(iter->cur);
 	}
 
-	const SordID*   key     = (const SordID*)g_sequence_get(iter->cur);
-	const SordTuple initial = { key[0], key[1], key[2], key[3] };
+	const SordID*  key     = (const SordID*)g_sequence_get(iter->cur);
+	const SordQuad initial = { key[0], key[1], key[2], key[3] };
 	while (true) {
 		iter->cur = g_sequence_iter_next(iter->cur);
 		if (g_sequence_iter_is_end(iter->cur))
@@ -290,7 +290,7 @@ sord_iter_seek_match(SordIter iter)
 	     !g_sequence_iter_is_end(iter->cur);
 	     sord_iter_forward(iter)) {
 		const SordID* const key = (const SordID*)g_sequence_get(iter->cur);
-		if (sord_tuple_match_inline(key, iter->pat))
+		if (sord_quad_match_inline(key, iter->pat))
 			return (iter->end = false);
 	}
 	return true;
@@ -309,7 +309,7 @@ sord_iter_seek_match_range(SordIter iter)
 	do {
 		const SordID* key = (const SordID*)g_sequence_get(iter->cur);
 
-		if (sord_tuple_match_inline(key, iter->pat))
+		if (sord_quad_match_inline(key, iter->pat))
 			return false; // Found match
 
 		for (int i = 0; i < iter->n_prefix; ++i) {
@@ -324,7 +324,7 @@ sord_iter_seek_match_range(SordIter iter)
 }
 
 static SordIter
-sord_iter_new(Sord sord, GSequenceIter* cur, const SordTuple pat,
+sord_iter_new(Sord sord, GSequenceIter* cur, const SordQuad pat,
               SordOrder order, SearchMode mode, int n_prefix)
 {
 	const int* ordering = orderings[order];
@@ -345,7 +345,7 @@ sord_iter_new(Sord sord, GSequenceIter* cur, const SordTuple pat,
 	case ALL:
 	case SINGLE:
 	case RANGE:
-		assert(sord_tuple_match_inline(
+		assert(sord_quad_match_inline(
 			       (const SordID*)g_sequence_get(iter->cur),
 		           iter->pat));
 		break;
@@ -358,7 +358,7 @@ sord_iter_new(Sord sord, GSequenceIter* cur, const SordTuple pat,
 	}
 
 #ifdef SORD_DEBUG_ITER
-	SordTuple value;
+	SordQuad value;
 	sord_iter_get(iter, value);
 	SORD_ITER_LOG("New %p pat=" TUP_FMT " cur=" TUP_FMT " end=%d skipgraphs=%d\n",
 	              (void*)iter, TUP_FMT_ARGS(pat), TUP_FMT_ARGS(value),
@@ -374,7 +374,7 @@ sord_iter_get_sord(SordIter iter)
 }
 
 void
-sord_iter_get(SordIter iter, SordTuple id)
+sord_iter_get(SordIter iter, SordQuad id)
 {
 	const SordID* key = (const SordID*)g_sequence_get(iter->cur);
 	id[iter->ordering[0]] = key[0];
@@ -431,7 +431,7 @@ sord_iter_next(SordIter iter)
 		return true;
 	} else {
 #ifdef SORD_DEBUG_ITER
-		SordTuple tup;
+		SordQuad tup;
 		sord_iter_get(iter, tup);
 		SORD_ITER_LOG("%p Increment to " TUP_FMT "\n", (void*)iter, TUP_FMT_ARGS(tup));
 #endif
@@ -476,7 +476,7 @@ sord_has_index(Sord sord, SordOrder* order, int* n_prefix, bool graph_search)
  *        (for @a mode == RANGE and @a mode == FILTER_RANGE)
  */
 static inline SordOrder
-sord_best_index(Sord sord, const SordTuple pat, SearchMode* mode, int* n_prefix)
+sord_best_index(Sord sord, const SordQuad pat, SearchMode* mode, int* n_prefix)
 {
 	const bool graph_search = (pat[TUP_G] != 0);
 
@@ -550,7 +550,7 @@ sord_new()
 }
 
 static void
-sord_add_tuple_ref(Sord sord, const SordID id)
+sord_add_quad_ref(Sord sord, const SordID id)
 {
 	if (id) {
 		SordNode node = sord_node_load(sord, id);
@@ -567,7 +567,7 @@ sord_drop_node(Sord sord, SordID id)
 }
 
 static void
-sord_drop_tuple_ref(Sord sord, const SordID id)
+sord_drop_quad_ref(Sord sord, const SordID id)
 {
 	if (id) {
 		SordNode node = sord_node_load(sord, id);
@@ -584,12 +584,12 @@ sord_free(Sord sord)
 		return;
 
 	// Free nodes
-	SordTuple tup;
+	SordQuad tup;
 	SordIter i = sord_begin(sord);
 	for (; !sord_iter_end(i); sord_iter_next(i)) {
 		sord_iter_get(i, tup);
 		for (int i = 0; i < TUP_LEN; ++i) {
-			sord_drop_tuple_ref(sord, tup[i]);
+			sord_drop_quad_ref(sord, tup[i]);
 		}
 	}
 	sord_iter_free(i);
@@ -635,7 +635,7 @@ sord_set_option(Sord sord, const char* key, const char* value,
 bool
 sord_open(Sord sord)
 {
-	sord->n_tuples = sord->n_nodes = 0;
+	sord->n_quads = sord->n_nodes = 0;
 
 	bool no_indices = true;
 	for (unsigned i = 0; i < NUM_ORDERS; ++i) {
@@ -660,9 +660,9 @@ sord_open(Sord sord)
 }
 
 int
-sord_num_tuples(Sord sord)
+sord_num_quads(Sord sord)
 {
-	return sord->n_tuples;
+	return sord->n_quads;
 }
 
 int
@@ -680,11 +680,11 @@ sord_node_set_user_data_free_function(Sord sord, void (*f)(void*))
 SordIter
 sord_begin(Sord sord)
 {
-	if (sord_num_tuples(sord) == 0) {
+	if (sord_num_quads(sord) == 0) {
 		return NULL;
 	} else {
 		GSequenceIter* cur = g_sequence_get_begin_iter(sord->indices[DEFAULT_ORDER]);
-		SordTuple pat = { 0, 0, 0, 0 };
+		SordQuad pat = { 0, 0, 0, 0 };
 		return sord_iter_new(sord, cur, pat, DEFAULT_ORDER, ALL, 0);
 	}
 }
@@ -696,17 +696,17 @@ sord_graphs_begin(Sord read)
 }
 
 static inline GSequenceIter*
-index_search(Sord sord, GSequence* db, const SordTuple search_key)
+index_search(Sord sord, GSequence* db, const SordQuad search_key)
 {
 	return  g_sequence_search(
-		db, (void*)search_key, sord_tuple_compare, sord);
+		db, (void*)search_key, sord_quad_compare, sord);
 }
 
 static inline GSequenceIter*
-index_lower_bound(Sord sord, GSequence* db, const SordTuple search_key)
+index_lower_bound(Sord sord, GSequence* db, const SordQuad search_key)
 {
 	GSequenceIter* i = g_sequence_search(
-		db, (void*)search_key, sord_tuple_compare, sord);
+		db, (void*)search_key, sord_quad_compare, sord);
 
 	/* i is now at the position where search_key would be inserted,
 	   but this is not necessarily a match, and we need the leftmost...
@@ -718,10 +718,10 @@ index_lower_bound(Sord sord, GSequence* db, const SordTuple search_key)
 		i = g_sequence_iter_prev(i);
 	}
 
-	if (!sord_tuple_match_inline(search_key, g_sequence_get(i))) {
+	if (!sord_quad_match_inline(search_key, g_sequence_get(i))) {
 		// No match, but perhaps immediately after a match
 		GSequenceIter* const prev = g_sequence_iter_prev(i);
-		if (!sord_tuple_match_inline(search_key, g_sequence_get(prev))) {
+		if (!sord_quad_match_inline(search_key, g_sequence_get(prev))) {
 			return i; // No match (caller must check)
 		} else {
 			i = prev;
@@ -731,12 +731,12 @@ index_lower_bound(Sord sord, GSequence* db, const SordTuple search_key)
 	/* i now points to some matching element,
 	   but not necessarily the first...
 	*/
-	assert(sord_tuple_match_inline(search_key, g_sequence_get(i)));
+	assert(sord_quad_match_inline(search_key, g_sequence_get(i)));
 
 	while (!g_sequence_iter_is_begin(i)) {
-		if (sord_tuple_match_inline(search_key, g_sequence_get(i))) {
+		if (sord_quad_match_inline(search_key, g_sequence_get(i))) {
 			GSequenceIter* const prev = g_sequence_iter_prev(i);
-			if (sord_tuple_match_inline(search_key, g_sequence_get(prev))) {
+			if (sord_quad_match_inline(search_key, g_sequence_get(prev))) {
 				i = prev;
 				continue;
 			}
@@ -748,7 +748,7 @@ index_lower_bound(Sord sord, GSequence* db, const SordTuple search_key)
 }
 
 SordIter
-sord_find(Sord sord, const SordTuple pat)
+sord_find(Sord sord, const SordQuad pat)
 {
 	if (!pat[0] && !pat[1] && !pat[2] && !pat[3])
 		return sord_begin(sord);
@@ -771,9 +771,9 @@ sord_find(Sord sord, const SordTuple pat)
 	const SordID d = pat[ordering[3]]; // Least Significant Node (LSN)
 
 	if (a && b && c && d)
-		mode = SINGLE; // No duplicate tuples (Sord is a set)
+		mode = SINGLE; // No duplicate quads (Sord is a set)
 
-	SordTuple            search_key = { a, b, c, d };
+	SordQuad             search_key = { a, b, c, d };
 	GSequence* const     db         = sord->indices[index_order];
 	GSequenceIter* const cur        = index_lower_bound(sord, db, search_key);
 	if (g_sequence_iter_is_end(cur)) {
@@ -782,7 +782,7 @@ sord_find(Sord sord, const SordTuple pat)
 	}
 	const SordID* const  key        = (const SordID*)g_sequence_get(cur);
 	if (!key || ( (mode == RANGE || mode == SINGLE)
-	              && !sord_tuple_match_inline(search_key, key) )) {
+	              && !sord_quad_match_inline(search_key, key) )) {
 		SORD_FIND_LOG("No match found\n");
 		return NULL;
 	}
@@ -963,29 +963,29 @@ sord_get_literal(Sord sord, bool create, SordID type,
 }
 
 static inline bool
-sord_add_to_index(Sord sord, const SordTuple tup, SordOrder order)
+sord_add_to_index(Sord sord, const SordQuad tup, SordOrder order)
 {
 	assert(sord->indices[order]);
 	const int* const ordering = orderings[order];
-	const SordTuple key = {
+	const SordQuad key = {
 		tup[ordering[0]], tup[ordering[1]], tup[ordering[2]], tup[ordering[3]]
 	};
 	GSequenceIter* const cur = index_search(sord, sord->indices[order], key);
 	if (!g_sequence_iter_is_end(cur)
-	    && !sord_tuple_compare(g_sequence_get(cur), key, sord)) {
-		return false;  // Tuple already stored in this index
+	    && !sord_quad_compare(g_sequence_get(cur), key, sord)) {
+		return false;  // Quad already stored in this index
 	}
 
-	// FIXME: would be nice to share tuples and just use a different comparator
-	// for each index (save significant space overhead per tuple)
-	SordID* key_copy = malloc(sizeof(SordTuple));
-	memcpy(key_copy, key, sizeof(SordTuple));
+	// FIXME: would be nice to share quads and just use a different comparator
+	// for each index (save significant space overhead per quad)
+	SordID* key_copy = malloc(sizeof(SordQuad));
+	memcpy(key_copy, key, sizeof(SordQuad));
 	g_sequence_insert_before(cur, key_copy);
 	return true;
 }
 
 void
-sord_add(Sord sord, const SordTuple tup)
+sord_add(Sord sord, const SordQuad tup)
 {
 	SORD_WRITE_LOG("Add " TUP_FMT "\n", TUP_FMT_ARGS(tup));
 	assert(tup[0] && tup[1] && tup[2]);
@@ -994,27 +994,27 @@ sord_add(Sord sord, const SordTuple tup)
 		if (sord->indices[i]) {
 			if (!sord_add_to_index(sord, tup, i)) {
 				assert(i == 0); // Assuming index coherency
-				return; // Tuple already stored, do nothing
+				return; // Quad already stored, do nothing
 			}
 		}
 	}
 
 	for (int i = 0; i < TUP_LEN; ++i)
-		sord_add_tuple_ref(sord, tup[i]);
+		sord_add_quad_ref(sord, tup[i]);
 
-	++sord->n_tuples;
-	assert(sord->n_tuples == g_sequence_get_length(sord->indices[SPO]));
+	++sord->n_quads;
+	assert(sord->n_quads == g_sequence_get_length(sord->indices[SPO]));
 }
 
 void
-sord_remove(Sord sord, const SordTuple tup)
+sord_remove(Sord sord, const SordQuad tup)
 {
 	SORD_WRITE_LOG("Remove " TUP_FMT "\n", TUP_FMT_ARGS(tup));
 		
 	for (unsigned i = 0; i < NUM_ORDERS; ++i) {
 		if (sord->indices[i]) {
 			const int* const ordering = orderings[i];
-			const SordTuple key = {
+			const SordQuad key = {
 				tup[ordering[0]], tup[ordering[1]], tup[ordering[2]], tup[ordering[3]]
 			};
 			GSequenceIter* const cur = index_search(sord, sord->indices[i], key);
@@ -1022,21 +1022,21 @@ sord_remove(Sord sord, const SordTuple tup)
 				g_sequence_remove(cur);
 			} else {
 				assert(i == 0); // Assuming index coherency
-				return; // Tuple not found, do nothing
+				return; // Quad not found, do nothing
 			}
 		}
 	}
 
 	for (int i = 0; i < TUP_LEN; ++i)
-		sord_drop_tuple_ref(sord, tup[i]);
+		sord_drop_quad_ref(sord, tup[i]);
 
-	--sord->n_tuples;
+	--sord->n_quads;
 }
 
 void
 sord_remove_iter(Sord sord, SordIter iter)
 {
-	SordTuple tup;
+	SordQuad tup;
 	sord_iter_get(iter, tup);
 
 	SORD_WRITE_LOG("Remove " TUP_FMT "\n", TUP_FMT_ARGS(tup));
@@ -1046,7 +1046,7 @@ sord_remove_iter(Sord sord, SordIter iter)
 	for (unsigned i = 0; i < NUM_ORDERS; ++i) {
 		if (sord->indices[i]) {
 			const int* const ordering = orderings[i];
-			const SordTuple key = {
+			const SordQuad key = {
 				tup[ordering[0]], tup[ordering[1]], tup[ordering[2]], tup[ordering[3]]
 			};
 			GSequenceIter* const cur = index_search(sord, sord->indices[i], key);
@@ -1059,9 +1059,9 @@ sord_remove_iter(Sord sord, SordIter iter)
 	}
 	
 	for (int i = 0; i < TUP_LEN; ++i)
-		sord_drop_tuple_ref(sord, tup[i]);
+		sord_drop_quad_ref(sord, tup[i]);
 
-	--sord->n_tuples;
+	--sord->n_quads;
 
 	iter->end = g_sequence_iter_is_end(iter->cur);
 }
@@ -1073,10 +1073,10 @@ sord_remove_graph(Sord sord, SordID graph)
 	if (!sord->indices[GSPO])
 		return;
 
-	// Remove all tuples in graph from non-graph indices
-	BDBCUR*         cur        = tcbdbcurnew(sord->indices[GSPO]);
-	const SordTuple search_key = { graph, 0, 0, 0 };
-	int             key_size   = sizeof(SordTuple);
+	// Remove all quads in graph from non-graph indices
+	BDBCUR*        cur        = tcbdbcurnew(sord->indices[GSPO]);
+	const SordQuad search_key = { graph, 0, 0, 0 };
+	int            key_size   = sizeof(SordQuad);
 	tcbdbcurjump(cur, &search_key, key_size);
 	do {
 		const SordID* key = (const SordID*)tcbdbcurkey3(cur, &key_size);
@@ -1086,19 +1086,19 @@ sord_remove_graph(Sord sord, SordID graph)
 		for (unsigned i = 0; i < GSPO; ++i) {
 			if (sord->indices[i]) {
 				const int* const ordering = orderings[i];
-				const SordTuple tup = { key[1], key[2], key[3], key[0] }; // Key in SPOG order
-				const SordTuple subkey = {
+				const SordQuad tup = { key[1], key[2], key[3], key[0] }; // Key in SPOG order
+				const SordQuad subkey = {
 					tup[ordering[0]], tup[ordering[1]], tup[ordering[2]], tup[ordering[3]]
 				};
-				if (!tcbdbout(sord->indices[i], &subkey, sizeof(SordTuple)))
+				if (!tcbdbout(sord->indices[i], &subkey, sizeof(SordQuad)))
 					fprintf(stderr, "Failed to remove key " TUP_FMT "\n", TUP_FMT_ARGS(subkey));
 			}
 		}
 
-		--sord->n_tuples;
+		--sord->n_quads;
 	} while (tcbdbcurnext(cur));
 
-	// Remove all tuples in graph from graph indices
+	// Remove all quads in graph from graph indices
 	for (unsigned i = GSPO; i < NUM_ORDERS; ++i) {
 		if (sord->indices[i]) {
 			BDBCUR* cur = tcbdbcurnew(sord->indices[i]);
@@ -1109,7 +1109,7 @@ sord_remove_graph(Sord sord, SordID graph)
 					break;
 				} else if (i == GSPO) {
 					for (int i = 0; i < TUP_LEN; ++i) {
-						sord_drop_tuple_ref(sord, key[i]);
+						sord_drop_quad_ref(sord, key[i]);
 					}
 				}
 				if (!tcbdbcurout(cur))

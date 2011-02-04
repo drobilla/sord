@@ -537,8 +537,9 @@ Sord
 sord_new()
 {
 	Sord sord = (Sord)malloc(sizeof(struct _Sord));
-	sord->names    = g_hash_table_new_full(g_str_hash, g_str_equal, 0, 0);
+	sord->names    = g_hash_table_new_full(g_str_hash, g_str_equal, free, 0);
 	sord->literals = g_hash_table_new_full(sord_literal_hash, sord_literal_equal, 0, 0);
+
 	sord->user_data_free = NULL;
 
 	for (unsigned i = 0; i < NUM_ORDERS; ++i)
@@ -547,11 +548,50 @@ sord_new()
 	return sord;
 }
 
+static void
+sord_add_tuple_ref(Sord sord, const SordID id)
+{
+	if (id) {
+		SordNode node = sord_node_load(sord, id);
+		++node->refs;
+	}
+}
+
+static void
+sord_drop_node(Sord sord, SordID id)
+{
+	SordNode node = sord_node_load(sord, id);
+	free(node->buf);
+	free(node);
+}
+
+static void
+sord_drop_tuple_ref(Sord sord, const SordID id)
+{
+	if (id) {
+		SordNode node = sord_node_load(sord, id);
+		if (--node->refs == 0) {
+			sord_drop_node(sord, id);
+		}
+	}
+}
+
 void
 sord_free(Sord sord)
 {
 	if (!sord)
 		return;
+
+	// Free nodes
+	SordTuple tup;
+	SordIter i = sord_begin(sord);
+	for (; !sord_iter_end(i); sord_iter_next(i)) {
+		sord_iter_get(i, tup);
+		for (int i = 0; i < TUP_LEN; ++i) {
+			sord_drop_tuple_ref(sord, tup[i]);
+		}
+	}
+	sord_iter_free(i);
 
 	g_hash_table_unref(sord->names);
 	g_hash_table_unref(sord->literals);
@@ -577,12 +617,12 @@ sord_set_option(Sord sord, const char* key, const char* value,
 	const bool  value_is_true = !strcmp(value, "true") || !strcmp(value, "1") || !strcmp(value, "yes");
 	if (!strcmp(option, "index-all")) {
 		for (int i = 0; i < NUM_ORDERS; ++i) {
-			sord->indices[i] = g_sequence_new(NULL);
+			sord->indices[i] = g_sequence_new(free);
 		}
 	} else if (!strncmp(option, "index-", 6) && value_is_true) {
 		for (int i = 0; i < NUM_ORDERS; ++i) {
 			if (!strcmp(option + 6, order_names[i])) {
-				sord->indices[i] = g_sequence_new(NULL);
+				sord->indices[i] = g_sequence_new(free);
 				return;
 			}
 		}
@@ -605,24 +645,17 @@ sord_open(Sord sord)
 	}
 
 	if (no_indices) {
-		// Use default indexing, avoids O(n) in all cases
-		sord->indices[SPO]  = g_sequence_new(NULL);
-		sord->indices[OPS]  = g_sequence_new(NULL);
-		//sord->indices[PSO]  = g_sequence_new(NULL);
-		sord->indices[GSPO] = g_sequence_new(NULL); // XXX: default?  do on demand?
-		sord->indices[GOPS] = g_sequence_new(NULL); // XXX: default?  do on demand?
+		// FIXME: make sord_new take a parameter so this is explicit
+		sord->indices[SPO]  = g_sequence_new(free);
+		sord->indices[OPS]  = g_sequence_new(free);
+		sord->indices[GSPO] = g_sequence_new(free);
+		sord->indices[GOPS] = g_sequence_new(free);
 	}
 
 	if (!sord->indices[DEFAULT_ORDER])
 		sord->indices[DEFAULT_ORDER] = g_sequence_new(NULL);
 
 	return true;
-}
-
-static void
-sord_drop_node(Sord sord, SordID id)
-{
-	// FIXME: leak?
 }
 
 int
@@ -926,26 +959,6 @@ sord_get_literal(Sord sord, bool create, SordID type, const char* str, const cha
 			lang, lang ? strlen(lang) : 0);
 }
 
-static void
-sord_add_tuple_ref(Sord sord, const SordID id)
-{
-	if (id) {
-		SordNode node = sord_node_load(sord, id);
-		++node->refs;
-	}
-}
-
-static void
-sord_drop_tuple_ref(Sord sord, const SordID id)
-{
-	if (id) {
-		SordNode node = sord_node_load(sord, id);
-		if (--node->refs == 0) {
-			sord_drop_node(sord, id);
-		}
-	}
-}
-
 static inline bool
 sord_add_to_index(Sord sord, const SordTuple tup, SordOrder order)
 {
@@ -960,7 +973,8 @@ sord_add_to_index(Sord sord, const SordTuple tup, SordOrder order)
 		return false;  // Tuple already stored in this index
 	}
 
-	// FIXME: memory leak?
+	// FIXME: would be nice to share tuples and just use a different comparator
+	// for each index (save significant space overhead per tuple)
 	SordID* key_copy = malloc(sizeof(SordTuple));
 	memcpy(key_copy, key, sizeof(SordTuple));
 	g_sequence_insert_before(cur, key_copy);

@@ -114,7 +114,9 @@ sord_node_from_serd_node(ReadState* state, const SerdNode* sn)
 		}
 		SerdURI ignored;
 		SerdNode abs_uri_node = serd_node_new_uri(&abs_uri, &ignored);
-		return sord_get_uri(state->sord, true, (const char*)abs_uri_node.buf);
+		SordID ret = sord_get_uri(state->sord, true, (const char*)abs_uri_node.buf);
+		serd_node_free(&abs_uri_node);
+		return ret;
 	}
 	case SERD_CURIE: {
 		SerdChunk uri_prefix;
@@ -124,12 +126,14 @@ sord_node_from_serd_node(ReadState* state, const SerdNode* sn)
 			return NULL;
 		}
 		const size_t uri_len = uri_prefix.len + uri_suffix.len;
-		char* buf = malloc(uri_len + 1);
+		char*        buf     = malloc(uri_len + 1);
 		memcpy(buf,                  uri_prefix.buf, uri_prefix.len);
 		memcpy(buf + uri_prefix.len, uri_suffix.buf, uri_suffix.len);
 		buf[uri_len] = '\0';
-		return sord_get_uri_counted(state->sord, true,
-		                            buf, uri_prefix.len + uri_suffix.len);
+		SordID ret = sord_get_uri_counted(state->sord, true,
+		                                  buf, uri_prefix.len + uri_suffix.len);
+		free(buf);
+		return ret;
 	}
 	case SERD_BLANK_ID:
 	case SERD_ANON_BEGIN:

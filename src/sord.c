@@ -535,16 +535,33 @@ sord_best_index(Sord sord, const SordQuad pat, SearchMode* mode, int* n_prefix)
 }
 
 Sord
-sord_new()
+sord_new(unsigned indices, bool graphs)
 {
 	Sord sord = (Sord)malloc(sizeof(struct _Sord));
 	sord->names    = g_hash_table_new_full(g_str_hash, g_str_equal, free, 0);
 	sord->literals = g_hash_table_new_full(sord_literal_hash, sord_literal_equal, 0, 0);
+	sord->n_quads  = 0;
+	sord->n_nodes  = 0;
 
 	sord->user_data_free = NULL;
 
-	for (unsigned i = 0; i < NUM_ORDERS; ++i)
-		sord->indices[i] = NULL;
+	for (unsigned i = 0; i < (NUM_ORDERS / 2); ++i) {
+		if (indices & (1 << i)) {
+			sord->indices[i] = g_sequence_new(free);
+			if (graphs) {
+				sord->indices[i + (NUM_ORDERS / 2)] = g_sequence_new(free);
+			} else {
+				sord->indices[i + (NUM_ORDERS / 2)] = NULL;
+			}
+		} else {
+			sord->indices[i] = NULL;
+			sord->indices[i + (NUM_ORDERS / 2)] = NULL;
+		}
+	}
+
+	if (!sord->indices[DEFAULT_ORDER]) {
+		sord->indices[DEFAULT_ORDER] = g_sequence_new(free);
+	}
 
 	return sord;
 }
@@ -603,62 +620,6 @@ sord_free(Sord sord)
 	free(sord);
 }
 
-void
-sord_set_option(Sord sord, const char* key, const char* value,
-                SordNodeType type, const char* datatype, const char* lang)
-{
-	const char* const prefix     = "http://drobilla.net/ns/sord#";
-	const size_t      prefix_len =  strlen(prefix);
-	if (strncmp(key, prefix, prefix_len)) {
-		fprintf(stderr, "Unknown option %s\n", key);
-		return;
-	}
-
-	const char* option        = key + prefix_len;
-	const bool  value_is_true = !strcmp(value, "true") || !strcmp(value, "1") || !strcmp(value, "yes");
-	if (!strcmp(option, "index-all")) {
-		for (int i = 0; i < NUM_ORDERS; ++i) {
-			sord->indices[i] = g_sequence_new(free);
-		}
-	} else if (!strncmp(option, "index-", 6) && value_is_true) {
-		for (int i = 0; i < NUM_ORDERS; ++i) {
-			if (!strcmp(option + 6, order_names[i])) {
-				sord->indices[i] = g_sequence_new(free);
-				return;
-			}
-		}
-	} else {
-		fprintf(stderr, "Unknown option %s\n", key);
-	}
-}
-
-bool
-sord_open(Sord sord)
-{
-	sord->n_quads = sord->n_nodes = 0;
-
-	bool no_indices = true;
-	for (unsigned i = 0; i < NUM_ORDERS; ++i) {
-		if (sord->indices[i]) {
-			no_indices = false;
-			break;
-		}
-	}
-
-	if (no_indices) {
-		// FIXME: make sord_new take a parameter so this is explicit
-		sord->indices[SPO]  = g_sequence_new(free);
-		sord->indices[OPS]  = g_sequence_new(free);
-		sord->indices[GSPO] = g_sequence_new(free);
-		sord->indices[GOPS] = g_sequence_new(free);
-	}
-
-	if (!sord->indices[DEFAULT_ORDER])
-		sord->indices[DEFAULT_ORDER] = g_sequence_new(NULL);
-
-	return true;
-}
-
 int
 sord_num_quads(Sord sord)
 {
@@ -698,7 +659,7 @@ sord_graphs_begin(Sord read)
 static inline GSequenceIter*
 index_search(Sord sord, GSequence* db, const SordQuad search_key)
 {
-	return  g_sequence_search(
+	return g_sequence_search(
 		db, (void*)search_key, sord_quad_compare, sord);
 }
 

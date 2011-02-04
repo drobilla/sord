@@ -64,6 +64,7 @@ typedef int   SordCount; ///< Count of nodes or triples
  */
 typedef SordID SordQuad[4];
 
+/** Index into a SordQuad. */
 typedef enum {
 	SORD_SUBJECT   = 0,
 	SORD_PREDICATE = 1,
@@ -71,12 +72,22 @@ typedef enum {
 	SORD_GRAPH     = 3
 } SordQuadIndex;
 
-/** Type of a node */
+/** Type of a node. */
 typedef enum {
 	SORD_URI     = 1, ///< URI
 	SORD_BLANK   = 2, ///< Blank node identifier
 	SORD_LITERAL = 3  ///< Literal (string with optional lang and/or type)
 } SordNodeType;
+
+/** Indexing option. */
+typedef enum {
+	SORD_SPO = 1,      ///< Subject,   Predicate, Object
+	SORD_SOP = 1 << 1, ///< Subject,   Object,    Predicate
+	SORD_OPS = 1 << 2, ///< Object,    Predicate, Subject
+	SORD_OSP = 1 << 3, ///< Object,    Subject,   Predicate
+	SORD_PSO = 1 << 4, ///< Predicate, Subject,   Object
+	SORD_POS = 1 << 5  ///< Predicate, Object,    Subject
+} SordIndexOption;
 
 /** @name Initialisation and Cleanup
  * @{
@@ -85,42 +96,7 @@ typedef enum {
 /** Create a new store. */
 SORD_API
 Sord
-sord_new(void);
-
-/** Set a store option.
- * Options are RDF properties (with the store as the subject), with the
- * restriction that each has at most one value.
- * If @a value is NULL, the option is unset (i.e. the property is removed).
- *
- * Known options (with acceptable types):
- *  - http://drobilla.net/ns/sord#index-spo :: xsd:boolean
- *  - http://drobilla.net/ns/sord#index-sop :: xsd:boolean
- *  - http://drobilla.net/ns/sord#index-ops :: xsd:boolean
- *  - http://drobilla.net/ns/sord#index-osp :: xsd:boolean
- *  - http://drobilla.net/ns/sord#index-pso :: xsd:boolean
- *  - http://drobilla.net/ns/sord#index-pos :: xsd:boolean
- *
- * @param sord     Store
- * @param key      URI of this option (predicate)
- * @param value    String of option value (object)
- * @param type     Type of @a value
- * @param datatype Data type of @a value (if @a type is SORD_LITERAL), or NULL
- * @param lang     Language of @a value (if @a type is SORD_LITERAL), or NULL
- */
-SORD_API
-void
-sord_set_option(Sord sord, const char* key, const char* value,
-                SordNodeType type, const char* datatype, const char* lang);
-
-/** Open store on disk. */
-SORD_API
-bool
-sord_open(Sord sord);
-
-/** Close store on disk. */
-SORD_API
-void
-sord_close(Sord sord);
+sord_new(unsigned indices, bool graphs);
 
 /** Close and free @a sord, leaving disk data intact. */
 SORD_API

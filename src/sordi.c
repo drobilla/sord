@@ -118,8 +118,7 @@ main(int argc, char** argv)
 
 	const uint8_t* input = (const uint8_t*)argv[a++];
 
-	Sord sord = sord_new();
-	sord_open(sord);
+	Sord sord = sord_new(SORD_SPO|SORD_OPS, false);
 
 	bool success = sord_read_file(sord, input, NULL, NULL);
 

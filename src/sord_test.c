@@ -267,10 +267,8 @@ main(int argc, char** argv)
 
 	sord_free(NULL); // Shouldn't crash
 
-	// Create with default options
-	Sord sord = sord_new();
-	sord_set_option(sord, "http://unknown", "something", SORD_LITERAL, NULL, NULL);
-	sord_open(sord);
+	// Create with minimal indexing
+	Sord sord = sord_new(SORD_SPO, false);
 	generate(sord, n_quads, n_objects_per);
 
 	if (test_read(sord, n_quads, n_objects_per)) {
@@ -314,28 +312,20 @@ main(int argc, char** argv)
 
 	sord_free(sord);
 
-	// Test each pattern type with each index
 	static const char* const index_names[6] = {
 		"spo", "sop", "ops", "osp", "pso", "pos"
 	};
 
-	char*        option     = strdup("http://drobilla.net/ns/sord#index-xxx");
-	const size_t option_len = strlen(option);
 	for (int i = 0; i < 6; ++i) {
-		strncpy(option + option_len - 3, index_names[i], 3);
-		sord = sord_new();
-		sord_set_option(sord, option, "true", SORD_LITERAL, NULL, NULL);
+		sord = sord_new((1 << i), false);
 		printf("Testing Index `%s'\n", index_names[i]);
-		sord_open(sord);
 		generate(sord, n_quads, n_objects_per);
 		if (test_read(sord, n_quads, n_objects_per))
 			goto fail;
 		sord_free(sord);
 	}
-	free(option);
 
-	sord = sord_new();
-	sord_open(sord);
+	sord = sord_new(SORD_SPO, false);
 	if (test_write(sord, n_quads, n_objects_per))
 	  goto fail;
 

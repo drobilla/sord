@@ -32,7 +32,7 @@ def configure(conf):
 	autowaf.display_header('Sord configuration')
 
 	conf.check_tool('compiler_cc')
-	conf.env.append_value('CCFLAGS', '-std=c99')
+	conf.env.append_value('CFLAGS', '-std=c99')
 
 	autowaf.check_pkg(conf, 'glib-2.0', uselib_store='GLIB',
 	                  atleast_version='2.0.0', mandatory=True)

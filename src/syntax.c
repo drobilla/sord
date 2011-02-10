@@ -49,24 +49,21 @@ static bool
 event_base(void*           handle,
            const SerdNode* uri_node)
 {
-	ReadState* const state         = (ReadState*)handle;
-	SerdNode         base_uri_node = *uri_node;
-	SerdURI          base_uri;
-	if (!serd_uri_parse(uri_node->buf, &base_uri)) {
-		return false;
-	}
+	ReadState* const state = (ReadState*)handle;
 
-	SerdURI abs_base_uri;
-	if (!serd_uri_resolve(&base_uri, &state->base_uri, &abs_base_uri)) {
-		fprintf(stderr, "error: failed to resolve new base URI\n");
-		return false;
-	}
-	base_uri_node = serd_node_new_uri(&abs_base_uri, &base_uri);
+	// Resolve base URI and create a new node and URI for it
+	SerdURI  base_uri;
+	SerdNode base_uri_node = serd_node_new_uri_from_node(
+		uri_node, &state->base_uri, &base_uri);
 
-	serd_node_free(&state->base_uri_node);
-	state->base_uri_node = base_uri_node;
-	state->base_uri      = base_uri;
-	return true;
+	if (base_uri_node.buf) {
+		// Replace the current base URI
+		serd_node_free(&state->base_uri_node);
+		state->base_uri_node = base_uri_node;
+		state->base_uri      = base_uri;
+		return true;
+	}
+	return false;
 }
 
 static bool
@@ -75,21 +72,22 @@ event_prefix(void*           handle,
              const SerdNode* uri_node)
 {
 	ReadState* const state = (ReadState*)handle;
-	if (!serd_uri_string_has_scheme(uri_node->buf)) {
-		SerdURI uri;
-		if (!serd_uri_parse(uri_node->buf, &uri)) {
-			return false;
-		}
-		SerdURI abs_uri;
-		if (!serd_uri_resolve(&uri, &state->base_uri, &abs_uri)) {
-			return false;
-		}
-		SerdURI  base_uri;
-		SerdNode base_uri_node = serd_node_new_uri(&abs_uri, &base_uri);
-		serd_env_add(state->env, name, &base_uri_node);
-		serd_node_free(&base_uri_node);
-	} else {
+	if (serd_uri_string_has_scheme(uri_node->buf)) {
+		// Set prefix to absolute URI
 		serd_env_add(state->env, name, uri_node);
+	} else {
+		// Resolve relative URI and create a new node and URI for it
+		SerdURI  abs_uri;
+		SerdNode abs_uri_node = serd_node_new_uri_from_node(
+			uri_node, &state->base_uri, &abs_uri);
+
+		if (!abs_uri_node.buf) {
+			return false;
+		}
+
+		// Set prefix to resolved (absolute) URI
+		serd_env_add(state->env, name, &abs_uri_node);
+		serd_node_free(&abs_uri_node);
 	}
 	return true;
 }
@@ -103,16 +101,9 @@ sord_node_from_serd_node(ReadState* state, const SerdNode* sn)
 	case SERD_LITERAL:
 		return sord_get_literal(state->sord, true, NULL, sn->buf, NULL);
 	case SERD_URI: {
-		SerdURI uri;
-		if (!serd_uri_parse(sn->buf, &uri)) {
-			return NULL;
-		}
-		SerdURI abs_uri;
-		if (!serd_uri_resolve(&uri, &state->base_uri, &abs_uri)) {
-			return false;
-		}
-		SerdURI ignored;
-		SerdNode abs_uri_node = serd_node_new_uri(&abs_uri, &ignored);
+		SerdURI  abs_uri;
+		SerdNode abs_uri_node = serd_node_new_uri_from_node(
+			sn, &state->base_uri, &abs_uri);
 		SordID ret = sord_get_uri(state->sord, true, abs_uri_node.buf);
 		serd_node_free(&abs_uri_node);
 		return ret;

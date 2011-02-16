@@ -53,12 +53,11 @@
 typedef struct _Sord*     Sord;      ///< Quad store
 typedef struct _SordIter* SordIter;  ///< Store iterator
 typedef struct _SordNode* SordNode;  ///< Node
-typedef void*             SordID;    ///< Integer ID of a Node (0 reserved for NULL)
 
 /** Quad of IDs (statement), or a quad pattern.
  * Nodes are ordered (S P O G).  The ID of the default graph is 0.
  */
-typedef SordID SordQuad[4];
+typedef SordNode SordQuad[4];
 
 /** Index into a SordQuad. */
 typedef enum {
@@ -89,84 +88,69 @@ typedef enum {
  * @{
  */
 
-/** Create a new store. */
+/** Create a new store.
+ * @param indices SordIndexOption flags (e.g. SORD_SPO|SORD_OPS).
+ *        Be sure to choose indices such that there is an index where the most
+ *        significant node(s) are not variables for your queries.  For example,
+ *        if you are going to make (? P O) queries, you should enable either
+ *        SORD_OPS or SORD_POS.
+ * @param graphs If true, store (and index) graph contexts.
+ */
 SORD_API
 Sord
 sord_new(unsigned indices, bool graphs);
 
-/** Close and free @a sord, leaving disk data intact. */
+/** Close and free @a sord. */
 SORD_API
 void
 sord_free(Sord sord);
 
 /** @} */
-/** @name Node Loading
- * Searching for node IDs by value and loading nodes from disk by ID.
+/** @name Nodes
+ * A Node is a component of a Quad.  Nodes may be URIs, blank nodes, or
+ * (in the case of quad objects only) string literals.  Literal nodes may
+ * have an associate language or datatype (but not both).
  * @{
  */
-
-/** Dereference an ID, loading node data into memory.
- * The returned node is allocated memory owned by @a sord,
- * it can only be freed by the caller via sord_clear_cache.
- */
-SORD_API
-SordNode
-sord_node_load(Sord sord, SordID id);
-
-/** Set @a s, @a p, and @a o to the nodes in @a tup. */
-SORD_API
-void
-sord_quad_load(Sord      sord,
-               SordQuad  tup,
-               SordNode* s,
-               SordNode* p,
-               SordNode* o);
 
 /** Find a URI, creating a new one if necessary iff @a create is true.
  * Use sord_get_uri_counted instead if the length of @a str is known.
  */
 SORD_API
-SordID
+SordNode
 sord_get_uri(Sord sord, bool create, const uint8_t* str);
 
 /** Find a URI, creating a new one if necessary iff @a create is true. */
 SORD_API
-SordID
+SordNode
 sord_get_uri_counted(Sord sord, bool create, const uint8_t* str, int str_len);
 
 /** Find a blank, creating a new one if necessary iff @a create is true
  * Use sord_get_blank_counted instead if the length of @a str is known.
  */
 SORD_API
-SordID
+SordNode
 sord_get_blank(Sord sord, bool create, const uint8_t* str);
 
 /** Find a blank, creating a new one if necessary iff @a create is true. */
 SORD_API
-SordID
+SordNode
 sord_get_blank_counted(Sord sord, bool create, const uint8_t* str, int str_len);
 
 /** Find a literal, creating a new one if necessary iff @a create is true.
  * Use sord_get_literal_counted instead if the length of @a str is known.
  */
 SORD_API
-SordID
-sord_get_literal(Sord sord, bool create, SordID type,
+SordNode
+sord_get_literal(Sord sord, bool create, SordNode type,
                  const uint8_t* str, const char* lang);
 
 /** Find a literal, creating a new one if necessary iff @a create is true. */
 SORD_API
-SordID
-sord_get_literal_counted(Sord sord, bool create, SordID type,
+SordNode
+sord_get_literal_counted(Sord sord, bool create, SordNode type,
                          const uint8_t* str,  int     str_len,
                          const char*    lang, uint8_t lang_len);
-
-
-/** @} */
-/** @name Node Values
- * Investigating loaded (in-memory) node values.
- * @{
- */
 
 /** Return the type of a node (SORD_URI, SORD_BLANK, or SORD_LITERAL). */
 SORD_API
@@ -259,7 +243,7 @@ sord_remove_iter(Sord sord, SordIter iter);
 /** Remove a graph from the store. */
 SORD_API
 void
-sord_remove_graph(Sord sord, SordID graph);
+sord_remove_graph(Sord sord, SordNode graph);
 
 /** @} */
 /** @name Iteration

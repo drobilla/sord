@@ -140,8 +140,9 @@ main(int argc, char** argv)
 	for (; !sord_iter_end(iter); sord_iter_next(iter)) {
 		SordQuad tup;
 		sord_iter_get(iter, tup);
-		SordNode s, p, o;
-		sord_quad_load(sord, tup, &s, &p, &o);
+		SordNode s = tup[SORD_SUBJECT];
+		SordNode p = tup[SORD_PREDICATE];
+		SordNode o = tup[SORD_OBJECT];
 		SerdNode ss = serd_node_from_sord_node(s);
 		SerdNode sp = serd_node_from_sord_node(p);
 		SerdNode so = serd_node_from_sord_node(o);

@@ -18,7 +18,7 @@
 /** @file
  * Sord Implementation.
  *
- * Quads are represented as simple arrays of SordID, of length 4,
+ * Quads are represented as simple arrays of SordNode, of length 4,
  * which represent statements (RDF triples) with an optional
  * context.  When contexts are not used, only the first 3 elements
  * are considered.
@@ -193,21 +193,18 @@ sord_node_equals(const SordNode a, const SordNode b)
  * result set.
  */
 static inline int
-sord_id_compare(Sord sord, const SordID a, const SordID b)
+sord_id_compare(Sord sord, const SordNode a, const SordNode b)
 {
 	if (a == b || !a || !b) {
 		return (const char*)a - (const char*)b;
 	} else {
-		SordNode a_node = sord_node_load(sord, a);
-		SordNode b_node = sord_node_load(sord, b);
-		const int ret = sord_node_compare(a_node, b_node);
-		return ret;
+		return sord_node_compare(a, b);
 	}
 }
 
 /** Return true iff IDs are equivalent, or one is a wildcard */
 static inline bool
-sord_id_match(const SordID a, const SordID b)
+sord_id_match(const SordNode a, const SordNode b)
 {
 	return !a || !b || (a == b);
 }
@@ -227,14 +224,6 @@ sord_quad_match(const SordQuad x, const SordQuad y)
 	return sord_quad_match_inline(x, y);
 }
 
-void
-sord_quad_load(Sord sord, SordQuad tup, SordNode* s, SordNode* p, SordNode* o)
-{
-	*s = sord_node_load(sord, tup[TUP_S]);
-	*p = sord_node_load(sord, tup[TUP_P]);
-	*o = sord_node_load(sord, tup[TUP_O]);
-}
-
 /** Compare two quad IDs lexicographically.
  * NULL IDs (equal to 0) are treated as wildcards, always less than every
  * other possible ID, except itself.
@@ -243,8 +232,8 @@ static int
 sord_quad_compare(const void* x_ptr, const void* y_ptr, void* user_data)
 {
 	Sord    const sord = (Sord)user_data;
-	SordID* const x    = (SordID*)x_ptr;
-	SordID* const y    = (SordID*)y_ptr;
+	SordNode* const x    = (SordNode*)x_ptr;
+	SordNode* const y    = (SordNode*)y_ptr;
 
 	for (int i = 0; i < TUP_LEN; ++i) {
 		const int cmp = sord_id_compare(sord, x[i], y[i]);
@@ -263,14 +252,14 @@ sord_iter_forward(SordIter iter)
 		return g_sequence_iter_is_end(iter->cur);
 	}
 
-	const SordID*  key     = (const SordID*)g_sequence_get(iter->cur);
+	const SordNode*  key     = (const SordNode*)g_sequence_get(iter->cur);
 	const SordQuad initial = { key[0], key[1], key[2], key[3] };
 	while (true) {
 		iter->cur = g_sequence_iter_next(iter->cur);
 		if (g_sequence_iter_is_end(iter->cur))
 			return true;
 
-		key = (const SordID*)g_sequence_get(iter->cur);
+		key = (const SordNode*)g_sequence_get(iter->cur);
 		for (int i = 0; i < 3; ++i)
 			if (key[i] != initial[i])
 				return false;
@@ -287,7 +276,7 @@ sord_iter_seek_match(SordIter iter)
 	for (iter->end = true;
 	     !g_sequence_iter_is_end(iter->cur);
 	     sord_iter_forward(iter)) {
-		const SordID* const key = (const SordID*)g_sequence_get(iter->cur);
+		const SordNode* const key = (const SordNode*)g_sequence_get(iter->cur);
 		if (sord_quad_match_inline(key, iter->pat))
 			return (iter->end = false);
 	}
@@ -305,7 +294,7 @@ sord_iter_seek_match_range(SordIter iter)
 		return true;
 
 	do {
-		const SordID* key = (const SordID*)g_sequence_get(iter->cur);
+		const SordNode* key = (const SordNode*)g_sequence_get(iter->cur);
 
 		if (sord_quad_match_inline(key, iter->pat))
 			return false; // Found match
@@ -344,7 +333,7 @@ sord_iter_new(Sord sord, GSequenceIter* cur, const SordQuad pat,
 	case SINGLE:
 	case RANGE:
 		assert(sord_quad_match_inline(
-			       (const SordID*)g_sequence_get(iter->cur),
+			       (const SordNode*)g_sequence_get(iter->cur),
 		           iter->pat));
 		break;
 	case FILTER_RANGE:
@@ -374,7 +363,7 @@ sord_iter_get_sord(SordIter iter)
 void
 sord_iter_get(SordIter iter, SordQuad id)
 {
-	const SordID* key = (const SordID*)g_sequence_get(iter->cur);
+	const SordNode* key = (const SordNode*)g_sequence_get(iter->cur);
 	id[iter->ordering[0]] = key[0];
 	id[iter->ordering[1]] = key[1];
 	id[iter->ordering[2]] = key[2];
@@ -387,7 +376,7 @@ sord_iter_next(SordIter iter)
 	if (iter->end)
 		return true;
 
-	const SordID* key;
+	const SordNode* key;
 	iter->end = sord_iter_forward(iter);
 	if (!iter->end) {
 		switch (iter->mode) {
@@ -401,7 +390,7 @@ sord_iter_next(SordIter iter)
 		case RANGE:
 			SORD_ITER_LOG("%p range next\n", (void*)iter);
 			// At the end if the MSNs no longer match
-			key = (const SordID*)g_sequence_get(iter->cur);
+			key = (const SordNode*)g_sequence_get(iter->cur);
 			assert(key);
 			for (int i = 0; i < iter->n_prefix; ++i) {
 				if (!sord_id_match(key[i], iter->pat[i])) {
@@ -563,29 +552,26 @@ sord_new(unsigned indices, bool graphs)
 }
 
 static void
-sord_add_quad_ref(Sord sord, const SordID id)
+sord_add_quad_ref(Sord sord, const SordNode node)
 {
-	if (id) {
-		SordNode node = sord_node_load(sord, id);
+	if (node) {
 		++node->refs;
 	}
 }
 
 static void
-sord_drop_node(Sord sord, SordID id)
+sord_drop_node(Sord sord, SordNode node)
 {
-	SordNode node = sord_node_load(sord, id);
 	free(node->buf);
 	free(node);
 }
 
 static void
-sord_drop_quad_ref(Sord sord, const SordID id)
+sord_drop_quad_ref(Sord sord, const SordNode node)
 {
-	if (id) {
-		SordNode node = sord_node_load(sord, id);
+	if (node) {
 		if (--node->refs == 0) {
-			sord_drop_node(sord, id);
+			sord_drop_node(sord, node);
 		}
 	}
 }
@@ -716,10 +702,10 @@ sord_find(Sord sord, const SordQuad pat)
 	// It's easiest to think about this algorithm in terms of (S P O) ordering,
 	// assuming (A B C) == (S P O).  For other orderings this is not actually
 	// the case, but it works the same way.
-	const SordID a = pat[ordering[0]]; // Most Significant Node (MSN)
-	const SordID b = pat[ordering[1]]; // ...
-	const SordID c = pat[ordering[2]]; // ...
-	const SordID d = pat[ordering[3]]; // Least Significant Node (LSN)
+	const SordNode a = pat[ordering[0]]; // Most Significant Node (MSN)
+	const SordNode b = pat[ordering[1]]; // ...
+	const SordNode c = pat[ordering[2]]; // ...
+	const SordNode d = pat[ordering[3]]; // Least Significant Node (LSN)
 
 	if (a && b && c && d)
 		mode = SINGLE; // No duplicate quads (Sord is a set)
@@ -731,7 +717,7 @@ sord_find(Sord sord, const SordQuad pat)
 		SORD_FIND_LOG("No match found\n");
 		return NULL;
 	}
-	const SordID* const  key        = (const SordID*)g_sequence_get(cur);
+	const SordNode* const  key        = (const SordNode*)g_sequence_get(cur);
 	if (!key || ( (mode == RANGE || mode == SINGLE)
 	              && !sord_quad_match_inline(search_key, key) )) {
 		SORD_FIND_LOG("No match found\n");
@@ -741,7 +727,7 @@ sord_find(Sord sord, const SordQuad pat)
 	return sord_iter_new(sord, cur, pat, index_order, mode, prefix_len);
 }
 
-static SordID
+static SordNode
 sord_lookup_name(Sord sord, const uint8_t* str, size_t str_len)
 {
 	return g_hash_table_lookup(sord->names, str);
@@ -786,12 +772,6 @@ sord_lookup_literal(Sord sord, SordNode type,
 	}
 }
 
-SordNode
-sord_node_load(Sord sord, SordID id)
-{
-	return (SordNode)id;
-}
-
 SordNodeType
 sord_node_get_type(SordNode ref)
 {
@@ -830,10 +810,10 @@ sord_add_node(Sord sord, SordNode node)
 	++sord->n_nodes;
 }
 
-SordID
+SordNode
 sord_get_uri_counted(Sord sord, bool create, const uint8_t* str, int str_len)
 {
-	SordID id = sord_lookup_name(sord, str, str_len);
+	SordNode id = sord_lookup_name(sord, str, str_len);
 	if (id || !create)
 		return id;
 
@@ -846,16 +826,16 @@ sord_get_uri_counted(Sord sord, bool create, const uint8_t* str, int str_len)
 	return id;
 }
 
-SordID
+SordNode
 sord_get_uri(Sord sord, bool create, const uint8_t* str)
 {
 	return sord_get_uri_counted(sord, create, str, strlen((const char*)str));
 }
 
-SordID
+SordNode
 sord_get_blank_counted(Sord sord, bool create, const uint8_t* str, int str_len)
 {
-	SordID id = sord_lookup_name(sord, str, str_len);
+	SordNode id = sord_lookup_name(sord, str, str_len);
 	if (id || !create)
 		return id;
 
@@ -868,18 +848,18 @@ sord_get_blank_counted(Sord sord, bool create, const uint8_t* str, int str_len)
 	return id;
 }
 
-SordID
+SordNode
 sord_get_blank(Sord sord, bool create, const uint8_t* str)
 {
 	return sord_get_blank_counted(sord, create, str, strlen((const char*)str));
 }
 
-SordID
-sord_get_literal_counted(Sord sord, bool create, SordID type,
+SordNode
+sord_get_literal_counted(Sord sord, bool create, SordNode type,
                          const uint8_t* str,  int     str_len,
                          const char*    lang, uint8_t lang_len)
 {
-	SordID id = sord_lookup_literal(sord, type, str, str_len, lang, lang_len);
+	SordNode id = sord_lookup_literal(sord, type, str, str_len, lang, lang_len);
 	if (id || !create)
 		return id;
 
@@ -891,8 +871,8 @@ sord_get_literal_counted(Sord sord, bool create, SordID type,
 	return id;
 }
 
-SordID
-sord_get_literal(Sord sord, bool create, SordID type,
+SordNode
+sord_get_literal(Sord sord, bool create, SordNode type,
                  const uint8_t* str, const char* lang)
 {
 	return sord_get_literal_counted(sord, create, type,
@@ -916,7 +896,7 @@ sord_add_to_index(Sord sord, const SordQuad tup, SordOrder order)
 
 	// FIXME: would be nice to share quads and just use a different comparator
 	// for each index (save significant space overhead per quad)
-	SordID* key_copy = malloc(sizeof(SordQuad));
+	SordNode* key_copy = malloc(sizeof(SordQuad));
 	memcpy(key_copy, key, sizeof(SordQuad));
 	g_sequence_insert_before(cur, key_copy);
 	return true;
@@ -1005,7 +985,7 @@ sord_remove_iter(Sord sord, SordIter iter)
 }
 
 void
-sord_remove_graph(Sord sord, SordID graph)
+sord_remove_graph(Sord sord, SordNode graph)
 {
 	#if 0
 	if (!sord->indices[GSPO])
@@ -1017,7 +997,7 @@ sord_remove_graph(Sord sord, SordID graph)
 	int            key_size   = sizeof(SordQuad);
 	tcbdbcurjump(cur, &search_key, key_size);
 	do {
-		const SordID* key = (const SordID*)tcbdbcurkey3(cur, &key_size);
+		const SordNode* key = (const SordNode*)tcbdbcurkey3(cur, &key_size);
 		if (!key || key[0] != graph)
 			break;
 
@@ -1042,7 +1022,7 @@ sord_remove_graph(Sord sord, SordID graph)
 			BDBCUR* cur = tcbdbcurnew(sord->indices[i]);
 			tcbdbcurjump(cur, &search_key, key_size);
 			while (true) {
-				const SordID* key = (const SordID*)tcbdbcurkey3(cur, &key_size);
+				const SordNode* key = (const SordNode*)tcbdbcurkey3(cur, &key_size);
 				if (!key || key[0] != graph) {
 					break;
 				} else if (i == GSPO) {

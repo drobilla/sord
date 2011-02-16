@@ -92,7 +92,7 @@ event_prefix(void*           handle,
 	return true;
 }
 
-static inline SordID
+static inline SordNode
 sord_node_from_serd_node(ReadState* state, const SerdNode* sn)
 {
 	switch (sn->type) {
@@ -104,7 +104,7 @@ sord_node_from_serd_node(ReadState* state, const SerdNode* sn)
 		SerdURI  abs_uri;
 		SerdNode abs_uri_node = serd_node_new_uri_from_node(
 			sn, &state->base_uri, &abs_uri);
-		SordID ret = sord_get_uri(state->sord, true, abs_uri_node.buf);
+		SordNode ret = sord_get_uri(state->sord, true, abs_uri_node.buf);
 		serd_node_free(&abs_uri_node);
 		return ret;
 	}
@@ -120,7 +120,7 @@ sord_node_from_serd_node(ReadState* state, const SerdNode* sn)
 		memcpy(buf,                  uri_prefix.buf, uri_prefix.len);
 		memcpy(buf + uri_prefix.len, uri_suffix.buf, uri_suffix.len);
 		buf[uri_len] = '\0';
-		SordID ret = sord_get_uri_counted(state->sord, true,
+		SordNode ret = sord_get_uri_counted(state->sord, true,
 		                                  buf, uri_prefix.len + uri_suffix.len);
 		free(buf);
 		return ret;

@@ -29,7 +29,7 @@ typedef struct { SordQuad query; int expected_num_results; } QueryTest;
 
 #define USTR(s) ((const uint8_t*)(s))
 
-static SordID
+static SordNode
 uri(Sord sord, int num)
 {
 	if (num == 0)
@@ -51,7 +51,7 @@ generate(Sord sord, size_t n_quads, size_t n_objects_per)
 	for (size_t i = 0; i < n_quads; ++i) {
 		int num = (i * n_objects_per) + 1;
 
-		SordID ids[2 + n_objects_per];
+		SordNode ids[2 + n_objects_per];
 		for (size_t j = 0; j < 2 + n_objects_per; ++j) {
 			ids[j] = uri(sord, num++);
 		}
@@ -100,12 +100,9 @@ test_fail()
 
 #define TUP_FMT "(%6s %6s %6s)"
 #define TUP_FMT_ARGS(t) \
-	(sord_node_load(sord, (t)[0]) \
-	 ? sord_node_get_string(sord_node_load(sord, (t)[0])) : USTR("*")), \
-	(sord_node_load(sord, (t)[1]) \
-	 ? sord_node_get_string(sord_node_load(sord, (t)[1])) : USTR("*")), \
-	(sord_node_load(sord, (t)[2]) \
-	 ? sord_node_get_string(sord_node_load(sord, (t)[2])) : USTR("*"))
+	((t)[0] ? sord_node_get_string((t)[0]) : USTR("*")), \
+	((t)[1] ? sord_node_get_string((t)[1]) : USTR("*")), \
+	((t)[2] ? sord_node_get_string((t)[2]) : USTR("*"))
 
 int
 test_read(Sord sord, const size_t n_quads, const int n_objects_per)
@@ -199,7 +196,7 @@ test_read(Sord sord, const size_t n_quads, const int n_objects_per)
 	// Test nested queries
 	fprintf(stderr, "Nested Queries... ");
 	pat[0] = pat[1] = pat[2] = 0;
-	SordID last_subject = 0;
+	SordNode last_subject = 0;
 	iter = sord_find(sord, pat);
 	for (; !sord_iter_end(iter); sord_iter_next(iter)) {
 		sord_iter_get(iter, id);
@@ -277,13 +274,13 @@ main(int argc, char** argv)
 	}
 
 	// Check interning merges equivalent values
-	SordID uri_id   = sord_get_uri(sord, true, USTR("http://example.org"));
-	SordID blank_id = sord_get_uri(sord, true, USTR("testblank"));
-	SordID lit_id   = sord_get_literal(sord, true, uri_id, USTR("hello"), NULL);
+	SordNode uri_id   = sord_get_uri(sord, true, USTR("http://example.org"));
+	SordNode blank_id = sord_get_uri(sord, true, USTR("testblank"));
+	SordNode lit_id   = sord_get_literal(sord, true, uri_id, USTR("hello"), NULL);
 	//sord_clear_cache(write);
-	SordID uri_id2   = sord_get_uri(sord, false, USTR("http://example.org"));
-	SordID blank_id2 = sord_get_uri(sord, false, USTR("testblank"));
-	SordID lit_id2   = sord_get_literal(sord, false, uri_id, USTR("hello"), NULL);
+	SordNode uri_id2   = sord_get_uri(sord, false, USTR("http://example.org"));
+	SordNode blank_id2 = sord_get_uri(sord, false, USTR("testblank"));
+	SordNode lit_id2   = sord_get_literal(sord, false, uri_id, USTR("hello"), NULL);
 	if (uri_id2 != uri_id) {
 		fprintf(stderr, "Fail: URI interning failed (duplicates)\n");
 		goto fail;
@@ -296,9 +293,9 @@ main(int argc, char** argv)
 	}
 
 	// Check interning doesn't clash non-equivalent values
-	SordID uri_id3   = sord_get_uri(sord, false, USTR("http://example.orgX"));
-	SordID blank_id3 = sord_get_uri(sord, false, USTR("testblankX"));
-	SordID lit_id3   = sord_get_literal(sord, false, uri_id, USTR("helloX"), NULL);
+	SordNode uri_id3   = sord_get_uri(sord, false, USTR("http://example.orgX"));
+	SordNode blank_id3 = sord_get_uri(sord, false, USTR("testblankX"));
+	SordNode lit_id3   = sord_get_literal(sord, false, uri_id, USTR("helloX"), NULL);
 	if (uri_id3 == uri_id) {
 		fprintf(stderr, "Fail: URI interning failed (clash)\n");
 		goto fail;

@@ -61,8 +61,9 @@ def configure(conf):
 	print
 
 def build(bld):
-	# C Headers
+	# C/C++ Headers
 	bld.install_files('${INCLUDEDIR}/sord', bld.path.ant_glob('sord/*.h'))
+	bld.install_files('${INCLUDEDIR}/sord', bld.path.ant_glob('sord/*.hpp'))
 
 	# Pkgconfig file
 	autowaf.build_pc(bld, 'SORD', SORD_VERSION, [])

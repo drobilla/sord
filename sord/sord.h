@@ -22,8 +22,14 @@
 #ifndef SORD_SORD_H
 #define SORD_SORD_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdbool.h>
 #include <stdint.h>
+
+#include "serd/serd.h"
 
 #if defined _WIN32 || defined __CYGWIN__
 	#define SORD_LIB_IMPORT __declspec(dllimport)
@@ -330,8 +336,29 @@ sord_read_file_handle(SordModel      model,
                       const SordNode graph,
                       const uint8_t* blank_prefix);
 
+SORD_API
+bool
+sord_write_file(SordModel      model,
+                SerdEnv        env,
+                const uint8_t* uri,
+                const SordNode graph,
+                const uint8_t* blank_prefix);
+
+SORD_API
+bool
+sord_write_file_handle(SordModel      model,
+                       SerdEnv        env,
+                       FILE*          fd,
+                       const uint8_t* base_uri,
+                       const SordNode graph,
+                       const uint8_t* blank_prefix);
+
 /** @} */
 
 /** @} */
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif // SORD_SORD_H

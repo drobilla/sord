@@ -23,7 +23,7 @@
 
 #include "sord/sord.h"
 
-typedef intptr_t SordCount; ///< Count of nodes or triples
+typedef intptr_t SordCount;  ///< Count of nodes or triples
 
 /** Node */
 struct _SordNode {

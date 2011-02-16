@@ -15,7 +15,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** @file
+/** @file sord.h
  * Public Sord API.
  */
 
@@ -34,13 +34,13 @@
 	#define SORD_LIB_EXPORT __attribute__ ((visibility("default")))
 #endif
 
-#ifdef SORD_SHARED // Building a shared library
-	#ifdef SORD_INTERNAL // Building SORD (not using it)
+#ifdef SORD_SHARED  // Building a shared library
+	#ifdef SORD_INTERNAL  // Building SORD (not using it)
 		#define SORD_API SORD_LIB_EXPORT
 	#else
 		#define SORD_API SORD_LIB_IMPORT
 	#endif
-#else // Building a static library
+#else  // Building a static library
 	#define SORD_API
 #endif
 
@@ -51,10 +51,10 @@
  * @{
  */
 
-typedef struct _Sord*     Sord;     ///< Quad store
-typedef struct _SordIter* SordIter; ///< Store iterator
-typedef struct _SordNode* SordNode; ///< Node
-typedef void*             SordID;   ///< Integer ID of a Node (0 reserved for NULL)
+typedef struct _Sord*     Sord;      ///< Quad store
+typedef struct _SordIter* SordIter;  ///< Store iterator
+typedef struct _SordNode* SordNode;  ///< Node
+typedef void*             SordID;    ///< Integer ID of a Node (0 reserved for NULL)
 
 /** Quad of IDs (statement), or a quad pattern.
  * Nodes are ordered (S P O G).  The ID of the default graph is 0.
@@ -63,27 +63,27 @@ typedef SordID SordQuad[4];
 
 /** Index into a SordQuad. */
 typedef enum {
-	SORD_SUBJECT   = 0,
-	SORD_PREDICATE = 1,
-	SORD_OBJECT    = 2,
-	SORD_GRAPH     = 3
+	SORD_SUBJECT   = 0,  ///< Subject
+	SORD_PREDICATE = 1,  ///< Predicate (a.k.a. "key")
+	SORD_OBJECT    = 2,  ///< Object    (a.k.a. "value")
+	SORD_GRAPH     = 3   ///< Graph     (a.k.a. "context")
 } SordQuadIndex;
 
 /** Type of a node. */
 typedef enum {
-	SORD_URI     = 1, ///< URI
-	SORD_BLANK   = 2, ///< Blank node identifier
-	SORD_LITERAL = 3  ///< Literal (string with optional lang and/or type)
+	SORD_URI     = 1,  ///< URI
+	SORD_BLANK   = 2,  ///< Blank node identifier
+	SORD_LITERAL = 3   ///< Literal (string with optional lang and/or type)
 } SordNodeType;
 
 /** Indexing option. */
 typedef enum {
-	SORD_SPO = 1,      ///< Subject,   Predicate, Object
-	SORD_SOP = 1 << 1, ///< Subject,   Object,    Predicate
-	SORD_OPS = 1 << 2, ///< Object,    Predicate, Subject
-	SORD_OSP = 1 << 3, ///< Object,    Subject,   Predicate
-	SORD_PSO = 1 << 4, ///< Predicate, Subject,   Object
-	SORD_POS = 1 << 5  ///< Predicate, Object,    Subject
+	SORD_SPO = 1,       ///< Subject,   Predicate, Object
+	SORD_SOP = 1 << 1,  ///< Subject,   Object,    Predicate
+	SORD_OPS = 1 << 2,  ///< Object,    Predicate, Subject
+	SORD_OSP = 1 << 3,  ///< Object,    Subject,   Predicate
+	SORD_PSO = 1 << 4,  ///< Predicate, Subject,   Object
+	SORD_POS = 1 << 5   ///< Predicate, Object,    Subject
 } SordIndexOption;
 
 /** @name Initialisation and Cleanup

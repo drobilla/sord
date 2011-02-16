@@ -118,11 +118,12 @@ main(int argc, char** argv)
 
 	const uint8_t* input = (const uint8_t*)argv[a++];
 
-	Sord sord = sord_new(SORD_SPO|SORD_OPS, false);
+	SordWorld world = sord_world_new();
+	Sord sord = sord_new(world, SORD_SPO|SORD_OPS, false);
 
 	bool success = sord_read_file(sord, input, NULL, NULL);
 
-	printf("loaded %u statements\n", sord_num_nodes(sord));
+	printf("loaded %u statements\n", sord_num_nodes(world));
 
 	SerdURI base_uri;
 	if (!serd_uri_parse(input, &base_uri)) {

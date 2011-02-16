@@ -50,9 +50,10 @@
  * @{
  */
 
-typedef struct _Sord*     Sord;      ///< Quad store
-typedef struct _SordIter* SordIter;  ///< Store iterator
-typedef struct _SordNode* SordNode;  ///< Node
+typedef struct _SordWorld* SordWorld;  ///< Sord world (library state)
+typedef struct _Sord*      Sord;       ///< Quad store
+typedef struct _SordIter*  SordIter;   ///< Store iterator
+typedef struct _SordNode*  SordNode;   ///< Node
 
 /** Quad of IDs (statement), or a quad pattern.
  * Nodes are ordered (S P O G).  The ID of the default graph is 0.
@@ -84,26 +85,17 @@ typedef enum {
 	SORD_POS = 1 << 5   ///< Predicate, Object,    Subject
 } SordIndexOption;
 
-/** @name Initialisation and Cleanup
+/** @name World
  * @{
  */
 
-/** Create a new store.
- * @param indices SordIndexOption flags (e.g. SORD_SPO|SORD_OPS).
- *        Be sure to choose indices such that there is an index where the most
- *        significant node(s) are not variables for your queries.  For example,
- *        if you are going to make (? P O) queries, you should enable either
- *        SORD_OPS or SORD_POS.
- * @param graphs If true, store (and index) graph contexts.
- */
 SORD_API
-Sord
-sord_new(unsigned indices, bool graphs);
+SordWorld
+sord_world_new(void);
 
-/** Close and free @a sord. */
 SORD_API
 void
-sord_free(Sord sord);
+sord_world_free(SordWorld world);
 
 /** @} */
 /** @name Nodes
@@ -118,37 +110,37 @@ sord_free(Sord sord);
  */
 SORD_API
 SordNode
-sord_new_uri(Sord sord, const uint8_t* str);
+sord_new_uri(SordWorld world, const uint8_t* str);
 
 /** Find a URI, creating a new one if necessary iff @a create is true. */
 SORD_API
 SordNode
-sord_new_uri_counted(Sord sord, const uint8_t* str, int str_len);
+sord_new_uri_counted(SordWorld world, const uint8_t* str, int str_len);
 
 /** Find a blank, creating a new one if necessary iff @a create is true
  * Use sord_get_blank_counted instead if the length of @a str is known.
  */
 SORD_API
 SordNode
-sord_new_blank(Sord sord, const uint8_t* str);
+sord_new_blank(SordWorld world, const uint8_t* str);
 
 /** Find a blank, creating a new one if necessary iff @a create is true. */
 SORD_API
 SordNode
-sord_new_blank_counted(Sord sord, const uint8_t* str, int str_len);
+sord_new_blank_counted(SordWorld world, const uint8_t* str, int str_len);
 
 /** Find a literal, creating a new one if necessary iff @a create is true.
  * Use sord_get_literal_counted instead if the length of @a str is known.
  */
 SORD_API
 SordNode
-sord_new_literal(Sord sord, SordNode datatype,
+sord_new_literal(SordWorld world, SordNode datatype,
                  const uint8_t* str, const char* lang);
 
 /** Find a literal, creating a new one if necessary iff @a create is true. */
 SORD_API
 SordNode
-sord_new_literal_counted(Sord sord, SordNode datatype,
+sord_new_literal_counted(SordWorld world, SordNode datatype,
                          const uint8_t* str,  int     str_len,
                          const char*    lang, uint8_t lang_len);
 
@@ -185,16 +177,38 @@ bool
 sord_node_equals(const SordNode a, const SordNode b);
 
 /** @} */
-/** @name Read Operations
+/** @name Store
+ * For brevity, the Sord store is simply referred to as a "Sord".
  * @{
  */
+
+/** Create a new store.
+ * @param indices SordIndexOption flags (e.g. SORD_SPO|SORD_OPS).
+ *        Be sure to choose indices such that there is an index where the most
+ *        significant node(s) are not variables for your queries.  For example,
+ *        if you are going to make (? P O) queries, you should enable either
+ *        SORD_OPS or SORD_POS.
+ * @param graphs If true, store (and index) graph contexts.
+ */
+SORD_API
+Sord
+sord_new(SordWorld world, unsigned indices, bool graphs);
+
+/** Close and free @a sord. */
+SORD_API
+void
+sord_free(Sord sord);
+
+SORD_API
+SordWorld
+sord_get_world(Sord sord);
 
 /** Return the number of nodes stored in @a sord.
  * Nodes are included in this count iff they are a part of a quad in @a sord.
  */
 SORD_API
 int
-sord_num_nodes(Sord read);
+sord_num_nodes(SordWorld world);
 
 /** Return the number of quads stored in @a sord. */
 SORD_API
@@ -217,12 +231,6 @@ sord_graphs_begin(Sord read);
 SORD_API
 SordIter
 sord_find(Sord sord, const SordQuad pat);
-
-
-/** @} */
-/** @name Write Operations
- * @{
- */
 
 /** Add a quad to the store. */
 SORD_API

@@ -32,6 +32,7 @@ typedef struct {
 	SordNode   graph_uri_node;
 	SerdNode   base_uri_node;
 	SerdURI    base_uri;
+	SordWorld  world;
 	Sord       sord;
 } ReadState;
 
@@ -99,12 +100,12 @@ sord_node_from_serd_node(ReadState* state, const SerdNode* sn)
 	case SERD_NOTHING:
 		return NULL;
 	case SERD_LITERAL:
-		return sord_new_literal(state->sord, NULL, sn->buf, NULL);
+		return sord_new_literal(state->world, NULL, sn->buf, NULL);
 	case SERD_URI: {
 		SerdURI  abs_uri;
 		SerdNode abs_uri_node = serd_node_new_uri_from_node(
 			sn, &state->base_uri, &abs_uri);
-		SordNode ret = sord_new_uri(state->sord, abs_uri_node.buf);
+		SordNode ret = sord_new_uri(state->world, abs_uri_node.buf);
 		serd_node_free(&abs_uri_node);
 		return ret;
 	}
@@ -120,7 +121,7 @@ sord_node_from_serd_node(ReadState* state, const SerdNode* sn)
 		memcpy(buf,                  uri_prefix.buf, uri_prefix.len);
 		memcpy(buf + uri_prefix.len, uri_suffix.buf, uri_suffix.len);
 		buf[uri_len] = '\0';
-		SordNode ret = sord_new_uri_counted(state->sord,
+		SordNode ret = sord_new_uri_counted(state->world,
 		                                    buf, uri_prefix.len + uri_suffix.len);
 		free(buf);
 		return ret;
@@ -128,7 +129,7 @@ sord_node_from_serd_node(ReadState* state, const SerdNode* sn)
 	case SERD_BLANK_ID:
 	case SERD_ANON_BEGIN:
 	case SERD_ANON:
-		return sord_new_blank(state->sord, sn->buf);
+		return sord_new_blank(state->world, sn->buf);
 	}
 	return NULL;
 }
@@ -229,7 +230,9 @@ sord_read_file_handle(Sord           sord,
 	                                 base_uri_n_bytes - 1,  // FIXME: UTF-8
 	                                 base_uri_str };
 
-	ReadState state = { NULL, env, graph, base_uri_node, base_uri, sord };
+	ReadState state = { NULL, env, graph,
+	                    base_uri_node, base_uri,
+	                    sord_get_world(sord), sord };
 
 	state.reader = serd_reader_new(
 		SERD_TURTLE, &state,

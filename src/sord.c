@@ -106,10 +106,16 @@ static const int orderings[NUM_ORDERS][TUP_LEN] = {
 	{3,0,1,2  }, {3,0,2,1  }, {3,2,1,0  }, {3,2,0,1  }, {3,1,0,2  }, {3,1,2,0  }
 };
 
-/** Store */
-struct _Sord {
+/** World */
+struct _SordWorld {
 	GHashTable* names;    ///< URI or blank node identifier string => ID
 	GHashTable* literals; ///< Literal => ID
+	SordCount   n_nodes;  ///< Number of nodes
+};
+
+/** Store */
+struct _Sord {
+	SordWorld world;
 
 	/** Index for each possible triple ordering (may or may not exist).
 	 * If an index for e.g. SPO exists, it is a dictionary with
@@ -118,7 +124,6 @@ struct _Sord {
 	GSequence* indices[NUM_ORDERS];
 
 	SordCount n_quads;
-	SordCount n_nodes;
 };
 
 /** Mode for searching or iteration */
@@ -157,6 +162,24 @@ sord_literal_equal(const void* a, const void* b)
 	// FIXME: type, lang
 	return g_str_equal(sord_node_get_string(a_node),
 	                   sord_node_get_string(b_node));
+}
+
+SordWorld
+sord_world_new(void)
+{
+	SordWorld world = malloc(sizeof(struct _SordWorld));
+	world->names    = g_hash_table_new_full(g_str_hash, g_str_equal, free, 0);
+	world->literals = g_hash_table_new_full(sord_literal_hash, sord_literal_equal, 0, 0);
+	world->n_nodes  = 0;
+	return world;
+}
+
+void
+sord_world_free(SordWorld world)
+{
+	g_hash_table_unref(world->names);
+	g_hash_table_unref(world->literals);
+	free(world);
 }
 
 static inline int
@@ -522,13 +545,11 @@ sord_best_index(Sord sord, const SordQuad pat, SearchMode* mode, int* n_prefix)
 }
 
 Sord
-sord_new(unsigned indices, bool graphs)
+sord_new(SordWorld world, unsigned indices, bool graphs)
 {
 	Sord sord = (Sord)malloc(sizeof(struct _Sord));
-	sord->names    = g_hash_table_new_full(g_str_hash, g_str_equal, free, 0);
-	sord->literals = g_hash_table_new_full(sord_literal_hash, sord_literal_equal, 0, 0);
-	sord->n_quads  = 0;
-	sord->n_nodes  = 0;
+	sord->world   = world;
+	sord->n_quads = 0;
 
 	for (unsigned i = 0; i < (NUM_ORDERS / 2); ++i) {
 		if (indices & (1 << i)) {
@@ -562,6 +583,18 @@ sord_add_quad_ref(Sord sord, const SordNode node)
 static void
 sord_drop_node(Sord sord, SordNode node)
 {
+	SordWorld world = sord_get_world(sord);
+	if (node->type == SORD_LITERAL) {
+		if (!g_hash_table_remove(world->literals, node)) {
+			fprintf(stderr, "Failed to remove literal from hash, leak!\n");
+			return;
+		}
+	} else {
+		if (!g_hash_table_remove(world->names, node->buf)) {
+			fprintf(stderr, "Failed to remove resource from hash, leak!\n");
+			return;
+		}
+	}
 	free(node->buf);
 	free(node);
 }
@@ -593,13 +626,17 @@ sord_free(Sord sord)
 	}
 	sord_iter_free(i);
 
-	g_hash_table_unref(sord->names);
-	g_hash_table_unref(sord->literals);
 	for (unsigned i = 0; i < NUM_ORDERS; ++i)
 		if (sord->indices[i])
 			g_sequence_free(sord->indices[i]);
 
 	free(sord);
+}
+
+SordWorld
+sord_get_world(Sord sord)
+{
+	return sord->world;
 }
 
 int
@@ -609,9 +646,9 @@ sord_num_quads(Sord sord)
 }
 
 int
-sord_num_nodes(Sord sord)
+sord_num_nodes(SordWorld world)
 {
-	return sord->n_nodes;
+	return world->n_nodes;
 }
 
 SordIter
@@ -728,9 +765,9 @@ sord_find(Sord sord, const SordQuad pat)
 }
 
 static SordNode
-sord_lookup_name(Sord sord, const uint8_t* str, size_t str_len)
+sord_lookup_name(SordWorld world, const uint8_t* str, size_t str_len)
 {
-	return g_hash_table_lookup(sord->names, str);
+	return g_hash_table_lookup(world->names, str);
 }
 
 static SordNode
@@ -747,7 +784,7 @@ sord_new_node(SordNodeType type, const uint8_t* data, size_t n_bytes)
 }
 
 static SordNode
-sord_new_literal_node(Sord sord, SordNode datatype,
+sord_new_literal_node(SordNode datatype,
                       const uint8_t* str,  int str_len,
                       const char*    lang, uint8_t lang_len)
 {
@@ -758,12 +795,13 @@ sord_new_literal_node(Sord sord, SordNode datatype,
 }
 
 static SordNode
-sord_lookup_literal(Sord sord, SordNode type,
+sord_lookup_literal(SordWorld world, SordNode type,
                     const uint8_t* str,  int     str_len,
                     const char*    lang, uint8_t lang_len)
 {
-	SordNode node = sord_new_literal_node(sord, type, str, str_len, lang, lang_len);
-	SordNode id   = g_hash_table_lookup(sord->literals, node);
+	// FIXME: double alloc, ick
+	SordNode node = sord_new_literal_node(type, str, str_len, lang, lang_len);
+	SordNode id   = g_hash_table_lookup(world->literals, node);
 	free(node);
 	if (id) {
 		return id;
@@ -804,73 +842,73 @@ sord_node_get_datatype(SordNode ref)
 }
 
 static void
-sord_add_node(Sord sord, SordNode node)
+sord_add_node(SordWorld world, SordNode node)
 {
 	node->refs = 0;
-	++sord->n_nodes;
+	++world->n_nodes;
 }
 
 SordNode
-sord_new_uri_counted(Sord sord, const uint8_t* str, int str_len)
+sord_new_uri_counted(SordWorld world, const uint8_t* str, int str_len)
 {
-	SordNode node = sord_lookup_name(sord, str, str_len);
+	SordNode node = sord_lookup_name(world, str, str_len);
 	if (node) {
 		return node;
 	}
 
 	node = sord_new_node(SORD_URI, (const uint8_t*)str, str_len + 1);
-	g_hash_table_insert(sord->names, g_strdup((const char*)str), node);
-	sord_add_node(sord, node);
+	g_hash_table_insert(world->names, g_strdup((const char*)str), node);
+	sord_add_node(world, node);
 	return node;
 }
 
 SordNode
-sord_new_uri(Sord sord, const uint8_t* str)
+sord_new_uri(SordWorld world, const uint8_t* str)
 {
-	return sord_new_uri_counted(sord, str, strlen((const char*)str));
+	return sord_new_uri_counted(world, str, strlen((const char*)str));
 }
 
 SordNode
-sord_new_blank_counted(Sord sord, const uint8_t* str, int str_len)
+sord_new_blank_counted(SordWorld world, const uint8_t* str, int str_len)
 {
-	SordNode node = sord_lookup_name(sord, str, str_len);
+	SordNode node = sord_lookup_name(world, str, str_len);
 	if (node) {
 		return node;
 	}
 
 	node = sord_new_node(SORD_BLANK, (const uint8_t*)str, str_len + 1);
-	g_hash_table_insert(sord->names, g_strdup((const char*)str), node);
-	sord_add_node(sord, node);
+	g_hash_table_insert(world->names, g_strdup((const char*)str), node);
+	sord_add_node(world, node);
 	return node;
 }
 
 SordNode
-sord_new_blank(Sord sord, const uint8_t* str)
+sord_new_blank(SordWorld world, const uint8_t* str)
 {
-	return sord_new_blank_counted(sord, str, strlen((const char*)str));
+	return sord_new_blank_counted(world, str, strlen((const char*)str));
 }
 
 SordNode
-sord_new_literal_counted(Sord sord, SordNode type,
+sord_new_literal_counted(SordWorld world, SordNode type,
                          const uint8_t* str,  int     str_len,
                          const char*    lang, uint8_t lang_len)
 {
-	SordNode node = sord_lookup_literal(sord, type, str, str_len, lang, lang_len);
+	SordNode node = sord_lookup_literal(world, type, str, str_len, lang, lang_len);
 	if (node) {
 		return node;
 	}
 
-	node = sord_new_literal_node(sord, type, str, str_len, lang, lang_len);
-	g_hash_table_insert(sord->literals, node, node);  // FIXME: correct?
-	sord_add_node(sord, node);
+	node = sord_new_literal_node(type, str, str_len, lang, lang_len);
+	g_hash_table_insert(world->literals, node, node);  // FIXME: correct?
+	sord_add_node(world, node);
 	return node;
 }
 
 SordNode
-sord_new_literal(Sord sord, SordNode type,
+sord_new_literal(SordWorld world, SordNode type,
                  const uint8_t* str, const char* lang)
 {
-	return sord_new_literal_counted(sord, type,
+	return sord_new_literal_counted(world, type,
 	                                str, strlen((const char*)str),
 	                                lang, lang ? strlen(lang) : 0);
 }

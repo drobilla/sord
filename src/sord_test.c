@@ -30,7 +30,7 @@ typedef struct { SordQuad query; int expected_num_results; } QueryTest;
 #define USTR(s) ((const uint8_t*)(s))
 
 static SordNode
-uri(Sord sord, int num)
+uri(SordWorld world, int num)
 {
 	if (num == 0)
 		return 0;
@@ -39,11 +39,11 @@ uri(Sord sord, int num)
 	const size_t uri_len = 3 + DIGITS;
 	char*        uri_num = uri + 3; // First `0'
 	snprintf(uri_num, DIGITS + 1, "%0*d", DIGITS, num);
-	return sord_new_uri_counted(sord, (const uint8_t*)uri, uri_len);
+	return sord_new_uri_counted(world, (const uint8_t*)uri, uri_len);
 }
 
 void
-generate(Sord sord, size_t n_quads, size_t n_objects_per)
+generate(SordWorld world, Sord sord, size_t n_quads, size_t n_objects_per)
 {
 	fprintf(stderr, "Generating %zu (S P *) quads with %zu objects each\n",
 			n_quads, n_objects_per);
@@ -53,7 +53,7 @@ generate(Sord sord, size_t n_quads, size_t n_objects_per)
 
 		SordNode ids[2 + n_objects_per];
 		for (size_t j = 0; j < 2 + n_objects_per; ++j) {
-			ids[j] = uri(sord, num++);
+			ids[j] = uri(world, num++);
 		}
 
 		for (size_t j = 0; j < n_objects_per; ++j) {
@@ -64,18 +64,18 @@ generate(Sord sord, size_t n_quads, size_t n_objects_per)
 
 	// Add some literals
 	SordQuad tup;
-	tup[0] = uri(sord, 98);
-	tup[1] = uri(sord, 4);
-	tup[2] = sord_new_literal(sord, 0, (const uint8_t*)"hello", NULL);
+	tup[0] = uri(world, 98);
+	tup[1] = uri(world, 4);
+	tup[2] = sord_new_literal(world, 0, (const uint8_t*)"hello", NULL);
 	tup[3] = 0;
 	sord_add(sord, tup);
-	tup[2] = sord_new_literal(sord, 0, USTR("hi"), NULL);
+	tup[2] = sord_new_literal(world, 0, USTR("hi"), NULL);
 	sord_add(sord, tup);
 
-	tup[0] = uri(sord, 14);
-	tup[2] = sord_new_literal(sord, 0, USTR("bonjour"), "fr");
+	tup[0] = uri(world, 14);
+	tup[2] = sord_new_literal(world, 0, USTR("bonjour"), "fr");
 	sord_add(sord, tup);
-	tup[2] = sord_new_literal(sord, 0, USTR("salut"), "fr");
+	tup[2] = sord_new_literal(world, 0, USTR("salut"), "fr");
 	sord_add(sord, tup);
 
 	// Attempt to add some duplicates
@@ -83,11 +83,11 @@ generate(Sord sord, size_t n_quads, size_t n_objects_per)
 	sord_add(sord, tup);
 
 	// Add a blank node subject
-	tup[0] = sord_new_blank(sord, USTR("ablank"));
+	tup[0] = sord_new_blank(world, USTR("ablank"));
 	sord_add(sord, tup);
 
-	tup[1] = uri(sord, 6);
-	tup[2] = uri(sord, 7);
+	tup[1] = uri(world, 6);
+	tup[2] = uri(world, 7);
 	sord_add(sord, tup);
 }
 
@@ -105,7 +105,7 @@ test_fail()
 	((t)[2] ? sord_node_get_string((t)[2]) : USTR("*"))
 
 int
-test_read(Sord sord, const size_t n_quads, const int n_objects_per)
+test_read(SordWorld world, Sord sord, const size_t n_quads, const int n_objects_per)
 {
 	int ret = EXIT_SUCCESS;
 
@@ -132,14 +132,14 @@ test_read(Sord sord, const size_t n_quads, const int n_objects_per)
 
 	QueryTest patterns[NUM_PATTERNS] = {
 		{ { 0, 0, 0 }, (n_quads * n_objects_per) + 6 },
-		{ { uri(sord, 9), uri(sord, 9), uri(sord, 9) }, 0 },
-		{ { uri(sord, 1), uri(sord, 2), uri(sord, 4) }, 1 },
-		{ { uri(sord, 3), uri(sord, 4), uri(sord, 0) }, 2 },
-		{ { uri(sord, 0), uri(sord, 2), uri(sord, 4) }, 1 },
-		{ { uri(sord, 0), uri(sord, 0), uri(sord, 4) }, 1 },
-		{ { uri(sord, 1), uri(sord, 0), uri(sord, 0) }, 2 },
-		{ { uri(sord, 1), uri(sord, 0), uri(sord, 4) }, 1 },
-		{ { uri(sord, 0), uri(sord, 2), uri(sord, 0) }, 2 } };
+		{ { uri(world, 9), uri(world, 9), uri(world, 9) }, 0 },
+		{ { uri(world, 1), uri(world, 2), uri(world, 4) }, 1 },
+		{ { uri(world, 3), uri(world, 4), uri(world, 0) }, 2 },
+		{ { uri(world, 0), uri(world, 2), uri(world, 4) }, 1 },
+		{ { uri(world, 0), uri(world, 0), uri(world, 4) }, 1 },
+		{ { uri(world, 1), uri(world, 0), uri(world, 0) }, 2 },
+		{ { uri(world, 1), uri(world, 0), uri(world, 4) }, 1 },
+		{ { uri(world, 0), uri(world, 2), uri(world, 0) }, 2 } };
 
 	for (unsigned i = 0; i < NUM_PATTERNS; ++i) {
 		QueryTest test = patterns[i];
@@ -168,7 +168,7 @@ test_read(Sord sord, const size_t n_quads, const int n_objects_per)
 	}
 
 	// Query blank node subject
-	SordQuad pat = { sord_new_blank(sord, USTR("ablank")), 0, 0 };
+	SordQuad pat = { sord_new_blank(world, USTR("ablank")), 0, 0 };
 	if (!pat[0]) {
 		fprintf(stderr, "Blank node subject lost\n");
 		return test_fail();
@@ -264,23 +264,25 @@ main(int argc, char** argv)
 
 	sord_free(NULL); // Shouldn't crash
 
-	// Create with minimal indexing
-	Sord sord = sord_new(SORD_SPO, false);
-	generate(sord, n_quads, n_objects_per);
+	SordWorld world = sord_world_new();
 
-	if (test_read(sord, n_quads, n_objects_per)) {
+	// Create with minimal indexing
+	Sord sord = sord_new(world, SORD_SPO, false);
+	generate(world, sord, n_quads, n_objects_per);
+
+	if (test_read(world, sord, n_quads, n_objects_per)) {
 		sord_free(sord);
 		return EXIT_FAILURE;
 	}
 
 	// Check interning merges equivalent values
-	SordNode uri_id   = sord_new_uri(sord, USTR("http://example.org"));
-	SordNode blank_id = sord_new_uri(sord, USTR("testblank"));
-	SordNode lit_id   = sord_new_literal(sord, uri_id, USTR("hello"), NULL);
+	SordNode uri_id   = sord_new_uri(world, USTR("http://example.org"));
+	SordNode blank_id = sord_new_uri(world, USTR("testblank"));
+	SordNode lit_id   = sord_new_literal(world, uri_id, USTR("hello"), NULL);
 	//sord_clear_cache(write);
-	SordNode uri_id2   = sord_new_uri(sord, USTR("http://example.org"));
-	SordNode blank_id2 = sord_new_uri(sord, USTR("testblank"));
-	SordNode lit_id2   = sord_new_literal(sord, uri_id, USTR("hello"), NULL);
+	SordNode uri_id2   = sord_new_uri(world, USTR("http://example.org"));
+	SordNode blank_id2 = sord_new_uri(world, USTR("testblank"));
+	SordNode lit_id2   = sord_new_literal(world, uri_id, USTR("hello"), NULL);
 	if (uri_id2 != uri_id) {
 		fprintf(stderr, "Fail: URI interning failed (duplicates)\n");
 		goto fail;
@@ -293,9 +295,9 @@ main(int argc, char** argv)
 	}
 
 	// Check interning doesn't clash non-equivalent values
-	SordNode uri_id3   = sord_new_uri(sord, USTR("http://example.orgX"));
-	SordNode blank_id3 = sord_new_uri(sord, USTR("testblankX"));
-	SordNode lit_id3   = sord_new_literal(sord, uri_id, USTR("helloX"), NULL);
+	SordNode uri_id3   = sord_new_uri(world, USTR("http://example.orgX"));
+	SordNode blank_id3 = sord_new_uri(world, USTR("testblankX"));
+	SordNode lit_id3   = sord_new_literal(world, uri_id, USTR("helloX"), NULL);
 	if (uri_id3 == uri_id) {
 		fprintf(stderr, "Fail: URI interning failed (clash)\n");
 		goto fail;
@@ -314,15 +316,15 @@ main(int argc, char** argv)
 	};
 
 	for (int i = 0; i < 6; ++i) {
-		sord = sord_new((1 << i), false);
+		sord = sord_new(world, (1 << i), false);
 		printf("Testing Index `%s'\n", index_names[i]);
-		generate(sord, n_quads, n_objects_per);
-		if (test_read(sord, n_quads, n_objects_per))
+		generate(world, sord, n_quads, n_objects_per);
+		if (test_read(world, sord, n_quads, n_objects_per))
 			goto fail;
 		sord_free(sord);
 	}
 
-	sord = sord_new(SORD_SPO, false);
+	sord = sord_new(world, SORD_SPO, false);
 	if (test_write(sord, n_quads, n_objects_per))
 	  goto fail;
 

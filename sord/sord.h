@@ -24,7 +24,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdio.h>
 
 #if defined _WIN32 || defined __CYGWIN__
 	#define SORD_LIB_IMPORT __declspec(dllimport)

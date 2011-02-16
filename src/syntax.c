@@ -228,7 +228,6 @@ sord_read_file(SordModel      model,
 
 	FILE* const fd = fopen((const char*)path,  "r");
 	if (!fd) {
-		fprintf(stderr, "failed to open file %s\n", path);
 		return false;
 	}
 

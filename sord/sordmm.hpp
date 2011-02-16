@@ -131,7 +131,7 @@ class Node : public Wrapper<SordNode> {
 public:
 	enum Type {
 		UNKNOWN  = 0,
-		RESOURCE = SORD_URI,
+		URI      = SORD_URI,
 		BLANK    = SORD_BLANK,
 		LITERAL  = SORD_LITERAL
 	};
@@ -178,11 +178,11 @@ public:
 
 	inline bool is_literal_type(const char* type_uri) const;
 
-	inline bool is_resource() const { return _c_obj && type() == RESOURCE; }
-	inline bool is_blank()    const { return _c_obj && type() == BLANK; }
-	inline bool is_int()      const { return is_literal_type(SORD_NS_XSD "integer"); }
-	inline bool is_float()    const { return is_literal_type(SORD_NS_XSD "decimal"); }
-	inline bool is_bool()     const { return is_literal_type(SORD_NS_XSD "boolean"); }
+	inline bool is_uri()   const { return _c_obj && type() == URI; }
+	inline bool is_blank() const { return _c_obj && type() == BLANK; }
+	inline bool is_int()   const { return is_literal_type(SORD_NS_XSD "integer"); }
+	inline bool is_float() const { return is_literal_type(SORD_NS_XSD "decimal"); }
+	inline bool is_bool()  const { return is_literal_type(SORD_NS_XSD "boolean"); }
 
 	inline int   to_int()   const;
 	inline float to_float() const;
@@ -205,15 +205,15 @@ operator<<(std::ostream& os, const Node& node)
 	return os << node.to_string() << std::endl;
 }
 
-class Resource : public Node {
+class URI : public Node {
 public:
-	inline Resource(World& world, const std::string& s) : Node(world, Node::RESOURCE, s) {}
+	inline URI(World& world, const std::string& s) : Node(world, Node::URI, s) {}
 };
 
 class Curie : public Node {
 public:
 	inline Curie(World& world, const std::string& s)
-		: Node(world, Node::RESOURCE, world.prefixes().expand(s)) {}
+		: Node(world, Node::URI, world.prefixes().expand(s)) {}
 };
 
 class Literal : public Node {
@@ -226,7 +226,7 @@ Node::Node(World& world, Type type, const std::string& s)
 	: _world(&world)
 {
 	switch (type) {
-	case RESOURCE:
+	case URI:
 		assert(s.find(":") == std::string::npos
 		       || s.substr(0, 5) == "http:"
 		       || s.substr(0, 5) == "file:"
@@ -415,7 +415,7 @@ private:
 inline
 Model::Model(World& world, const Glib::ustring& base_uri)
 	: _world(world)
-	, _base(world, Node::RESOURCE, base_uri)
+	, _base(world, Node::URI, base_uri)
 	, _writer(NULL)
 {
 	// FIXME: parameters

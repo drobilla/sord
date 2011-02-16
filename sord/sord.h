@@ -118,37 +118,37 @@ sord_free(Sord sord);
  */
 SORD_API
 SordNode
-sord_get_uri(Sord sord, bool create, const uint8_t* str);
+sord_new_uri(Sord sord, const uint8_t* str);
 
 /** Find a URI, creating a new one if necessary iff @a create is true. */
 SORD_API
 SordNode
-sord_get_uri_counted(Sord sord, bool create, const uint8_t* str, int str_len);
+sord_new_uri_counted(Sord sord, const uint8_t* str, int str_len);
 
 /** Find a blank, creating a new one if necessary iff @a create is true
  * Use sord_get_blank_counted instead if the length of @a str is known.
  */
 SORD_API
 SordNode
-sord_get_blank(Sord sord, bool create, const uint8_t* str);
+sord_new_blank(Sord sord, const uint8_t* str);
 
 /** Find a blank, creating a new one if necessary iff @a create is true. */
 SORD_API
 SordNode
-sord_get_blank_counted(Sord sord, bool create, const uint8_t* str, int str_len);
+sord_new_blank_counted(Sord sord, const uint8_t* str, int str_len);
 
 /** Find a literal, creating a new one if necessary iff @a create is true.
  * Use sord_get_literal_counted instead if the length of @a str is known.
  */
 SORD_API
 SordNode
-sord_get_literal(Sord sord, bool create, SordNode type,
+sord_new_literal(Sord sord, SordNode datatype,
                  const uint8_t* str, const char* lang);
 
 /** Find a literal, creating a new one if necessary iff @a create is true. */
 SORD_API
 SordNode
-sord_get_literal_counted(Sord sord, bool create, SordNode type,
+sord_new_literal_counted(Sord sord, SordNode datatype,
                          const uint8_t* str,  int     str_len,
                          const char*    lang, uint8_t lang_len);
 

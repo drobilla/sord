@@ -811,71 +811,66 @@ sord_add_node(Sord sord, SordNode node)
 }
 
 SordNode
-sord_get_uri_counted(Sord sord, bool create, const uint8_t* str, int str_len)
+sord_new_uri_counted(Sord sord, const uint8_t* str, int str_len)
 {
-	SordNode id = sord_lookup_name(sord, str, str_len);
-	if (id || !create)
-		return id;
+	SordNode node = sord_lookup_name(sord, str, str_len);
+	if (node) {
+		return node;
+	}
 
-	id = sord_new_node(SORD_URI, (const uint8_t*)str, str_len + 1);
-
-	assert(id);
-	g_hash_table_insert(sord->names, (void*)g_strdup((const char*)str), (void*)id);
-	sord_add_node(sord, id);
-	
-	return id;
+	node = sord_new_node(SORD_URI, (const uint8_t*)str, str_len + 1);
+	g_hash_table_insert(sord->names, g_strdup((const char*)str), node);
+	sord_add_node(sord, node);
+	return node;
 }
 
 SordNode
-sord_get_uri(Sord sord, bool create, const uint8_t* str)
+sord_new_uri(Sord sord, const uint8_t* str)
 {
-	return sord_get_uri_counted(sord, create, str, strlen((const char*)str));
+	return sord_new_uri_counted(sord, str, strlen((const char*)str));
 }
 
 SordNode
-sord_get_blank_counted(Sord sord, bool create, const uint8_t* str, int str_len)
+sord_new_blank_counted(Sord sord, const uint8_t* str, int str_len)
 {
-	SordNode id = sord_lookup_name(sord, str, str_len);
-	if (id || !create)
-		return id;
+	SordNode node = sord_lookup_name(sord, str, str_len);
+	if (node) {
+		return node;
+	}
 
-	id = sord_new_node(SORD_BLANK, (const uint8_t*)str, str_len + 1);
-
-	assert(id);
-	g_hash_table_insert(sord->names, (void*)g_strdup((const char*)str), (void*)id);
-	sord_add_node(sord, id);
-	
-	return id;
+	node = sord_new_node(SORD_BLANK, (const uint8_t*)str, str_len + 1);
+	g_hash_table_insert(sord->names, g_strdup((const char*)str), node);
+	sord_add_node(sord, node);
+	return node;
 }
 
 SordNode
-sord_get_blank(Sord sord, bool create, const uint8_t* str)
+sord_new_blank(Sord sord, const uint8_t* str)
 {
-	return sord_get_blank_counted(sord, create, str, strlen((const char*)str));
+	return sord_new_blank_counted(sord, str, strlen((const char*)str));
 }
 
 SordNode
-sord_get_literal_counted(Sord sord, bool create, SordNode type,
+sord_new_literal_counted(Sord sord, SordNode type,
                          const uint8_t* str,  int     str_len,
                          const char*    lang, uint8_t lang_len)
 {
-	SordNode id = sord_lookup_literal(sord, type, str, str_len, lang, lang_len);
-	if (id || !create)
-		return id;
+	SordNode node = sord_lookup_literal(sord, type, str, str_len, lang, lang_len);
+	if (node) {
+		return node;
+	}
 
-	id = sord_new_literal_node(sord, type, str, str_len, lang, lang_len);
-
-	g_hash_table_insert(sord->literals, (void*)id, id);
-	sord_add_node(sord, id);
-	
-	return id;
+	node = sord_new_literal_node(sord, type, str, str_len, lang, lang_len);
+	g_hash_table_insert(sord->literals, node, node);  // FIXME: correct?
+	sord_add_node(sord, node);
+	return node;
 }
 
 SordNode
-sord_get_literal(Sord sord, bool create, SordNode type,
+sord_new_literal(Sord sord, SordNode type,
                  const uint8_t* str, const char* lang)
 {
-	return sord_get_literal_counted(sord, create, type,
+	return sord_new_literal_counted(sord, type,
 	                                str, strlen((const char*)str),
 	                                lang, lang ? strlen(lang) : 0);
 }

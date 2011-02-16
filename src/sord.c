@@ -792,13 +792,13 @@ sord_node_get_string_counted(SordNode ref, size_t* n_bytes)
 }
 
 const char*
-sord_literal_get_lang(SordNode ref)
+sord_node_get_language(SordNode ref)
 {
 	return ref->lang;
 }
 
 SordNode
-sord_literal_get_datatype(SordNode ref)
+sord_node_get_datatype(SordNode ref)
 {
 	return ref->datatype;
 }

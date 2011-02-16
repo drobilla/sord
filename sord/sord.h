@@ -162,20 +162,24 @@ SORD_API
 const uint8_t*
 sord_node_get_string(SordNode node);
 
+/** Return the string value of a node, and set @a len to its length. */
 SORD_API
 const uint8_t*
 sord_node_get_string_counted(SordNode node, size_t* len);
 
-/** Get the language of a literal node. */
+/** Return the language of a literal node (or NULL). */
 SORD_API
 const char*
-sord_literal_get_lang(SordNode node);
+sord_node_get_language(SordNode node);
 
-/** Get the datatype URI of a literal node. */
+/** Return the datatype URI of a literal node (or NULL). */
 SORD_API
 SordNode
-sord_literal_get_datatype(SordNode node);
+sord_node_get_datatype(SordNode node);
 
+/** Return true iff @a a is equal to @a b.
+ * Note this is much faster than comparing the node's strings.
+ */
 SORD_API
 bool
 sord_node_equals(const SordNode a, const SordNode b);

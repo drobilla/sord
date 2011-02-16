@@ -55,8 +55,8 @@ typedef struct _Sord*     Sord;     ///< Quad store
 typedef struct _SordIter* SordIter; ///< Store iterator
 typedef struct _SordNode* SordNode; ///< Node
 
-typedef void* SordID;    ///< Integer ID of a Node (0 reserved for NULL)
-typedef int   SordCount; ///< Count of nodes or triples
+typedef void*    SordID;    ///< Integer ID of a Node (0 reserved for NULL)
+typedef intptr_t SordCount; ///< Count of nodes or triples
 
 
 /** Quad of IDs (statement), or a quad pattern.

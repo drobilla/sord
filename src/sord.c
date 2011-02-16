@@ -114,7 +114,7 @@ struct _SordWorld {
 };
 
 /** Store */
-struct _Sord {
+struct _SordModel {
 	SordWorld world;
 
 	/** Index for each possible triple ordering (may or may not exist).
@@ -137,7 +137,7 @@ typedef enum {
 
 /** Iterator over some range of a store */
 struct _SordIter {
-	Sord           sord;              ///< Store this is an iterator for
+	SordModel      sord;              ///< Store this is an iterator for
 	GSequenceIter* cur;               ///< Current DB cursor
 	SordQuad       pat;               ///< Iteration pattern (in ordering order)
 	int            ordering[TUP_LEN]; ///< Store ordering
@@ -216,7 +216,7 @@ sord_node_equals(const SordNode a, const SordNode b)
  * result set.
  */
 static inline int
-sord_id_compare(Sord sord, const SordNode a, const SordNode b)
+sord_id_compare(SordModel sord, const SordNode a, const SordNode b)
 {
 	if (a == b || !a || !b) {
 		return (const char*)a - (const char*)b;
@@ -254,7 +254,7 @@ sord_quad_match(const SordQuad x, const SordQuad y)
 static int
 sord_quad_compare(const void* x_ptr, const void* y_ptr, void* user_data)
 {
-	Sord    const sord = (Sord)user_data;
+	SordModel const sord = (SordModel)user_data;
 	SordNode* const x    = (SordNode*)x_ptr;
 	SordNode* const y    = (SordNode*)y_ptr;
 
@@ -334,7 +334,7 @@ sord_iter_seek_match_range(SordIter iter)
 }
 
 static SordIter
-sord_iter_new(Sord sord, GSequenceIter* cur, const SordQuad pat,
+sord_iter_new(SordModel sord, GSequenceIter* cur, const SordQuad pat,
               SordOrder order, SearchMode mode, int n_prefix)
 {
 	const int* ordering = orderings[order];
@@ -377,8 +377,8 @@ sord_iter_new(Sord sord, GSequenceIter* cur, const SordQuad pat,
 	return iter;
 }
 
-Sord
-sord_iter_get_sord(SordIter iter)
+SordModel
+sord_iter_get_model(SordIter iter)
 {
 	return iter->sord;
 }
@@ -469,7 +469,7 @@ sord_iter_free(SordIter iter)
  * corresponding order with a G prepended (so G will be the MSN).
  */
 static inline bool
-sord_has_index(Sord sord, SordOrder* order, int* n_prefix, bool graph_search)
+sord_has_index(SordModel sord, SordOrder* order, int* n_prefix, bool graph_search)
 {
 	if (graph_search) {
 		*order    += GSPO;
@@ -486,7 +486,7 @@ sord_has_index(Sord sord, SordOrder* order, int* n_prefix, bool graph_search)
  *        (for @a mode == RANGE and @a mode == FILTER_RANGE)
  */
 static inline SordOrder
-sord_best_index(Sord sord, const SordQuad pat, SearchMode* mode, int* n_prefix)
+sord_best_index(SordModel sord, const SordQuad pat, SearchMode* mode, int* n_prefix)
 {
 	const bool graph_search = (pat[TUP_G] != 0);
 
@@ -544,10 +544,10 @@ sord_best_index(Sord sord, const SordQuad pat, SearchMode* mode, int* n_prefix)
 	}
 }
 
-Sord
+SordModel
 sord_new(SordWorld world, unsigned indices, bool graphs)
 {
-	Sord sord = (Sord)malloc(sizeof(struct _Sord));
+	SordModel sord = (SordModel)malloc(sizeof(struct _SordModel));
 	sord->world   = world;
 	sord->n_quads = 0;
 
@@ -573,7 +573,7 @@ sord_new(SordWorld world, unsigned indices, bool graphs)
 }
 
 static void
-sord_add_quad_ref(Sord sord, const SordNode node)
+sord_add_quad_ref(SordModel sord, const SordNode node)
 {
 	if (node) {
 		++node->refs;
@@ -581,7 +581,7 @@ sord_add_quad_ref(Sord sord, const SordNode node)
 }
 
 static void
-sord_drop_node(Sord sord, SordNode node)
+sord_drop_node(SordModel sord, SordNode node)
 {
 	SordWorld world = sord_get_world(sord);
 	if (node->type == SORD_LITERAL) {
@@ -600,7 +600,7 @@ sord_drop_node(Sord sord, SordNode node)
 }
 
 static void
-sord_drop_quad_ref(Sord sord, const SordNode node)
+sord_drop_quad_ref(SordModel sord, const SordNode node)
 {
 	if (node) {
 		if (--node->refs == 0) {
@@ -610,7 +610,7 @@ sord_drop_quad_ref(Sord sord, const SordNode node)
 }
 
 void
-sord_free(Sord sord)
+sord_free(SordModel sord)
 {
 	if (!sord)
 		return;
@@ -634,13 +634,13 @@ sord_free(Sord sord)
 }
 
 SordWorld
-sord_get_world(Sord sord)
+sord_get_world(SordModel sord)
 {
 	return sord->world;
 }
 
 int
-sord_num_quads(Sord sord)
+sord_num_quads(SordModel sord)
 {
 	return sord->n_quads;
 }
@@ -652,7 +652,7 @@ sord_num_nodes(SordWorld world)
 }
 
 SordIter
-sord_begin(Sord sord)
+sord_begin(SordModel sord)
 {
 	if (sord_num_quads(sord) == 0) {
 		return NULL;
@@ -664,20 +664,20 @@ sord_begin(Sord sord)
 }
 
 SordIter
-sord_graphs_begin(Sord read)
+sord_graphs_begin(SordModel model)
 {
 	return NULL;
 }
 
 static inline GSequenceIter*
-index_search(Sord sord, GSequence* db, const SordQuad search_key)
+index_search(SordModel sord, GSequence* db, const SordQuad search_key)
 {
 	return g_sequence_search(
 		db, (void*)search_key, sord_quad_compare, sord);
 }
 
 static inline GSequenceIter*
-index_lower_bound(Sord sord, GSequence* db, const SordQuad search_key)
+index_lower_bound(SordModel sord, GSequence* db, const SordQuad search_key)
 {
 	GSequenceIter* i = g_sequence_search(
 		db, (void*)search_key, sord_quad_compare, sord);
@@ -722,7 +722,7 @@ index_lower_bound(Sord sord, GSequence* db, const SordQuad search_key)
 }
 
 SordIter
-sord_find(Sord sord, const SordQuad pat)
+sord_find(SordModel sord, const SordQuad pat)
 {
 	if (!pat[0] && !pat[1] && !pat[2] && !pat[3])
 		return sord_begin(sord);
@@ -913,8 +913,19 @@ sord_new_literal(SordWorld world, SordNode type,
 	                                lang, lang ? strlen(lang) : 0);
 }
 
+void
+sord_node_free(SordNode node)
+{
+}
+
+SordNode
+sord_node_copy(SordNode node)
+{
+	return node;
+}
+
 static inline bool
-sord_add_to_index(Sord sord, const SordQuad tup, SordOrder order)
+sord_add_to_index(SordModel sord, const SordQuad tup, SordOrder order)
 {
 	assert(sord->indices[order]);
 	const int* const ordering = orderings[order];
@@ -936,7 +947,7 @@ sord_add_to_index(Sord sord, const SordQuad tup, SordOrder order)
 }
 
 void
-sord_add(Sord sord, const SordQuad tup)
+sord_add(SordModel sord, const SordQuad tup)
 {
 	SORD_WRITE_LOG("Add " TUP_FMT "\n", TUP_FMT_ARGS(tup));
 	assert(tup[0] && tup[1] && tup[2]);
@@ -958,7 +969,7 @@ sord_add(Sord sord, const SordQuad tup)
 }
 
 void
-sord_remove(Sord sord, const SordQuad tup)
+sord_remove(SordModel sord, const SordQuad tup)
 {
 	SORD_WRITE_LOG("Remove " TUP_FMT "\n", TUP_FMT_ARGS(tup));
 		
@@ -985,7 +996,7 @@ sord_remove(Sord sord, const SordQuad tup)
 }
 
 void
-sord_remove_iter(Sord sord, SordIter iter)
+sord_remove_iter(SordModel sord, SordIter iter)
 {
 	SordQuad tup;
 	sord_iter_get(iter, tup);
@@ -1018,7 +1029,7 @@ sord_remove_iter(Sord sord, SordIter iter)
 }
 
 void
-sord_remove_graph(Sord sord, SordNode graph)
+sord_remove_graph(SordModel sord, SordNode graph)
 {
 	#if 0
 	if (!sord->indices[GSPO])

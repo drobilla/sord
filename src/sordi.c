@@ -28,7 +28,7 @@ typedef struct {
 	SerdEnv    env;
 	SerdNode   base_uri_node;
 	SerdURI    base_uri;
-	Sord       sord;
+	SordModel  sord;
 } State;
 
 int
@@ -119,7 +119,7 @@ main(int argc, char** argv)
 	const uint8_t* input = (const uint8_t*)argv[a++];
 
 	SordWorld world = sord_world_new();
-	Sord sord = sord_new(world, SORD_SPO|SORD_OPS, false);
+	SordModel sord = sord_new(world, SORD_SPO|SORD_OPS, false);
 
 	bool success = sord_read_file(sord, input, NULL, NULL);
 

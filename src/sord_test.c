@@ -43,7 +43,7 @@ uri(SordWorld world, int num)
 }
 
 void
-generate(SordWorld world, Sord sord, size_t n_quads, size_t n_objects_per)
+generate(SordWorld world, SordModel sord, size_t n_quads, size_t n_objects_per)
 {
 	fprintf(stderr, "Generating %zu (S P *) quads with %zu objects each\n",
 			n_quads, n_objects_per);
@@ -105,14 +105,14 @@ test_fail()
 	((t)[2] ? sord_node_get_string((t)[2]) : USTR("*"))
 
 int
-test_read(SordWorld world, Sord sord, const size_t n_quads, const int n_objects_per)
+test_read(SordWorld world, SordModel sord, const size_t n_quads, const int n_objects_per)
 {
 	int ret = EXIT_SUCCESS;
 
 	SordQuad id;
 
 	SordIter iter = sord_begin(sord);
-	if (sord_iter_get_sord(iter) != sord) {
+	if (sord_iter_get_model(iter) != sord) {
 		fprintf(stderr, "Fail: Iterator has incorrect sord pointer\n");
 		return test_fail();
 	}
@@ -232,7 +232,7 @@ test_read(SordWorld world, Sord sord, const size_t n_quads, const int n_objects_
 }
 
 int
-test_write(Sord sord, const size_t n_quads, const int n_objects_per)
+test_write(SordModel sord, const size_t n_quads, const int n_objects_per)
 {
 	int ret = EXIT_SUCCESS;
 
@@ -267,7 +267,7 @@ main(int argc, char** argv)
 	SordWorld world = sord_world_new();
 
 	// Create with minimal indexing
-	Sord sord = sord_new(world, SORD_SPO, false);
+	SordModel sord = sord_new(world, SORD_SPO, false);
 	generate(world, sord, n_quads, n_objects_per);
 
 	if (test_read(world, sord, n_quads, n_objects_per)) {

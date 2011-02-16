@@ -51,7 +51,7 @@
  */
 
 typedef struct _SordWorld* SordWorld;  ///< Sord world (library state)
-typedef struct _Sord*      Sord;       ///< Quad store
+typedef struct _SordModel* SordModel;  ///< Quad store
 typedef struct _SordIter*  SordIter;   ///< Store iterator
 typedef struct _SordNode*  SordNode;   ///< Node
 
@@ -144,6 +144,16 @@ sord_new_literal_counted(SordWorld world, SordNode datatype,
                          const uint8_t* str,  int     str_len,
                          const char*    lang, uint8_t lang_len);
 
+/** Copy a node. */
+SORD_API
+SordNode
+sord_node_copy(SordNode node);
+
+/** Free a node. */
+SORD_API
+void
+sord_node_free(SordNode node);
+
 /** Return the type of a node (SORD_URI, SORD_BLANK, or SORD_LITERAL). */
 SORD_API
 SordNodeType
@@ -177,8 +187,7 @@ bool
 sord_node_equals(const SordNode a, const SordNode b);
 
 /** @} */
-/** @name Store
- * For brevity, the Sord store is simply referred to as a "Sord".
+/** @name Model
  * @{
  */
 
@@ -191,17 +200,17 @@ sord_node_equals(const SordNode a, const SordNode b);
  * @param graphs If true, store (and index) graph contexts.
  */
 SORD_API
-Sord
+SordModel
 sord_new(SordWorld world, unsigned indices, bool graphs);
 
 /** Close and free @a sord. */
 SORD_API
 void
-sord_free(Sord sord);
+sord_free(SordModel model);
 
 SORD_API
 SordWorld
-sord_get_world(Sord sord);
+sord_get_world(SordModel model);
 
 /** Return the number of nodes stored in @a sord.
  * Nodes are included in this count iff they are a part of a quad in @a sord.
@@ -213,29 +222,29 @@ sord_num_nodes(SordWorld world);
 /** Return the number of quads stored in @a sord. */
 SORD_API
 int
-sord_num_quads(Sord read);
+sord_num_quads(SordModel model);
 
 /** Return an iterator to the start of the store. */
 SORD_API
 SordIter
-sord_begin(Sord read);
+sord_begin(SordModel model);
 
 /** Return an iterator that will iterate over each graph URI. */
 SORD_API
 SordIter
-sord_graphs_begin(Sord read);
+sord_graphs_begin(SordModel model);
 
 /** Search for a triple pattern.
  * @return an iterator to the first match, or NULL if no matches found
  */
 SORD_API
 SordIter
-sord_find(Sord sord, const SordQuad pat);
+sord_find(SordModel model, const SordQuad pat);
 
 /** Add a quad to the store. */
 SORD_API
 void
-sord_add(Sord sord, const SordQuad tup);
+sord_add(SordModel model, const SordQuad quad);
 
 /** Remove a quad from the store.
  * This function invalidates all iterators to @a sord (use sord_remove_iter
@@ -243,19 +252,19 @@ sord_add(Sord sord, const SordQuad tup);
  */
 SORD_API
 void
-sord_remove(Sord sord, const SordQuad tup);
+sord_remove(SordModel model, const SordQuad quad);
 
 /** Remove a quad from the store by iterator.
  * @a iter will be incremented to point at the next value.
  */
 SORD_API
 void
-sord_remove_iter(Sord sord, SordIter iter);
+sord_remove_iter(SordModel model, SordIter iter);
 
 /** Remove a graph from the store. */
 SORD_API
 void
-sord_remove_graph(Sord sord, SordNode graph);
+sord_remove_graph(SordModel model, SordNode graph);
 
 /** @} */
 /** @name Iteration
@@ -265,12 +274,12 @@ sord_remove_graph(Sord sord, SordNode graph);
 /** Set @a id to the quad pointed to by @a iter. */
 SORD_API
 void
-sord_iter_get(SordIter iter, SordQuad tup);
+sord_iter_get(SordIter iter, SordQuad quad);
 
 /** Return the store pointed to by @a iter. */
 SORD_API
-Sord
-sord_iter_get_sord(SordIter iter);
+SordModel
+sord_iter_get_model(SordIter iter);
 
 /** Increment @a iter to point to the next statement. */
 SORD_API
@@ -308,14 +317,14 @@ sord_quad_match(const SordQuad x, const SordQuad y);
 
 SORD_API
 bool
-sord_read_file(Sord           sord,
+sord_read_file(SordModel      model,
                const uint8_t* uri,
                const SordNode graph,
                const uint8_t* blank_prefix);
 
 SORD_API
 bool
-sord_read_file_handle(Sord           sord,
+sord_read_file_handle(SordModel      model,
                       FILE*          fd,
                       const uint8_t* base_uri,
                       const SordNode graph,

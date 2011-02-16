@@ -33,7 +33,7 @@ typedef struct {
 	SerdNode   base_uri_node;
 	SerdURI    base_uri;
 	SordWorld  world;
-	Sord       sord;
+	SordModel  sord;
 } ReadState;
 
 static uint8_t*
@@ -175,7 +175,7 @@ event_statement(void*           handle,
 
 SORD_API
 bool
-sord_read_file(Sord           sord,
+sord_read_file(SordModel      sord,
                const uint8_t* input,
                const SordNode graph,
                const uint8_t* blank_prefix)
@@ -210,7 +210,7 @@ sord_read_file(Sord           sord,
 
 SORD_API
 bool
-sord_read_file_handle(Sord           sord,
+sord_read_file_handle(SordModel      sord,
                       FILE*          fd,
                       const uint8_t* base_uri_str_in,
                       const SordNode graph,

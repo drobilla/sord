@@ -117,8 +117,6 @@ struct _Sord {
 	 */
 	GSequence* indices[NUM_ORDERS];
 
-	void (*user_data_free)(void*); ///< Destructor for node user data
-
 	SordCount n_quads;
 	SordCount n_nodes;
 };
@@ -543,8 +541,6 @@ sord_new(unsigned indices, bool graphs)
 	sord->n_quads  = 0;
 	sord->n_nodes  = 0;
 
-	sord->user_data_free = NULL;
-
 	for (unsigned i = 0; i < (NUM_ORDERS / 2); ++i) {
 		if (indices & (1 << i)) {
 			sord->indices[i] = g_sequence_new(free);
@@ -630,12 +626,6 @@ int
 sord_num_nodes(Sord sord)
 {
 	return sord->n_nodes;
-}
-
-void
-sord_node_set_user_data_free_function(Sord sord, void (*f)(void*))
-{
-	sord->user_data_free = f;
 }
 
 SordIter
@@ -764,7 +754,6 @@ sord_new_node(SordNodeType type, const uint8_t* data, size_t n_bytes)
 	node->type      = type;
 	node->n_bytes   = n_bytes;
 	node->refs      = 0;
-	node->user_data = 0;
 	node->datatype  = 0;
 	node->lang      = 0;
 	node->buf       = (uint8_t*)g_strdup((const char*)data); // TODO: no-copy
@@ -820,18 +809,6 @@ sord_node_get_string_counted(SordNode ref, size_t* n_bytes)
 {
 	*n_bytes = ref->n_bytes;
 	return ref->buf;
-}
-
-void
-sord_node_set_user_data(SordNode ref, void* user_data)
-{
-	ref->user_data = user_data;
-}
-
-void*
-sord_node_get_user_data(SordNode ref)
-{
-	return ref->user_data;
 }
 
 const char*

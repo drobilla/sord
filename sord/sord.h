@@ -109,11 +109,6 @@ sord_free(Sord sord);
  * @{
  */
 
-/** Set the free function for node opaque user data. */
-SORD_API
-void
-sord_node_set_user_data_free_function(Sord sord, void (*f)(void*));
-
 /** Dereference an ID, loading node data into memory.
  * The returned node is allocated memory owned by @a sord,
  * it can only be freed by the caller via sord_clear_cache.
@@ -126,10 +121,10 @@ sord_node_load(Sord sord, SordID id);
 SORD_API
 void
 sord_quad_load(Sord      sord,
-                SordQuad  tup,
-                SordNode* s,
-                SordNode* p,
-                SordNode* o);
+               SordQuad  tup,
+               SordNode* s,
+               SordNode* p,
+               SordNode* o);
 
 /** Find a URI, creating a new one if necessary iff @a create is true.
  * Use sord_get_uri_counted instead if the length of @a str is known.
@@ -190,14 +185,6 @@ sord_node_get_string(SordNode node);
 SORD_API
 const uint8_t*
 sord_node_get_string_counted(SordNode node, size_t* len);
-
-/** Set an opaque user pointer on a node.
- * Sord does not interpret the user pointer in any way, but it will be
- * preserved on the node until the cache is cleared.
- */
-SORD_API
-void
-sord_node_set_user_data(SordNode node, void* user_data);
 
 /** Get the opaque user pointer on a node. */
 SORD_API

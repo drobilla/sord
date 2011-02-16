@@ -25,13 +25,12 @@
 
 /** Node */
 struct _SordNode {
-	SordNodeType type;       ///< SordNodeType
-	size_t       n_bytes;    ///< Length of data in bytes (including terminator)
-	SordCount    refs;       ///< Reference count (i.e. number of containing quads)
-	void*        user_data;  ///< Opaque user data
-	SordNode     datatype;   ///< Literal data type (ID of a URI node, or 0)
-	const char*  lang;       ///< Literal language (interned string)
-	uint8_t*     buf;        ///< Value (string)
+	SordNodeType type;      ///< SordNodeType
+	size_t       n_bytes;   ///< Length of data in bytes (including terminator)
+	SordCount    refs;      ///< Reference count (i.e. number of containing quads)
+	SordNode     datatype;  ///< Literal data type (ID of a URI node, or 0)
+	const char*  lang;      ///< Literal language (interned string)
+	uint8_t*     buf;       ///< Value (string)
 };
 
 #endif // SORD_INTERNAL_H

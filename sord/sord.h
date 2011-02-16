@@ -186,11 +186,6 @@ SORD_API
 const uint8_t*
 sord_node_get_string_counted(SordNode node, size_t* len);
 
-/** Get the opaque user pointer on a node. */
-SORD_API
-void*
-sord_node_get_user_data(SordNode node);
-
 /** Get the language of a literal node. */
 SORD_API
 const char*

@@ -75,7 +75,7 @@ public:
 		SerdChunk      suffix;
 		if (serd_env_qualify(_c_obj, &uri_node, &prefix, &suffix)) {
 			std::string ret((const char*)prefix.buf, prefix.n_bytes - 1);
-			ret.append((const char*)suffix.buf, suffix.len);
+			ret.append(":").append((const char*)suffix.buf, suffix.len);
 			return ret;
 		}
 		return uri;

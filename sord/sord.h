@@ -338,6 +338,12 @@ sord_read_file_handle(SordModel      model,
 
 SORD_API
 bool
+sord_read_string(SordModel      model,
+                 const uint8_t* str,
+                 const uint8_t* base_uri);
+
+SORD_API
+bool
 sord_write_file(SordModel      model,
                 SerdEnv        env,
                 const uint8_t* uri,
@@ -352,6 +358,13 @@ sord_write_file_handle(SordModel      model,
                        const uint8_t* base_uri,
                        const SordNode graph,
                        const uint8_t* blank_prefix);
+
+SORD_API
+uint8_t*
+sord_write_string(SordModel      model,
+                  SerdEnv        env,
+                  const uint8_t* base_uri);
+
 
 /** @} */
 

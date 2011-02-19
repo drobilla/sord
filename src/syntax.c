@@ -238,7 +238,7 @@ sord_read_file(SordModel      model,
 
 SORD_API
 bool
-sord_read_file_handle(SordModel      sord,
+sord_read_file_handle(SordModel      model,
                       FILE*          fd,
                       const uint8_t* base_uri_str_in,
                       const SordNode graph,
@@ -246,6 +246,7 @@ sord_read_file_handle(SordModel      sord,
 {
 	size_t   base_uri_n_bytes = 0;
 	uint8_t* base_uri_str     = copy_string(base_uri_str_in, &base_uri_n_bytes);
+
 	SerdURI  base_uri;
 	if (!serd_uri_parse(base_uri_str, &base_uri)) {
 		fprintf(stderr, "invalid base URI `%s'\n", base_uri_str);
@@ -260,7 +261,7 @@ sord_read_file_handle(SordModel      sord,
 
 	ReadState state = { NULL, env, graph,
 	                    base_uri_node, base_uri,
-	                    sord_get_world(sord), sord };
+	                    sord_get_world(model), model };
 
 	state.reader = serd_reader_new(
 		SERD_TURTLE, &state,
@@ -271,6 +272,43 @@ sord_read_file_handle(SordModel      sord,
 	}
 
 	const bool success = serd_reader_read_file(state.reader, fd, base_uri_str);
+
+	serd_reader_free(state.reader);
+	serd_node_free(&state.base_uri_node);
+
+	return success;
+}
+
+SORD_API
+bool
+sord_read_string(SordModel      model,
+                 const uint8_t* str,
+                 const uint8_t* base_uri_str_in)
+{
+	size_t   base_uri_n_bytes = 0;
+	uint8_t* base_uri_str     = copy_string(base_uri_str_in, &base_uri_n_bytes);
+
+	SerdURI  base_uri;
+	if (!serd_uri_parse(base_uri_str, &base_uri)) {
+		fprintf(stderr, "invalid base URI `%s'\n", base_uri_str);
+	}
+
+	SerdEnv env = serd_env_new();
+
+	const SerdNode base_uri_node = { SERD_URI,
+	                                 base_uri_n_bytes,
+	                                 base_uri_n_bytes - 1,  // FIXME: UTF-8
+	                                 base_uri_str };
+
+	ReadState state = { NULL, env, NULL,
+	                    base_uri_node, base_uri,
+	                    sord_get_world(model), model };
+
+	state.reader = serd_reader_new(
+		SERD_TURTLE, &state,
+		event_base, event_prefix, event_statement, NULL);
+
+	const bool success = serd_reader_read_string(state.reader, str);
 
 	serd_reader_free(state.reader);
 	serd_node_free(&state.base_uri_node);
@@ -309,33 +347,11 @@ file_sink(const void* buf, size_t len, void* stream)
 	return fwrite(buf, 1, len, file);
 }
 
-SORD_API
-bool
-sord_write_file_handle(SordModel      model,
-                       SerdEnv        env,
-                       FILE*          fd,
-                       const uint8_t* base_uri_str_in,
-                       const SordNode graph,
-                       const uint8_t* blank_prefix)
+static void
+sord_write(const SordModel model,
+           const SordNode  graph,
+           SerdWriter      writer)
 {
-	size_t   base_uri_n_bytes = 0;
-	uint8_t* base_uri_str     = copy_string(base_uri_str_in, &base_uri_n_bytes);
-	SerdURI  base_uri;
-	if (!serd_uri_parse(base_uri_str, &base_uri)) {
-		fprintf(stderr, "invalid base URI `%s'\n", base_uri_str);
-	}
-
-	SerdWriter writer = serd_writer_new(SERD_TURTLE,
-	                                    SERD_STYLE_ABBREVIATED|SERD_STYLE_CURIED,
-	                                    env,
-	                                    &base_uri,
-	                                    file_sink,
-	                                    fd);
-
-	serd_env_foreach(env,
-	                 (SerdPrefixSink)serd_writer_set_prefix,
-	                 writer);
-
 	SerdNode s_graph;
 	sord_node_to_serd_node(graph, &s_graph);
 	for (SordIter i = sord_begin(model); !sord_iter_end(i); sord_iter_next(i)) {
@@ -366,9 +382,76 @@ sord_write_file_handle(SordModel      model,
 		                            &subject, &predicate, &object,
 		                            &datatype, &language);
 	}
+}
 
+
+static SerdWriter
+make_writer(SerdEnv        env,
+            const uint8_t* base_uri_str_in,
+            SerdSink       sink,
+            void*          stream)
+{
+	size_t   base_uri_n_bytes = 0;
+	uint8_t* base_uri_str     = copy_string(base_uri_str_in, &base_uri_n_bytes);
+	SerdURI  base_uri;
+	if (!serd_uri_parse(base_uri_str, &base_uri)) {
+		fprintf(stderr, "invalid base URI `%s'\n", base_uri_str);
+	}
+
+	SerdWriter writer = serd_writer_new(SERD_TURTLE,
+	                                    SERD_STYLE_ABBREVIATED|SERD_STYLE_CURIED,
+	                                    env,
+	                                    &base_uri,
+	                                    sink,
+	                                    stream);
+
+	serd_env_foreach(env,
+	                 (SerdPrefixSink)serd_writer_set_prefix,
+	                 writer);
+
+	return writer;
+}
+
+SORD_API
+bool
+sord_write_file_handle(SordModel      model,
+                       SerdEnv        env,
+                       FILE*          fd,
+                       const uint8_t* base_uri_str_in,
+                       const SordNode graph,
+                       const uint8_t* blank_prefix)
+{
+	SerdWriter writer = make_writer(env, base_uri_str_in, file_sink, fd);
+	sord_write(model, graph, writer);
 	serd_writer_free(writer);
-	free(base_uri_str);
-
 	return true;
+}
+
+struct SerdBuffer {
+	uint8_t* buf;
+	size_t   len;
+};
+
+static size_t
+string_sink(const void* buf, size_t len, void* stream)
+{
+	struct SerdBuffer* out = (struct SerdBuffer*)stream;
+	out->buf = realloc(out->buf, out->len + len);
+	memcpy(out->buf + out->len, buf, len);
+	out->len += len;
+	return len;
+}
+
+SORD_API
+uint8_t*
+sord_write_string(SordModel      model,
+                  SerdEnv        env,
+                  const uint8_t* base_uri)
+{
+	struct SerdBuffer buf = { NULL, 0 };
+	SerdWriter writer = make_writer(env, base_uri, string_sink, &buf);
+	sord_write(model, NULL, writer);
+	serd_writer_free(writer);
+	string_sink("", 1, &buf);
+	return buf.buf;
 }

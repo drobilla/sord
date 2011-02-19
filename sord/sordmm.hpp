@@ -202,7 +202,7 @@ private:
 inline std::ostream&
 operator<<(std::ostream& os, const Node& node)
 {
-	return os << node.to_string() << std::endl;
+	return os << node.to_string();
 }
 
 class URI : public Node {
@@ -284,13 +284,11 @@ Node::~Node()
 	}
 }
 
-
 inline std::string
 Node::to_string() const
 {
-	return std::string(to_c_string());
+	return _c_obj ? (const char*)sord_node_get_string(_c_obj) : "";
 }
-
 
 inline const char*
 Node::to_c_string() const
@@ -391,7 +389,8 @@ public:
 
 	inline void  write_to_file_handle(FILE* fd, const char* lang);
 	inline void  write_to_file(const Glib::ustring& uri, const char* lang);
-	inline char* write_to_string(const char* lang);
+
+	inline std::string write_to_string(const char* lang);
 
 	inline void add_statement(const Node& subject,
 	                          const Node& predicate,
@@ -428,7 +427,9 @@ Model::load_string(const char*          str,
                    const Glib::ustring& base_uri,
                    const std::string    lang)
 {
-	// TODO
+	sord_read_string(_c_obj,
+	                 (const uint8_t*)str,
+	                 (const uint8_t*)base_uri.c_str());
 }
 
 inline Model::~Model()
@@ -465,11 +466,15 @@ Model::write_to_file(const Glib::ustring& uri, const char* lang)
 	                NULL);
 }
 
-inline char*
+inline std::string
 Model::write_to_string(const char* lang)
 {
-	std::cerr << "TODO: serialise" << std::endl;
-	return NULL;
+	uint8_t* const c_str = sord_write_string(_c_obj,
+	                                         _world.prefixes().c_obj(),
+	                                         base_uri().to_u_string());
+	std::string ret((const char*)c_str);
+	free(c_str);
+	return ret;
 }
 
 inline void

@@ -262,9 +262,8 @@ sord_node_equals(const SordNode a,
    @param world The world in which to make this store.
 
    @param indices SordIndexOption flags (e.g. SORD_SPO|SORD_OPS).  Be sure to
-   choose indices such that there is an index where the most significant
-   node(s) are not variables for your queries.  For example, if you are going
-   to make (? P O) queries, you should enable either SORD_OPS or SORD_POS.
+   enable an index where the most significant node(s) are not variables in your
+   queries (e.g. to make (? P O) queries, enable either SORD_OPS or SORD_POS).
 
    @param graphs If true, store (and index) graph contexts.
 */

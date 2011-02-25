@@ -35,13 +35,12 @@
 #include "sord_internal.h"
 
 typedef struct {
-	SerdReader reader;
-	SerdEnv    env;
-	SordNode   graph_uri_node;
-	SerdNode   base_uri_node;
-	SerdURI    base_uri;
-	SordWorld  world;
-	SordModel  sord;
+	SerdReader    reader;
+	SerdEnv       env;
+	SerdReadState read_state;
+	SordNode      graph_uri_node;
+	SordWorld     world;
+	SordModel     sord;
 } ReadState;
 
 static uint8_t*
@@ -60,19 +59,7 @@ event_base(void*           handle,
 {
 	ReadState* const state = (ReadState*)handle;
 
-	// Resolve base URI and create a new node and URI for it
-	SerdURI  base_uri;
-	SerdNode base_uri_node = serd_node_new_uri_from_node(
-		uri_node, &state->base_uri, &base_uri);
-
-	if (base_uri_node.buf) {
-		// Replace the current base URI
-		serd_node_free(&state->base_uri_node);
-		state->base_uri_node = base_uri_node;
-		state->base_uri      = base_uri;
-		return true;
-	}
-	return false;
+	return serd_read_state_set_base_uri(state->read_state, uri_node);
 }
 
 static bool
@@ -81,24 +68,8 @@ event_prefix(void*           handle,
              const SerdNode* uri_node)
 {
 	ReadState* const state = (ReadState*)handle;
-	if (serd_uri_string_has_scheme(uri_node->buf)) {
-		// Set prefix to absolute URI
-		serd_env_add(state->env, name, uri_node);
-	} else {
-		// Resolve relative URI and create a new node and URI for it
-		SerdURI  abs_uri;
-		SerdNode abs_uri_node = serd_node_new_uri_from_node(
-			uri_node, &state->base_uri, &abs_uri);
 
-		if (!abs_uri_node.buf) {
-			return false;
-		}
-
-		// Set prefix to resolved (absolute) URI
-		serd_env_add(state->env, name, &abs_uri_node);
-		serd_node_free(&abs_uri_node);
-	}
-	return true;
+	return serd_read_state_set_prefix(state->read_state, name, uri_node);
 }
 
 static inline SordNode
@@ -115,9 +86,11 @@ sord_node_from_serd_node(ReadState* state, const SerdNode* sn,
 			sn->buf,
 			g_intern_string((const char*)lang->buf));
 	case SERD_URI: {
+		SerdURI base_uri;
+		serd_read_state_get_base_uri(state->read_state, &base_uri);
 		SerdURI  abs_uri;
 		SerdNode abs_uri_node = serd_node_new_uri_from_node(
-			sn, &state->base_uri, &abs_uri);
+			sn, &base_uri, &abs_uri);
 		SordNode ret = sord_new_uri(state->world, abs_uri_node.buf);
 		serd_node_free(&abs_uri_node);
 		return ret;
@@ -262,13 +235,9 @@ sord_read_file_handle(SordModel      model,
 
 	SerdEnv env = serd_env_new();
 
-	const SerdNode base_uri_node = { SERD_URI,
-	                                 base_uri_n_bytes,
-	                                 base_uri_n_bytes - 1,  // FIXME: UTF-8
-	                                 base_uri_str };
+	SerdReadState read_state = serd_read_state_new(env, base_uri_str);
 
-	ReadState state = { NULL, env, graph,
-	                    base_uri_node, base_uri,
+	ReadState state = { NULL, env, read_state, graph,
 	                    sord_get_world(model), model };
 
 	state.reader = serd_reader_new(
@@ -282,7 +251,7 @@ sord_read_file_handle(SordModel      model,
 	const bool success = serd_reader_read_file(state.reader, fd, base_uri_str);
 
 	serd_reader_free(state.reader);
-	serd_node_free(&state.base_uri_node);
+	serd_read_state_free(state.read_state);
 
 	return success;
 }
@@ -302,14 +271,10 @@ sord_read_string(SordModel      model,
 	}
 
 	SerdEnv env = serd_env_new();
+	
+	SerdReadState read_state = serd_read_state_new(env, base_uri_str);
 
-	const SerdNode base_uri_node = { SERD_URI,
-	                                 base_uri_n_bytes,
-	                                 base_uri_n_bytes - 1,  // FIXME: UTF-8
-	                                 base_uri_str };
-
-	ReadState state = { NULL, env, NULL,
-	                    base_uri_node, base_uri,
+	ReadState state = { NULL, env, read_state, NULL,
 	                    sord_get_world(model), model };
 
 	state.reader = serd_reader_new(
@@ -319,7 +284,7 @@ sord_read_string(SordModel      model,
 	const bool success = serd_reader_read_string(state.reader, str);
 
 	serd_reader_free(state.reader);
-	serd_node_free(&state.base_uri_node);
+	serd_read_state_free(state.read_state);
 
 	return success;
 }

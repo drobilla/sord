@@ -848,7 +848,7 @@ sord_add_node(SordWorld world, SordNode node)
 }
 
 SordNode
-sord_new_uri_counted(SordWorld world, const uint8_t* str, int str_len)
+sord_new_uri_counted(SordWorld world, const uint8_t* str, size_t str_len)
 {
 	SordNode node = sord_lookup_name(world, str, str_len);
 	if (node) {
@@ -868,7 +868,7 @@ sord_new_uri(SordWorld world, const uint8_t* str)
 }
 
 SordNode
-sord_new_blank_counted(SordWorld world, const uint8_t* str, int str_len)
+sord_new_blank_counted(SordWorld world, const uint8_t* str, size_t str_len)
 {
 	SordNode node = sord_lookup_name(world, str, str_len);
 	if (node) {
@@ -889,7 +889,7 @@ sord_new_blank(SordWorld world, const uint8_t* str)
 
 SordNode
 sord_new_literal_counted(SordWorld world, SordNode type,
-                         const uint8_t* str,  int     str_len,
+                         const uint8_t* str,  size_t  str_len,
                          const char*    lang, uint8_t lang_len)
 {
 	SordNode node = sord_lookup_literal(world, type, str, str_len, lang, lang_len);

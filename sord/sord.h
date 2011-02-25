@@ -148,7 +148,7 @@ SORD_API
 SordNode
 sord_new_uri_counted(SordWorld      world,
                      const uint8_t* str,
-                     int            str_len);
+                     size_t         str_len);
 
 /**
    Find a blank, creating a new one if necessary iff @a create is true.
@@ -166,7 +166,7 @@ SORD_API
 SordNode
 sord_new_blank_counted(SordWorld      world,
                        const uint8_t* str,
-                       int            str_len);
+                       size_t         str_len);
 
 /**
    Find a literal, creating a new one if necessary iff @a create is true.
@@ -188,7 +188,7 @@ SordNode
 sord_new_literal_counted(SordWorld      world,
                          SordNode       datatype,
                          const uint8_t* str,
-                         int            str_len,
+                         size_t         str_len,
                          const char*    lang,
                          uint8_t        lang_len);
 

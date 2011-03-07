@@ -42,8 +42,8 @@
 		#define SORD_LIB_IMPORT __declspec(dllimport)
 		#define SORD_LIB_EXPORT __declspec(dllexport)
 	#else
-		#define SORD_LIB_IMPORT __attribute__ ((visibility("default")))
-		#define SORD_LIB_EXPORT __attribute__ ((visibility("default")))
+		#define SORD_LIB_IMPORT __attribute__((visibility("default")))
+		#define SORD_LIB_EXPORT __attribute__((visibility("default")))
 	#endif
 	#ifdef SORD_INTERNAL
 		#define SORD_API SORD_LIB_EXPORT
@@ -67,10 +67,10 @@ extern "C" {
    @{
 */
 
-typedef struct _SordWorld* SordWorld;  ///< Sord world (library state)
-typedef struct _SordModel* SordModel;  ///< Quad store
-typedef struct _SordIter*  SordIter;   ///< Store iterator
-typedef struct _SordNode*  SordNode;   ///< Node
+typedef struct _SordWorld* SordWorld;  /**< Sord world (library state) */
+typedef struct _SordModel* SordModel;  /**< Quad store */
+typedef struct _SordIter*  SordIter;   /**< Store iterator */
+typedef struct _SordNode*  SordNode;   /**< Node */
 
 /**
    Quad of IDs (statement), or a quad pattern.
@@ -83,42 +83,52 @@ typedef SordNode SordQuad[4];
    Index into a SordQuad.
 */
 typedef enum {
-	SORD_SUBJECT   = 0,  ///< Subject
-	SORD_PREDICATE = 1,  ///< Predicate (a.k.a. "key")
-	SORD_OBJECT    = 2,  ///< Object    (a.k.a. "value")
-	SORD_GRAPH     = 3   ///< Graph     (a.k.a. "context")
+	SORD_SUBJECT   = 0,  /**< Subject */
+	SORD_PREDICATE = 1,  /**< Predicate (a.k.a. "key") */
+	SORD_OBJECT    = 2,  /**< Object    (a.k.a. "value") */
+	SORD_GRAPH     = 3   /**< Graph     (a.k.a. "context") */
 } SordQuadIndex;
 
 /**
    Type of a node.
 */
 typedef enum {
-	SORD_URI     = 1,  ///< URI
-	SORD_BLANK   = 2,  ///< Blank node identifier
-	SORD_LITERAL = 3   ///< Literal (string with optional lang or datatype)
+	SORD_URI     = 1,  /**< URI */
+	SORD_BLANK   = 2,  /**< Blank node identifier */
+	SORD_LITERAL = 3   /**< Literal (string with optional lang or datatype) */
 } SordNodeType;
 
 /**
    Indexing option.
 */
 typedef enum {
-	SORD_SPO = 1,       ///< Subject,   Predicate, Object
-	SORD_SOP = 1 << 1,  ///< Subject,   Object,    Predicate
-	SORD_OPS = 1 << 2,  ///< Object,    Predicate, Subject
-	SORD_OSP = 1 << 3,  ///< Object,    Subject,   Predicate
-	SORD_PSO = 1 << 4,  ///< Predicate, Subject,   Object
-	SORD_POS = 1 << 5   ///< Predicate, Object,    Subject
+	SORD_SPO = 1,       /**< Subject,   Predicate, Object */
+	SORD_SOP = 1 << 1,  /**< Subject,   Object,    Predicate */
+	SORD_OPS = 1 << 2,  /**< Object,    Predicate, Subject */
+	SORD_OSP = 1 << 3,  /**< Object,    Subject,   Predicate */
+	SORD_PSO = 1 << 4,  /**< Predicate, Subject,   Object */
+	SORD_POS = 1 << 5   /**< Predicate, Object,    Subject */
 } SordIndexOption;
 
 /**
    @name World
+   The World represents all library state, including interned strings.  It is
+   safe to use multiple worlds in one process, though no data (e.g. nodes) can
+   be shared between worlds, and this should be avoided if possible for
+   performance reasons.
    @{
 */
 
+/**
+   Create a new Sord World.
+*/
 SORD_API
 SordWorld
 sord_world_new(void);
 
+/**
+   Free @a world.
+*/
 SORD_API
 void
 sord_world_free(SordWorld world);
@@ -251,10 +261,11 @@ bool
 sord_node_equals(const SordNode a,
                  const SordNode b);
 
-/** @} */
-/** @name Model
- * @{
- */
+/**
+   @}
+   @name Model
+   @{
+*/
 
 /**
    Create a new store.
@@ -466,7 +477,6 @@ sord_write_string(SordModel      model,
                   SerdEnv        env,
                   const uint8_t* base_uri);
 
-
 /**
    @}
    @}
@@ -476,4 +486,4 @@ sord_write_string(SordModel      model,
 }  /* extern "C" */
 #endif
 
-#endif  /** SORD_SORD_H */
+#endif  /* SORD_SORD_H */

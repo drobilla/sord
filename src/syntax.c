@@ -252,6 +252,7 @@ sord_read_file_handle(SordModel      model,
 
 	serd_reader_free(state.reader);
 	serd_read_state_free(state.read_state);
+	serd_env_free(env);
 
 	return success;
 }
@@ -285,6 +286,7 @@ sord_read_string(SordModel      model,
 
 	serd_reader_free(state.reader);
 	serd_read_state_free(state.read_state);
+	serd_env_free(env);
 
 	return success;
 }

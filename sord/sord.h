@@ -329,7 +329,7 @@ sord_find(SordModel model, const SordQuad pat);
    Add a quad to the store.
 */
 SORD_API
-void
+bool
 sord_add(SordModel model, const SordQuad quad);
 
 /**

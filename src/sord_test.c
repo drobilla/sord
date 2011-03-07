@@ -50,7 +50,14 @@ uri(SordWorld world, int num)
 	return sord_new_uri_counted(world, (const uint8_t*)uri, uri_len);
 }
 
-void
+/** Trivial function to return EXIT_FAILURE (useful as a breakpoint) */
+int
+test_fail()
+{
+	return EXIT_FAILURE;
+}
+
+int
 generate(SordWorld world, SordModel sord, size_t n_quads, size_t n_objects_per)
 {
 	fprintf(stderr, "Generating %zu (S P *) quads with %zu objects each\n",
@@ -66,12 +73,15 @@ generate(SordWorld world, SordModel sord, size_t n_quads, size_t n_objects_per)
 
 		for (size_t j = 0; j < n_objects_per; ++j) {
 			SordQuad tup = { ids[0], ids[1], ids[2 + j] };
-			sord_add(sord, tup);
-			sord_node_free(world, ids[2 + j]);
+			if (!sord_add(sord, tup)) {
+				fprintf(stderr, "Fail: Failed to add quad\n");
+				return test_fail();
+			}
 		}
 
-		sord_node_free(world, ids[0]);
-		sord_node_free(world, ids[1]);
+		for (size_t j = 0; j < 2 + n_objects_per; ++j) {
+			sord_node_free(world, ids[j]);
+		}
 	}
 
 	// Add some literals
@@ -84,31 +94,40 @@ generate(SordWorld world, SordModel sord, size_t n_quads, size_t n_objects_per)
 	sord_node_free(world, tup[2]);
 	tup[2] = sord_new_literal(world, 0, USTR("hi"), NULL);
 	sord_add(sord, tup);
+	sord_node_free(world, tup[2]);
 
 	tup[0] = uri(world, 14);
 	tup[2] = sord_new_literal(world, 0, USTR("bonjour"), "fr");
 	sord_add(sord, tup);
+	sord_node_free(world, tup[2]);
 	tup[2] = sord_new_literal(world, 0, USTR("salut"), "fr");
 	sord_add(sord, tup);
 
 	// Attempt to add some duplicates
-	sord_add(sord, tup);
-	sord_add(sord, tup);
+	if (sord_add(sord, tup)) {
+		fprintf(stderr, "Fail: Successfully added duplicate quad\n");
+		return test_fail();
+	}
+	if (sord_add(sord, tup)) {
+		fprintf(stderr, "Fail: Successfully added duplicate quad\n");
+		return test_fail();
+	}
 
 	// Add a blank node subject
+	sord_node_free(world, tup[0]);
 	tup[0] = sord_new_blank(world, USTR("ablank"));
 	sord_add(sord, tup);
+	sord_node_free(world, tup[1]);
+	sord_node_free(world, tup[2]);
 
 	tup[1] = uri(world, 6);
 	tup[2] = uri(world, 7);
 	sord_add(sord, tup);
-}
+	sord_node_free(world, tup[0]);
+	sord_node_free(world, tup[1]);
+	sord_node_free(world, tup[2]);
 
-/** Trivial function to return EXIT_FAILURE (useful as a breakpoint) */
-int
-test_fail()
-{
-	return EXIT_FAILURE;
+	return EXIT_SUCCESS;
 }
 
 #define TUP_FMT "(%6s %6s %6s)"
@@ -325,6 +344,9 @@ main(int argc, char** argv)
 	sord_node_free(world, uri_id);
 	sord_node_free(world, blank_id);
 	sord_node_free(world, lit_id);
+	sord_node_free(world, uri_id2);
+	sord_node_free(world, blank_id2);
+	sord_node_free(world, lit_id2);
 	sord_node_free(world, uri_id3);
 	sord_node_free(world, blank_id3);
 	sord_node_free(world, lit_id3);

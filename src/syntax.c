@@ -171,6 +171,10 @@ event_statement(void*           handle,
 	}
 
 	sord_add(state->sord, tup);
+	sord_node_free(state->world, tup[0]);
+	sord_node_free(state->world, tup[1]);
+	sord_node_free(state->world, tup[2]);
+	sord_node_free(state->world, tup[3]);
 
 	return true;
 }

@@ -185,8 +185,12 @@ sord_world_free(SordWorld world)
 static inline int
 sord_node_compare(const SordNode a, const SordNode b)
 {
-	if (!a || !b) {
-		return a - b;
+	if (!a && b) {
+		return 1;
+	} else if (a && !b) {
+		return -1;
+	} else if (!a && !b) {
+		return 0;
 	} else if (a->type != b->type) {
 		return a->type - b->type;
 	}
@@ -203,8 +207,10 @@ sord_node_compare(const SordNode a, const SordNode b)
 			cmp = sord_node_compare(a->datatype, b->datatype);
 		}
 		if (cmp == 0) {
-			if (!a->lang || !b->lang) {
-				cmp = a->lang - b->lang;
+			if (!a->lang && b->lang) {
+				cmp = 1;
+			} else if (a->lang && !b->lang) {
+				cmp = -1;
 			} else {
 				cmp = strcmp(a->lang, b->lang);
 			}
@@ -594,6 +600,7 @@ static void
 sord_add_quad_ref(SordModel sord, const SordNode node)
 {
 	if (node) {
+		assert(node->refs > 0);
 		++node->refs;
 	}
 }
@@ -798,7 +805,7 @@ sord_lookup_literal(SordWorld world, SordNode type,
 	struct _SordNode key;
 	key.type     = SORD_LITERAL;
 	key.n_bytes  = str_len;
-	key.refs     = 0;
+	key.refs     = 1;
 	key.datatype = type;
 	key.lang     = lang ? g_intern_string(lang) : NULL;
 	key.buf      = (uint8_t*)str;
@@ -853,6 +860,7 @@ sord_new_uri_counted(SordWorld world, const uint8_t* str, size_t str_len)
 {
 	SordNode node = sord_lookup_name(world, str, str_len);
 	if (node) {
+		++node->refs;
 		return node;
 	}
 
@@ -873,6 +881,7 @@ sord_new_blank_counted(SordWorld world, const uint8_t* str, size_t str_len)
 {
 	SordNode node = sord_lookup_name(world, str, str_len);
 	if (node) {
+		++node->refs;
 		return node;
 	}
 
@@ -895,12 +904,14 @@ sord_new_literal_counted(SordWorld world, SordNode type,
 {
 	SordNode node = sord_lookup_literal(world, type, str, str_len, lang, lang_len);
 	if (node) {
+		++node->refs;
 		return node;
 	}
 
 	node = sord_new_literal_node(type, str, str_len, lang, lang_len);
 	g_hash_table_insert(world->literals, node, node);  // FIXME: correct?
 	sord_add_node(world, node);
+	assert(node->refs == 1);
 	return node;
 }
 
@@ -941,6 +952,7 @@ sord_node_free(SordWorld world, SordNode node)
 SordNode
 sord_node_copy(SordNode node)
 {
+	++node->refs;
 	return node;
 }
 
@@ -966,17 +978,24 @@ sord_add_to_index(SordModel sord, const SordQuad tup, SordOrder order)
 	return true;
 }
 
-void
+bool
 sord_add(SordModel sord, const SordQuad tup)
 {
 	SORD_WRITE_LOG("Add " TUP_FMT "\n", TUP_FMT_ARGS(tup));
 	assert(tup[0] && tup[1] && tup[2]);
 
+	// FIXME: Remove double search
+	SordIter existing = sord_find(sord, tup);
+	if (existing) {
+		sord_iter_free(existing);
+		return false;
+	}
+
 	for (unsigned i = 0; i < NUM_ORDERS; ++i) {
 		if (sord->indices[i]) {
 			if (!sord_add_to_index(sord, tup, i)) {
 				assert(i == 0); // Assuming index coherency
-				return; // Quad already stored, do nothing
+				return false; // Quad already stored, do nothing
 			}
 		}
 	}
@@ -986,6 +1005,7 @@ sord_add(SordModel sord, const SordQuad tup)
 
 	++sord->n_quads;
 	assert(sord->n_quads == g_sequence_get_length(sord->indices[SPO]));
+	return true;
 }
 
 void

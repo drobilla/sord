@@ -163,7 +163,7 @@ event_statement(void*           handle,
 
 	if (state->graph_uri_node) {
 		assert(graph->type == SERD_NOTHING);
-		tup[3] = state->graph_uri_node;
+		tup[3] = sord_node_copy(state->graph_uri_node);
 	} else {
 		tup[3] = (graph && graph->buf)
 			? sord_node_from_serd_node(state, graph, NULL, NULL)

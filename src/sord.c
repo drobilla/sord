@@ -158,9 +158,10 @@ sord_literal_equal(const void* a, const void* b)
 {
 	SordNode a_node = (SordNode)a;
 	SordNode b_node = (SordNode)b;
-	// FIXME: type, lang
 	return g_str_equal(sord_node_get_string(a_node),
-	                   sord_node_get_string(b_node));
+	                   sord_node_get_string(b_node))
+		&& (a_node->lang == b_node->lang)
+		&& sord_node_equals(a_node->datatype, b_node->datatype);
 }
 
 SordWorld
@@ -184,17 +185,31 @@ sord_world_free(SordWorld world)
 static inline int
 sord_node_compare(const SordNode a, const SordNode b)
 {
-	if (a->type != b->type)
+	if (!a || !b) {
+		return a - b;
+	} else if (a->type != b->type) {
 		return a->type - b->type;
+	}
 
+	int cmp;
 	switch ((SordNodeType)a->type) {
 	case SORD_URI:
 	case SORD_BLANK:
 		return strcmp((const char*)a->buf, (const char*)b->buf);
 	case SORD_LITERAL:
-		// TODO: lang, type
-		return strcmp((const char*)sord_node_get_string(a),
-		              (const char*)sord_node_get_string(b));
+		cmp = strcmp((const char*)sord_node_get_string(a),
+		             (const char*)sord_node_get_string(b));
+		if (cmp == 0) {
+			cmp = sord_node_compare(a->datatype, b->datatype);
+		}
+		if (cmp == 0) {
+			if (!a->lang || !b->lang) {
+				cmp = a->lang - b->lang;
+			} else {
+				cmp = strcmp(a->lang, b->lang);
+			}
+		}
+		return cmp;
 	}
 	assert(false);
 	return 0;
@@ -203,8 +218,12 @@ sord_node_compare(const SordNode a, const SordNode b)
 bool
 sord_node_equals(const SordNode a, const SordNode b)
 {
-	// FIXME: nodes are interned, this can be much faster
-	return sord_node_compare(a, b) == 0;
+	if (!a || !b) {
+		return (a == b);
+	} else {
+		// FIXME: nodes are interned, this can be much faster
+		return (a == b) || (sord_node_compare(a, b) == 0);
+	}
 }
 
 /** Compare two IDs (dereferencing if necessary).
@@ -580,32 +599,9 @@ sord_add_quad_ref(SordModel sord, const SordNode node)
 }
 
 static void
-sord_drop_node(SordModel sord, SordNode node)
+sord_drop_quad_ref(SordModel sord, SordNode node)
 {
-	SordWorld world = sord_get_world(sord);
-	if (node->type == SORD_LITERAL) {
-		if (!g_hash_table_remove(world->literals, node)) {
-			fprintf(stderr, "Failed to remove literal from hash, leak!\n");
-			return;
-		}
-	} else {
-		if (!g_hash_table_remove(world->names, node->buf)) {
-			fprintf(stderr, "Failed to remove resource from hash, leak!\n");
-			return;
-		}
-	}
-	free(node->buf);
-	free(node);
-}
-
-static void
-sord_drop_quad_ref(SordModel sord, const SordNode node)
-{
-	if (node) {
-		if (--node->refs == 0) {
-			sord_drop_node(sord, node);
-		}
-	}
+	sord_node_free(sord_get_world(sord), node);
 }
 
 void
@@ -773,12 +769,12 @@ static SordNode
 sord_new_node(SordNodeType type, const uint8_t* data, size_t n_bytes)
 {
 	SordNode node = malloc(sizeof(struct _SordNode));
-	node->type      = type;
-	node->n_bytes   = n_bytes;
-	node->refs      = 0;
-	node->datatype  = 0;
-	node->lang      = 0;
-	node->buf       = (uint8_t*)g_strdup((const char*)data); // TODO: no-copy
+	node->type     = type;
+	node->n_bytes  = n_bytes;
+	node->refs     = 0;
+	node->datatype = 0;
+	node->lang     = 0;
+	node->buf      = (uint8_t*)g_strdup((const char*)data); // TODO: no-copy
 	return node;
 }
 
@@ -798,10 +794,16 @@ sord_lookup_literal(SordWorld world, SordNode type,
                     const uint8_t* str,  int     str_len,
                     const char*    lang, uint8_t lang_len)
 {
-	// FIXME: double alloc, ick
-	SordNode node = sord_new_literal_node(type, str, str_len, lang, lang_len);
-	SordNode id   = g_hash_table_lookup(world->literals, node);
-	free(node);
+	// Make search key (FIXME: ick)
+	struct _SordNode key;
+	key.type     = SORD_LITERAL;
+	key.n_bytes  = str_len;
+	key.refs     = 0;
+	key.datatype = type;
+	key.lang     = lang ? g_intern_string(lang) : NULL;
+	key.buf      = (uint8_t*)str;
+
+	SordNode id = g_hash_table_lookup(world->literals, &key);
 	if (id) {
 		return id;
 	} else {
@@ -913,8 +915,27 @@ sord_new_literal(SordWorld world, SordNode type,
 }
 
 void
-sord_node_free(SordNode node)
+sord_node_free(SordWorld world, SordNode node)
 {
+	if (!node) {
+		return;
+	}
+
+	if (node->refs == 0 || (--node->refs == 0)) {
+		if (node->type == SORD_LITERAL) {
+			if (!g_hash_table_remove(world->literals, node)) {
+				fprintf(stderr, "Failed to remove literal from hash.\n");
+				return;
+			}
+		} else {
+			if (!g_hash_table_remove(world->names, node->buf)) {
+				fprintf(stderr, "Failed to remove resource from hash.\n");
+				return;
+			}
+		}
+		free(node->buf);
+		free(node);
+	}
 }
 
 SordNode

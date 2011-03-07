@@ -204,7 +204,7 @@ sord_node_copy(SordNode node);
 */
 SORD_API
 void
-sord_node_free(SordNode node);
+sord_node_free(SordWorld world, SordNode node);
 
 /**
    Return the type of a node (SORD_URI, SORD_BLANK, or SORD_LITERAL).

@@ -317,6 +317,12 @@ main(int argc, char** argv)
 		goto fail;
 	}
 
+	sord_node_free(world, uri_id);
+	sord_node_free(world, blank_id);
+	sord_node_free(world, lit_id);
+	sord_node_free(world, uri_id3);
+	sord_node_free(world, blank_id3);
+	sord_node_free(world, lit_id3);
 	sord_free(sord);
 
 	static const char* const index_names[6] = {
@@ -337,6 +343,8 @@ main(int argc, char** argv)
 	  goto fail;
 
 	sord_free(sord);
+
+	sord_world_free(world);
 
 	return EXIT_SUCCESS;
 

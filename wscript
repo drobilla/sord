@@ -58,7 +58,7 @@ def configure(conf):
 	autowaf.display_msg(conf, "Utilities", str(conf.env['BUILD_UTILS']))
 	autowaf.display_msg(conf, "Unit tests", str(conf.env['BUILD_TESTS']))
 	autowaf.display_msg(conf, "Debug dumping", dump)
-	print
+	print('')
 
 def build(bld):
 	# C/C++ Headers

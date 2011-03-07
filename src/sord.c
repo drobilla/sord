@@ -771,7 +771,7 @@ sord_new_node(SordNodeType type, const uint8_t* data, size_t n_bytes)
 	SordNode node = malloc(sizeof(struct _SordNode));
 	node->type     = type;
 	node->n_bytes  = n_bytes;
-	node->refs     = 0;
+	node->refs     = 1;
 	node->datatype = 0;
 	node->lang     = 0;
 	node->buf      = (uint8_t*)g_strdup((const char*)data); // TODO: no-copy
@@ -845,7 +845,6 @@ sord_node_get_datatype(SordNode ref)
 static void
 sord_add_node(SordWorld world, SordNode node)
 {
-	node->refs = 0;
 	++world->n_nodes;
 }
 
@@ -921,7 +920,8 @@ sord_node_free(SordWorld world, SordNode node)
 		return;
 	}
 
-	if (node->refs == 0 || (--node->refs == 0)) {
+	assert(node->refs > 0);
+	if (--node->refs == 0) {
 		if (node->type == SORD_LITERAL) {
 			if (!g_hash_table_remove(world->literals, node)) {
 				fprintf(stderr, "Failed to remove literal from hash.\n");

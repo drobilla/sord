@@ -67,7 +67,11 @@ generate(SordWorld world, SordModel sord, size_t n_quads, size_t n_objects_per)
 		for (size_t j = 0; j < n_objects_per; ++j) {
 			SordQuad tup = { ids[0], ids[1], ids[2 + j] };
 			sord_add(sord, tup);
+			sord_node_free(world, ids[2 + j]);
 		}
+
+		sord_node_free(world, ids[0]);
+		sord_node_free(world, ids[1]);
 	}
 
 	// Add some literals
@@ -77,6 +81,7 @@ generate(SordWorld world, SordModel sord, size_t n_quads, size_t n_objects_per)
 	tup[2] = sord_new_literal(world, 0, (const uint8_t*)"hello", NULL);
 	tup[3] = 0;
 	sord_add(sord, tup);
+	sord_node_free(world, tup[2]);
 	tup[2] = sord_new_literal(world, 0, USTR("hi"), NULL);
 	sord_add(sord, tup);
 

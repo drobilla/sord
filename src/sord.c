@@ -982,7 +982,10 @@ bool
 sord_add(SordModel sord, const SordQuad tup)
 {
 	SORD_WRITE_LOG("Add " TUP_FMT "\n", TUP_FMT_ARGS(tup));
-	assert(tup[0] && tup[1] && tup[2]);
+	if (!tup[0] || !tup[1] || !tup[2]) {
+		fprintf(stderr, "Attempt to add quad with NULL field.\n");
+		return false;
+	}
 
 	// FIXME: Remove double search
 	SordIter existing = sord_find(sord, tup);

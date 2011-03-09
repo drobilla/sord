@@ -161,8 +161,9 @@ public:
 	}
 
 	const Node& operator=(const Node& other) {
-		if (_c_obj)
+		if (_c_obj) {
 			sord_node_free(_world->c_obj(), _c_obj);
+		}
 		_world = other._world;
 		_c_obj = other._c_obj ? sord_node_copy(other._c_obj) : NULL;
 		return *this;

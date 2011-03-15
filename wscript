@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-import autowaf
-import Options
+import waflib.Options as Options
+from waflib.extras import autowaf as autowaf
 
 # Version of this package (even if built as a child)
 SORD_VERSION = '0.1.0'
@@ -31,7 +31,7 @@ def configure(conf):
 	autowaf.configure(conf)
 	autowaf.display_header('Sord configuration')
 
-	conf.check_tool('compiler_cc')
+	conf.load('compiler_cc')
 	conf.env.append_value('CFLAGS', '-std=c99')
 
 	autowaf.check_pkg(conf, 'glib-2.0', uselib_store='GLIB',
@@ -46,13 +46,13 @@ def configure(conf):
 	dump = Options.options.dump.split(',')
 	all = 'all' in dump
 	if all or 'iter' in dump:
-		conf.define('SORD_DEBUG_ITER', 1)
+		autowaf.define(conf, 'SORD_DEBUG_ITER', 1)
 	if all or 'search' in dump:
-		conf.define('SORD_DEBUG_SEARCH', 1)
+		autowaf.define(conf, 'SORD_DEBUG_SEARCH', 1)
 	if all or 'write' in dump:
-		conf.define('SORD_DEBUG_WRITE', 1)
+		autowaf.define(conf, 'SORD_DEBUG_WRITE', 1)
 
-	conf.define('SORD_VERSION', SORD_VERSION)
+	autowaf.define(conf, 'SORD_VERSION', SORD_VERSION)
 	conf.write_config_header('sord-config.h', remove=False)
 
 	autowaf.display_msg(conf, "Utilities", str(conf.env['BUILD_UTILS']))

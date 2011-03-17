@@ -67,15 +67,38 @@ extern "C" {
    @{
 */
 
-typedef struct _SordWorld* SordWorld;  /**< Sord world (library state) */
-typedef struct _SordModel* SordModel;  /**< Quad store */
-typedef struct _SordIter*  SordIter;   /**< Store iterator */
-typedef struct _SordNode*  SordNode;   /**< Node */
+/**
+   Sord World.
+   The World represents all library state, including interned strings.
+*/
+typedef struct _SordWorld* SordWorld;
+
+/**
+   Sord Model.
+
+   A model is an indexed set of Quads (i.e. it can contain several RDF
+   graphs). It may be searched using various patterns depending on which
+   indices are enabled.
+*/
+typedef struct _SordModel* SordModel;
+
+/**
+   Model Iterator.
+*/
+typedef struct _SordIter* SordIter;
+
+/**
+   RDF Node.
+   A Node is a component of a Quad. Nodes may be URIs, blank nodes, or
+   (in the case of quad objects only) string literals. Literal nodes may
+   have an associate language or datatype (but not both).
+*/
+typedef struct _SordNode* SordNode;
 
 /**
    Quad of IDs (statement), or a quad pattern.
 
-   Nodes are ordered (S P O G).  The ID of the default graph is 0.
+   Nodes are ordered (S P O G). The ID of the default graph is 0.
 */
 typedef SordNode SordQuad[4];
 
@@ -112,15 +135,14 @@ typedef enum {
 
 /**
    @name World
-   The World represents all library state, including interned strings.  It is
-   safe to use multiple worlds in one process, though no data (e.g. nodes) can
-   be shared between worlds, and this should be avoided if possible for
-   performance reasons.
    @{
 */
 
 /**
    Create a new Sord World.
+   It is safe to use multiple worlds in one process, though no data
+   (e.g. nodes) can be shared between worlds, and this should be avoided if
+   possible for performance reasons.
 */
 SORD_API
 SordWorld
@@ -135,10 +157,7 @@ sord_world_free(SordWorld world);
 
 /**
    @}
-   @name Nodes
-   A Node is a component of a Quad.  Nodes may be URIs, blank nodes, or
-   (in the case of quad objects only) string literals.  Literal nodes may
-   have an associate language or datatype (but not both).
+   @name Node
    @{
 */
 
@@ -272,7 +291,7 @@ sord_node_equals(const SordNode a,
 
    @param world The world in which to make this store.
 
-   @param indices SordIndexOption flags (e.g. SORD_SPO|SORD_OPS).  Be sure to
+   @param indices SordIndexOption flags (e.g. SORD_SPO|SORD_OPS). Be sure to
    enable an index where the most significant node(s) are not variables in your
    queries (e.g. to make (? P O) queries, enable either SORD_OPS or SORD_POS).
 

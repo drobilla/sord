@@ -1,6 +1,8 @@
 #!/usr/bin/env python
-import waflib.Options as Options
+import os
+
 from waflib.extras import autowaf as autowaf
+import waflib.Logs as Logs, waflib.Options as Options
 
 # Version of this package (even if built as a child)
 SORD_VERSION = '0.1.0'
@@ -118,7 +120,7 @@ def build(bld):
 	# Documentation
 	autowaf.build_dox(bld, 'SORD', SORD_VERSION, top, out)
 
-def fixdocs(ctx):
+def fix_docs(ctx):
     try:
         os.chdir('build/doc/html')
         os.system("sed -i 's/SORD_API //' group__sord.html")
@@ -127,7 +129,10 @@ def fixdocs(ctx):
         os.symlink('group__sord.html',
                    'index.html')
     except Exception as e:
-        Logs.error("Failed to fix up Doxygen documentation\n")
+        Logs.error("Failed to fix up Doxygen documentation (%s)\n" % e)
+
+def upload_docs(ctx):
+    os.system("rsync -avz --delete -e ssh build/doc/html/* drobilla@drobilla.net:~/drobilla.net/docs/sord")
 
 def test(ctx):
 	autowaf.pre_test(ctx, APPNAME)

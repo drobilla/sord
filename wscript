@@ -117,7 +117,18 @@ def build(bld):
 
 	# Documentation
 	autowaf.build_dox(bld, 'SORD', SORD_VERSION, top, out)
-	
+
+def fixdocs(ctx):
+    try:
+        os.chdir('build/doc/html')
+        os.system("sed -i 's/SORD_API //' group__sord.html")
+        os.system("sed -i 's/SORD_DEPRECATED //' group__sord.html")
+        os.remove('index.html')
+        os.symlink('group__sord.html',
+                   'index.html')
+    except Exception as e:
+        Logs.error("Failed to fix up Doxygen documentation\n")
+
 def test(ctx):
 	autowaf.pre_test(ctx, APPNAME)
 	autowaf.run_tests(ctx, APPNAME, ['./sord_test'])

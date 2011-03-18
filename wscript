@@ -82,7 +82,7 @@ def build(bld):
     obj.cflags          = [ '-fvisibility=hidden', '-DSORD_SHARED', '-DSORD_INTERNAL' ]
     obj.libs            = [ 'm' ]
     autowaf.use_lib(bld, obj, 'GLIB SERD')
-    
+
     if bld.env['BUILD_TESTS']:
         # Static library (for unit test code coverage)
         obj = bld(features = 'c cstlib')

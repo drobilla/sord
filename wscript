@@ -120,6 +120,8 @@ def build(bld):
 	# Documentation
 	autowaf.build_dox(bld, 'SORD', SORD_VERSION, top, out)
 
+	bld.add_post_fun(autowaf.run_ldconfig)
+
 def fix_docs(ctx):
     try:
         os.chdir('build/doc/html')

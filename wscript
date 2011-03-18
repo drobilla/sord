@@ -71,51 +71,55 @@ def build(bld):
     autowaf.build_pc(bld, 'SORD', SORD_VERSION, [])
 
     # Library
-    obj = bld(features = 'c cshlib')
-    obj.source          = 'src/sord.c src/syntax.c'
-    obj.includes        = ['.', './src']
-    obj.export_includes = ['.']
-    obj.name            = 'libsord'
-    obj.target          = 'sord'
-    obj.vnum            = SORD_LIB_VERSION
-    obj.install_path    = '${LIBDIR}'
-    obj.cflags          = [ '-fvisibility=hidden', '-DSORD_SHARED', '-DSORD_INTERNAL' ]
-    obj.libs            = [ 'm' ]
+    obj = bld(features        = 'c cshlib',
+              source          = 'src/sord.c src/syntax.c',
+              includes        = ['.', './src'],
+              export_includes = ['.'],
+              name            = 'libsord',
+              target          = 'sord',
+              vnum            = SORD_LIB_VERSION,
+              install_path    = '${LIBDIR}',
+              libs            = [ 'm' ],
+              cflags          = [ '-fvisibility=hidden',
+                                  '-DSORD_SHARED',
+                                  '-DSORD_INTERNAL' ])
     autowaf.use_lib(bld, obj, 'GLIB SERD')
 
     if bld.env['BUILD_TESTS']:
+        test_cflags = [ '-fprofile-arcs',  '-ftest-coverage' ],
+
         # Static library (for unit test code coverage)
-        obj = bld(features = 'c cstlib')
-        obj.source       = 'src/sord.c src/syntax.c'
-        obj.includes     = ['.', './src']
-        obj.name         = 'libsord_static'
-        obj.target       = 'sord_static'
-        obj.install_path = ''
-        obj.cflags       = [ '-fprofile-arcs',  '-ftest-coverage' ]
-        obj.libs         = [ 'm' ]
+        obj = bld(features     = 'c cstlib',
+                  source       = 'src/sord.c src/syntax.c',
+                  includes     = ['.', './src'],
+                  name         = 'libsord_static',
+                  target       = 'sord_static',
+                  install_path = '',
+                  cflags       = test_cflags,
+                  libs         = [ 'm' ])
         autowaf.use_lib(bld, obj, 'GLIB SERD')
 
         # Unit test program
-        obj = bld(features = 'c cprogram')
-        obj.source       = 'src/sord_test.c'
-        obj.includes     = ['.', './src']
-        obj.use          = 'libsord_static'
-        obj.linkflags    = '-lgcov'
-        obj.target       = 'sord_test'
-        obj.install_path = ''
-        obj.cflags       = [ '-fprofile-arcs',  '-ftest-coverage' ]
+        obj = bld(features     = 'c cprogram',
+                  source       = 'src/sord_test.c',
+                  includes     = ['.', './src'],
+                  use          = 'libsord_static',
+                  linkflags    = '-lgcov',
+                  target       = 'sord_test',
+                  install_path = '',
+                  cflags       = test_cflags)
         autowaf.use_lib(bld, obj, 'GLIB SERD')
 
         # Unit test programa
         if bld.env['BUILD_UTILS']:
-            obj = bld(features = 'c cprogram')
-            obj.source       = 'src/sordi.c'
-            obj.includes     = ['.', './src']
-            obj.use          = 'libsord_static'
-            obj.linkflags    = '-lgcov'
-            obj.target       = 'sordi_static'
-            obj.install_path = ''
-            obj.cflags       = [ '-fprofile-arcs',  '-ftest-coverage' ]
+            obj = bld(features     = 'c cprogram',
+                      source       = 'src/sordi.c',
+                      includes     = ['.', './src'],
+                      use          = 'libsord_static',
+                      linkflags    = '-lgcov',
+                      target       = 'sordi_static',
+                      install_path = '',
+                      cflags       = test_cflags)
 
     # Documentation
     autowaf.build_dox(bld, 'SORD', SORD_VERSION, top, out)

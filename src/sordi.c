@@ -42,10 +42,9 @@ typedef struct {
 int
 print_version()
 {
-	printf("sordi " SORD_VERSION " <http://drobilla.net/software/serd>\n");
+	printf("sordi " SORD_VERSION " <http://drobilla.net/software/sord>\n");
 	printf("Copyright (C) 2011 David Robillard <http://drobilla.net>.\n"
-	       "\nLicense: GNU LGPL version 3 or later "
-	       "<http://gnu.org/licenses/lgpl.html>.\n"
+	       "\nLicense: Simplified BSD License.\n"
 	       "This is free software; you are free to change and redistribute it."
 	       "\nThere is NO WARRANTY, to the extent permitted by law.\n");
 	return 0;

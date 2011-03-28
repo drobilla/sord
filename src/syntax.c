@@ -188,8 +188,13 @@ sord_file_uri_to_path(const uint8_t* uri)
 		if (strncmp((const char*)uri, "file:", 5)) {
 			fprintf(stderr, "unsupported URI scheme `%s'\n", uri);
 			return NULL;
+#ifdef __WIN32__
+		} else if (!strncmp((const char*)uri, "file:///", 8)) {
+			filename = uri + 8;
+#else
 		} else if (!strncmp((const char*)uri, "file://", 7)) {
 			filename = uri + 7;
+#endif
 		} else {
 			filename = uri + 5;
 		}
@@ -208,11 +213,13 @@ sord_read_file(SordModel      model,
 {
 	const uint8_t* const path = sord_file_uri_to_path(uri);
 	if (!path) {
+		fprintf(stderr, "unable to read non-file URI `%s'\n", uri);
 		return false;
 	}
 
-	FILE* const fd = fopen((const char*)path,  "r");
+	FILE* const fd = fopen((const char*)path, "r");
 	if (!fd) {
+		fprintf(stderr, "failed to open file `%s'\n", path);
 		return false;
 	}
 

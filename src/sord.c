@@ -152,7 +152,7 @@ sord_literal_hash(const void* n)
 	SordNode node = (SordNode)n;
 	return g_str_hash(node->buf) + (node->lang ? g_str_hash(node->lang) : 0);
 }
-		
+
 static gboolean
 sord_literal_equal(const void* a, const void* b)
 {
@@ -1015,7 +1015,7 @@ void
 sord_remove(SordModel sord, const SordQuad tup)
 {
 	SORD_WRITE_LOG("Remove " TUP_FMT "\n", TUP_FMT_ARGS(tup));
-		
+
 	for (unsigned i = 0; i < NUM_ORDERS; ++i) {
 		if (sord->indices[i]) {
 			const int* const ordering = orderings[i];
@@ -1045,7 +1045,7 @@ sord_remove_iter(SordModel sord, SordIter iter)
 	sord_iter_get(iter, tup);
 
 	SORD_WRITE_LOG("Remove " TUP_FMT "\n", TUP_FMT_ARGS(tup));
-	
+
 	// TODO: Directly remove the iterator's index (avoid one search)
 
 	for (unsigned i = 0; i < NUM_ORDERS; ++i) {
@@ -1062,7 +1062,7 @@ sord_remove_iter(SordModel sord, SordIter iter)
 			}
 		}
 	}
-	
+
 	for (int i = 0; i < TUP_LEN; ++i)
 		sord_drop_quad_ref(sord, tup[i]);
 

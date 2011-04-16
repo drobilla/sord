@@ -269,7 +269,7 @@ test_write(SordModel sord, const size_t n_quads, const int n_objects_per)
 	int ret = EXIT_SUCCESS;
 
 	fprintf(stderr, "Removing Statements... ");
-	
+
 	// Remove statements
 	SordIter iter;
 	for (iter = sord_begin(sord); !sord_iter_end(iter);) {
@@ -284,7 +284,7 @@ test_write(SordModel sord, const size_t n_quads, const int n_objects_per)
 	}
 
 	fprintf(stderr, "OK\n\n");
-	
+
 	return ret;
 }
 

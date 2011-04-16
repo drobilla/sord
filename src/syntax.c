@@ -284,7 +284,7 @@ sord_read_string(SordModel      model,
 	}
 
 	SerdEnv env = serd_env_new();
-	
+
 	SerdReadState read_state = serd_read_state_new(env, base_uri_str);
 
 	ReadState state = { NULL, env, read_state, NULL,
@@ -353,11 +353,11 @@ sord_write(const SordModel model,
 		sord_node_to_serd_node(quad[SORD_SUBJECT],   &subject);
 		sord_node_to_serd_node(quad[SORD_PREDICATE], &predicate);
 		sord_node_to_serd_node(quad[SORD_OBJECT],    &object);
-		
+
 		sord_node_to_serd_node(sord_node_get_datatype(quad[SORD_OBJECT]), &datatype);
 		const char* lang_str = sord_node_get_language(quad[SORD_OBJECT]);
 		size_t      lang_len = lang_str ? strlen(lang_str) : 0;
-		
+
 		SerdNode language = SERD_NODE_NULL;
 		if (lang_str) {
 			language.type    = SERD_LITERAL;
@@ -365,13 +365,12 @@ sord_write(const SordModel model,
 			language.n_chars = lang_len; // FIXME: UTF-8
 			language.buf     = (const uint8_t*)lang_str;
 		};
-			    
+
 		serd_writer_write_statement(writer, &s_graph,
 		                            &subject, &predicate, &object,
 		                            &datatype, &language);
 	}
 }
-
 
 static SerdWriter
 make_writer(SerdEnv        env,

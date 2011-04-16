@@ -109,7 +109,7 @@ public:
 	inline ~World() {
 		sord_world_free(_c_obj);
 	}
-	
+
 	inline uint64_t blank_id() { return _next_blank_id++; }
 
 	inline void add_prefix(const std::string& prefix, const std::string& uri) {
@@ -370,7 +370,6 @@ struct Iter : public Wrapper<SordIter> {
 	}
 	World& _world;
 };
-
 
 /** An RDF Model (collection of triples).
  */

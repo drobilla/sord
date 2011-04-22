@@ -57,8 +57,8 @@ def configure(conf):
     autowaf.define(conf, 'SORD_VERSION', SORD_VERSION)
     conf.write_config_header('sord-config.h', remove=False)
 
-    autowaf.display_msg(conf, "Utilities", str(conf.env['BUILD_UTILS']))
-    autowaf.display_msg(conf, "Unit tests", str(conf.env['BUILD_TESTS']))
+    autowaf.display_msg(conf, "Utilities", bool(conf.env['BUILD_UTILS']))
+    autowaf.display_msg(conf, "Unit tests", bool(conf.env['BUILD_TESTS']))
     autowaf.display_msg(conf, "Debug dumping", dump)
     print('')
 
@@ -86,7 +86,7 @@ def build(bld):
     autowaf.use_lib(bld, obj, 'GLIB SERD')
 
     if bld.env['BUILD_TESTS']:
-        test_cflags = [ '-fprofile-arcs',  '-ftest-coverage' ],
+        test_cflags = [ '-fprofile-arcs',  '-ftest-coverage' ]
 
         # Static library (for unit test code coverage)
         obj = bld(features     = 'c cstlib',
@@ -142,5 +142,5 @@ def upload_docs(ctx):
 
 def test(ctx):
     autowaf.pre_test(ctx, APPNAME)
-    autowaf.run_tests(ctx, APPNAME, ['./sord_test'])
+    autowaf.run_tests(ctx, APPNAME, ['sord_test'])
     autowaf.post_test(ctx, APPNAME)

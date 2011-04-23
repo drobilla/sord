@@ -65,7 +65,7 @@ serd_node_from_sord_node(const SordNode n)
 {
 	size_t         n_bytes = 0;
 	const uint8_t* buf     = sord_node_get_string_counted(n, &n_bytes);
-	SerdNode       sn      = { SERD_NOTHING, n_bytes, n_bytes - 1, (const uint8_t*)buf };
+	SerdNode       sn      = { (const uint8_t*)buf, n_bytes, n_bytes - 1, SERD_NOTHING };
 	// FIXME: UTF-8
 	switch (sord_node_get_type(n)) {
 	case SORD_URI:

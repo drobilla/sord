@@ -58,7 +58,7 @@ public:
 
 	static inline SerdNode string_to_node(SerdType type, const std::string& s) {
 		SerdNode ret = {
-			type, s.length() + 1, s.length(), (const uint8_t*)s.c_str() };
+			(const uint8_t*)s.c_str(), s.length() + 1, s.length(), type };
 		return ret;
 	}
 

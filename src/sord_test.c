@@ -76,17 +76,18 @@ generate(SordWorld world, SordModel sord, size_t n_quads, size_t n_objects_per)
 	}
 
 	// Add some literals
-	SordQuad tup;
+	SordQuad tup = { 0, 0, 0, 0};
 	tup[0] = uri(world, 98);
 	tup[1] = uri(world, 4);
-	tup[2] = sord_new_literal(world, 0, (const uint8_t*)"hello", NULL);
+	tup[2] = sord_new_literal(world, 0, USTR("hello"), NULL);
 	tup[3] = 0;
 	sord_add(sord, tup);
 	sord_node_free(world, tup[2]);
 	tup[2] = sord_new_literal(world, 0, USTR("hi"), NULL);
 	sord_add(sord, tup);
-	sord_node_free(world, tup[2]);
 
+	sord_node_free(world, tup[0]);
+	sord_node_free(world, tup[2]);
 	tup[0] = uri(world, 14);
 	tup[2] = sord_new_literal(world, 0, USTR("bonjour"), "fr");
 	sord_add(sord, tup);
@@ -108,9 +109,9 @@ generate(SordWorld world, SordModel sord, size_t n_quads, size_t n_objects_per)
 	sord_node_free(world, tup[0]);
 	tup[0] = sord_new_blank(world, USTR("ablank"));
 	sord_add(sord, tup);
+
 	sord_node_free(world, tup[1]);
 	sord_node_free(world, tup[2]);
-
 	tup[1] = uri(world, 6);
 	tup[2] = uri(world, 7);
 	sord_add(sord, tup);
@@ -210,6 +211,7 @@ test_read(SordWorld world, SordModel sord, const size_t n_quads, const int n_obj
 		}
 	}
 	fprintf(stderr, "OK\n");
+	sord_node_free(world, pat[0]);
 	sord_iter_free(iter);
 	if (num_results != 2) {
 		fprintf(stderr, "Blank node subject query failed\n");
@@ -282,7 +284,7 @@ test_write(SordModel sord, const size_t n_quads, const int n_objects_per)
 int
 main(int argc, char** argv)
 {
-	static const size_t n_quads      = 300;
+	static const size_t n_quads       = 300;
 	static const int    n_objects_per = 2;
 
 	sord_free(NULL); // Shouldn't crash
@@ -295,6 +297,7 @@ main(int argc, char** argv)
 
 	if (test_read(world, sord, n_quads, n_objects_per)) {
 		sord_free(sord);
+		sord_world_free(world);
 		return EXIT_FAILURE;
 	}
 
@@ -361,12 +364,12 @@ main(int argc, char** argv)
 	  goto fail;
 
 	sord_free(sord);
-
 	sord_world_free(world);
 
 	return EXIT_SUCCESS;
 
 fail:
 	sord_free(sord);
+	sord_world_free(world);
 	return EXIT_FAILURE;
 }

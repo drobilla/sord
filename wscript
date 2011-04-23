@@ -142,5 +142,5 @@ def upload_docs(ctx):
 
 def test(ctx):
     autowaf.pre_test(ctx, APPNAME)
-    autowaf.run_tests(ctx, APPNAME, ['sord_test'])
+    autowaf.run_tests(ctx, APPNAME, ['./sord_test'])
     autowaf.post_test(ctx, APPNAME)

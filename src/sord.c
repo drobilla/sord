@@ -150,10 +150,11 @@ sord_literal_equal(const void* a, const void* b)
 {
 	SordNode a_node = (SordNode)a;
 	SordNode b_node = (SordNode)b;
-	return g_str_equal(sord_node_get_string(a_node),
-	                   sord_node_get_string(b_node))
-		&& (a_node->lang == b_node->lang)
-		&& sord_node_equals(a_node->datatype, b_node->datatype);
+	return (a_node == b_node)
+		|| (g_str_equal(sord_node_get_string(a_node),
+		                sord_node_get_string(b_node))
+		    && (a_node->lang == b_node->lang)
+		    && (a_node->datatype == b_node->datatype));
 }
 
 SordWorld
@@ -179,12 +180,10 @@ sord_world_free(SordWorld world)
 static inline int
 sord_node_compare(const SordNode a, const SordNode b)
 {
-	if (!a && b) {
-		return 1;
-	} else if (a && !b) {
-		return -1;
-	} else if (!a && !b) {
+	if (a == b) {
 		return 0;
+	} else if (!a || !b) {
+		return a - b;
 	} else if (a->type != b->type) {
 		return a->type - b->type;
 	}
@@ -201,10 +200,8 @@ sord_node_compare(const SordNode a, const SordNode b)
 			cmp = sord_node_compare(a->datatype, b->datatype);
 		}
 		if (cmp == 0) {
-			if (!a->lang && b->lang) {
-				cmp = 1;
-			} else if (a->lang && !b->lang) {
-				cmp = -1;
+			if (!a->lang || !b->lang) {
+				cmp = a->lang - b->lang;
 			} else {
 				cmp = strcmp(a->lang, b->lang);
 			}

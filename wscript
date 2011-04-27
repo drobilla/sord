@@ -121,16 +121,26 @@ def build(bld):
                   cflags       = test_cflags)
         autowaf.use_lib(bld, obj, 'GLIB SERD')
 
+    # Static command line utility (for testing)
+        if bld.env['BUILD_UTILS']:
+            obj = bld(features     = 'c cprogram',
+                      source       = 'src/sordi.c',
+                      includes     = ['.', './src'],
+                      use          = 'libsord_static',
+                      linkflags    = '-lgcov',
+                      target       = 'sordi_static',
+                      install_path = '',
+                      cflags       = test_cflags)
+
     # Command line utility
     if bld.env['BUILD_UTILS']:
         obj = bld(features     = 'c cprogram',
                   source       = 'src/sordi.c',
                   includes     = ['.', './src'],
-                  use          = 'libsord_static',
+                  use          = 'libsord',
                   linkflags    = '-lgcov',
-                  target       = 'sordi_static',
-                  install_path = '',
-                  cflags       = test_cflags)
+                  target       = 'sordi',
+                  install_path = '${BINDIR}')
 
     # Documentation
     autowaf.build_dox(bld, 'SORD', SORD_VERSION, top, out)

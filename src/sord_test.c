@@ -257,31 +257,6 @@ test_read(SordWorld world, SordModel sord, const size_t n_quads, const int n_obj
 }
 
 int
-test_write(SordModel sord, const size_t n_quads, const int n_objects_per)
-{
-	int ret = EXIT_SUCCESS;
-
-	fprintf(stderr, "Removing Statements... ");
-
-	// Remove statements
-	SordIter iter;
-	for (iter = sord_begin(sord); !sord_iter_end(iter);) {
-		sord_remove_iter(sord, iter);
-	}
-	sord_iter_free(iter);
-
-	const int num_quads = sord_num_quads(sord);
-	if (num_quads != 0) {
-		fprintf(stderr, "Fail: All quads removed but %d quads remain\n", num_quads);
-		return test_fail();
-	}
-
-	fprintf(stderr, "OK\n\n");
-
-	return ret;
-}
-
-int
 main(int argc, char** argv)
 {
 	static const size_t n_quads       = 300;
@@ -359,11 +334,6 @@ main(int argc, char** argv)
 		sord_free(sord);
 	}
 
-	sord = sord_new(world, SORD_SPO, false);
-	if (test_write(sord, n_quads, n_objects_per))
-	  goto fail;
-
-	sord_free(sord);
 	sord_world_free(world);
 
 	return EXIT_SUCCESS;

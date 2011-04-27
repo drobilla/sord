@@ -356,28 +356,11 @@ sord_add(SordModel model, const SordQuad quad);
 /**
    Remove a quad from the store.
 
-   This function invalidates all iterators to @a sord (use sord_remove_iter
-   if this is undesirable)
+   Note that is it illegal to remove while iterator over @a model.
 */
 SORD_API
 void
 sord_remove(SordModel model, const SordQuad quad);
-
-/**
-   Remove a quad from the store by iterator.
-
-   @a iter will be incremented to point at the next value.
-*/
-SORD_API
-void
-sord_remove_iter(SordModel model, SordIter iter);
-
-/**
-   Remove a graph from the store.
-*/
-SORD_API
-void
-sord_remove_graph(SordModel model, SordNode graph);
 
 /**
    @}

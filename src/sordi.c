@@ -137,7 +137,7 @@ main(int argc, char** argv)
 	SordQuad pat = { 0, 0, 0, 0 };
 	SordIter* iter = sord_find(sord, pat);
 	for (; !sord_iter_end(iter); sord_iter_next(iter)) {
-		SordQuadConst tup;
+		SordQuad tup;
 		sord_iter_get(iter, tup);
 		const SordNode* s  = tup[SORD_SUBJECT];
 		const SordNode* p  = tup[SORD_PREDICATE];

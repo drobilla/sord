@@ -24,12 +24,11 @@
 
 #include <cassert>
 #include <cstring>
+#include <cstdlib>
 #include <iostream>
 #include <set>
 #include <string>
-
-#include <boost/utility.hpp>
-#include <glibmm/ustring.h>
+#include <sstream>
 
 #include "serd/serd.h"
 #include "sord/sord.h"
@@ -37,6 +36,16 @@
 #define SORD_NS_XSD "http://www.w3.org/2001/XMLSchema#"
 
 namespace Sord {
+
+/** Utility base class to prevent copying. */
+class Noncopyable {
+protected:
+	Noncopyable() {}
+	~Noncopyable() {}
+private:
+	Noncopyable(const Noncopyable&);
+	const Noncopyable& operator=(const Noncopyable&);
+};
 
 /** C++ wrapper for a Sord object. */
 template <typename T>
@@ -97,7 +106,7 @@ public:
 };
 
 /** Sord library state. */
-class World : public boost::noncopyable, public Wrapper<SordWorld*> {
+class World : public Noncopyable, public Wrapper<SordWorld*> {
 public:
 	inline World()
 		: _next_blank_id(0)
@@ -374,22 +383,22 @@ struct Iter : public Wrapper<SordIter*> {
 
 /** An RDF Model (collection of triples).
  */
-class Model : public boost::noncopyable, public Wrapper<SordModel*> {
+class Model : public Noncopyable, public Wrapper<SordModel*> {
 public:
-	inline Model(World& world, const Glib::ustring& base_uri=".");
+	inline Model(World& world, const std::string& base_uri=".");
 	inline ~Model();
 
 	inline const Node& base_uri() const { return _base; }
 
-	inline void load_file(const Glib::ustring& uri);
+	inline void load_file(const std::string& uri);
 
-	inline void load_string(const char*          str,
-	                        size_t               len,
-	                        const Glib::ustring& base_uri,
-	                        const std::string    lang = "turtle");
+	inline void load_string(const char*        str,
+	                        size_t             len,
+	                        const std::string& base_uri,
+	                        const std::string  lang = "turtle");
 
 	inline void  write_to_file_handle(FILE* fd, const char* lang);
-	inline void  write_to_file(const Glib::ustring& uri, const char* lang);
+	inline void  write_to_file(const std::string& uri, const char* lang);
 
 	inline std::string write_to_string(const char* lang);
 
@@ -413,7 +422,7 @@ private:
 /** Create an empty in-memory RDF model.
  */
 inline
-Model::Model(World& world, const Glib::ustring& base_uri)
+Model::Model(World& world, const std::string& base_uri)
 	: _world(world)
 	, _base(world, Node::URI, base_uri)
 	, _writer(NULL)
@@ -423,10 +432,10 @@ Model::Model(World& world, const Glib::ustring& base_uri)
 }
 
 inline void
-Model::load_string(const char*          str,
-                   size_t               len,
-                   const Glib::ustring& base_uri,
-                   const std::string    lang)
+Model::load_string(const char*        str,
+                   size_t             len,
+                   const std::string& base_uri,
+                   const std::string  lang)
 {
 	sord_read_string(_c_obj,
 	                 (const uint8_t*)str,
@@ -439,7 +448,7 @@ inline Model::~Model()
 }
 
 inline void
-Model::load_file(const Glib::ustring& data_uri)
+Model::load_file(const std::string& data_uri)
 {
 	// FIXME: blank prefix
 	sord_read_file(_c_obj, (const uint8_t*)data_uri.c_str(), NULL,
@@ -458,7 +467,7 @@ Model::write_to_file_handle(FILE* fd, const char* lang)
 }
 
 inline void
-Model::write_to_file(const Glib::ustring& uri, const char* lang)
+Model::write_to_file(const std::string& uri, const char* lang)
 {
 	sord_write_file(_c_obj,
 	                _world.prefixes().c_obj(),

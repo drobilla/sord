@@ -23,11 +23,11 @@
 #include "sord-config.h"
 
 typedef struct {
-	SerdWriter writer;
-	SerdEnv    env;
-	SerdNode   base_uri_node;
-	SerdURI    base_uri;
-	SordModel  sord;
+	SerdWriter* writer;
+	SerdEnv*    env;
+	SerdNode    base_uri_node;
+	SerdURI     base_uri;
+	SordModel   sord;
 } State;
 
 int
@@ -129,9 +129,9 @@ main(int argc, char** argv)
 		return 1;
 	}
 
-	SerdEnv    env    = serd_env_new();
-	SerdWriter writer = serd_writer_new(SERD_TURTLE, SERD_STYLE_ABBREVIATED,
-	                                    env, &base_uri, file_sink, stdout);
+	SerdEnv*    env    = serd_env_new();
+	SerdWriter* writer = serd_writer_new(SERD_TURTLE, SERD_STYLE_ABBREVIATED,
+	                                     env, &base_uri, file_sink, stdout);
 
 	// Query
 	SordQuad pat = { 0, 0, 0, 0 };

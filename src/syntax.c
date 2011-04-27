@@ -26,12 +26,12 @@
 #include "sord_internal.h"
 
 typedef struct {
-	SerdReader    reader;
-	SerdEnv       env;
-	SerdReadState read_state;
-	SordNode      graph_uri_node;
-	SordWorld     world;
-	SordModel     sord;
+	SerdReader*    reader;
+	SerdEnv*       env;
+	SerdReadState* read_state;
+	SordNode       graph_uri_node;
+	SordWorld      world;
+	SordModel      sord;
 } ReadState;
 
 static uint8_t*
@@ -235,9 +235,9 @@ sord_read_file_handle(SordModel      model,
 		fprintf(stderr, "invalid base URI `%s'\n", base_uri_str);
 	}
 
-	SerdEnv env = serd_env_new();
+	SerdEnv* env = serd_env_new();
 
-	SerdReadState read_state = serd_read_state_new(env, base_uri_str);
+	SerdReadState* read_state = serd_read_state_new(env, base_uri_str);
 
 	ReadState state = { NULL, env, read_state, graph,
 	                    sord_get_world(model), model };
@@ -274,9 +274,9 @@ sord_read_string(SordModel      model,
 		fprintf(stderr, "invalid base URI `%s'\n", base_uri_str);
 	}
 
-	SerdEnv env = serd_env_new();
+	SerdEnv* env = serd_env_new();
 
-	SerdReadState read_state = serd_read_state_new(env, base_uri_str);
+	SerdReadState* read_state = serd_read_state_new(env, base_uri_str);
 
 	ReadState state = { NULL, env, read_state, NULL,
 	                    sord_get_world(model), model };
@@ -298,7 +298,7 @@ sord_read_string(SordModel      model,
 SORD_API
 bool
 sord_write_file(SordModel      model,
-                SerdEnv        env,
+                SerdEnv*       env,
                 const uint8_t* uri,
                 const SordNode graph,
                 const uint8_t* blank_prefix)
@@ -329,7 +329,7 @@ file_sink(const void* buf, size_t len, void* stream)
 static void
 sord_write(const SordModel model,
            const SordNode  graph,
-           SerdWriter      writer)
+           SerdWriter*     writer)
 {
 	SerdNode s_graph;
 	sord_node_to_serd_node(graph, &s_graph);
@@ -363,8 +363,8 @@ sord_write(const SordModel model,
 	}
 }
 
-static SerdWriter
-make_writer(SerdEnv        env,
+static SerdWriter*
+make_writer(SerdEnv*       env,
             const uint8_t* base_uri_str_in,
             SerdSink       sink,
             void*          stream)
@@ -376,12 +376,12 @@ make_writer(SerdEnv        env,
 		fprintf(stderr, "invalid base URI `%s'\n", base_uri_str);
 	}
 
-	SerdWriter writer = serd_writer_new(SERD_TURTLE,
-	                                    SERD_STYLE_ABBREVIATED|SERD_STYLE_CURIED,
-	                                    env,
-	                                    &base_uri,
-	                                    sink,
-	                                    stream);
+	SerdWriter* writer = serd_writer_new(SERD_TURTLE,
+	                                     SERD_STYLE_ABBREVIATED|SERD_STYLE_CURIED,
+	                                     env,
+	                                     &base_uri,
+	                                     sink,
+	                                     stream);
 
 	serd_env_foreach(env,
 	                 (SerdPrefixSink)serd_writer_set_prefix,
@@ -393,13 +393,13 @@ make_writer(SerdEnv        env,
 SORD_API
 bool
 sord_write_file_handle(SordModel      model,
-                       SerdEnv        env,
+                       SerdEnv*       env,
                        FILE*          fd,
                        const uint8_t* base_uri_str_in,
                        const SordNode graph,
                        const uint8_t* blank_prefix)
 {
-	SerdWriter writer = make_writer(env, base_uri_str_in, file_sink, fd);
+	SerdWriter* writer = make_writer(env, base_uri_str_in, file_sink, fd);
 	sord_write(model, graph, writer);
 	serd_writer_free(writer);
 	return true;
@@ -423,11 +423,11 @@ string_sink(const void* buf, size_t len, void* stream)
 SORD_API
 uint8_t*
 sord_write_string(SordModel      model,
-                  SerdEnv        env,
+                  SerdEnv*       env,
                   const uint8_t* base_uri)
 {
 	struct SerdBuffer buf = { NULL, 0 };
-	SerdWriter writer = make_writer(env, base_uri, string_sink, &buf);
+	SerdWriter* writer = make_writer(env, base_uri, string_sink, &buf);
 	sord_write(model, NULL, writer);
 	serd_writer_free(writer);
 	string_sink("", 1, &buf);

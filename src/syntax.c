@@ -67,15 +67,20 @@ static inline SordNode
 sord_node_from_serd_node(ReadState* state, const SerdNode* sn,
                          const SerdNode* datatype, const SerdNode* lang)
 {
+	SordNode datatype_node = NULL;
+	SordNode ret           = NULL;
 	switch (sn->type) {
 	case SERD_NOTHING:
 		return NULL;
 	case SERD_LITERAL:
-		return sord_new_literal(
+		datatype_node = sord_node_from_serd_node(state, datatype, NULL, NULL),
+		ret = sord_new_literal(
 			state->world,
-			sord_node_from_serd_node(state, datatype, NULL, NULL),
+			datatype_node,
 			sn->buf,
-			g_intern_string((const char*)lang->buf));
+			sord_intern_lang(state->world, (const char*)lang->buf));
+		sord_node_free(state->world, datatype_node);
+		return ret;
 	case SERD_URI: {
 		SerdURI base_uri;
 		serd_read_state_get_base_uri(state->read_state, &base_uri);
@@ -165,7 +170,7 @@ event_statement(void*           handle,
 	sord_node_free(state->world, tup[0]);
 	sord_node_free(state->world, tup[1]);
 	sord_node_free(state->world, tup[2]);
-	// FIXME: sord_node_free(state->world, tup[3]);
+	sord_node_free(state->world, tup[3]);
 
 	return true;
 }

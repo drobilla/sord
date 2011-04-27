@@ -34,4 +34,7 @@ struct _SordNode {
 	SordNodeType type;      ///< SordNodeType
 };
 
+const char*
+sord_intern_lang(SordWorld world, const char* lang);
+
 #endif /* SORD_SORD_INTERNAL_H_ */

@@ -797,7 +797,7 @@ sord_new_literal_node(SordWorld world, SordNode datatype,
                       const char*    lang, uint8_t lang_len)
 {
 	SordNode node = sord_new_node(SORD_LITERAL, str, str_len + 1);
-	node->datatype = datatype;
+	node->datatype = sord_node_copy(datatype);
 	node->lang     = sord_intern_lang(world, lang);
 	return node;
 }
@@ -945,6 +945,7 @@ sord_node_free(SordWorld world, SordNode node)
 				fprintf(stderr, "Failed to remove literal from hash.\n");
 				return;
 			}
+			sord_node_free(world, node->datatype);
 		} else {
 			if (!g_hash_table_remove(world->names, node->buf)) {
 				fprintf(stderr, "Failed to remove resource from hash.\n");
@@ -959,7 +960,9 @@ sord_node_free(SordWorld world, SordNode node)
 SordNode
 sord_node_copy(SordNode node)
 {
-	++node->refs;
+	if (node) {
+		++node->refs;
+	}
 	return node;
 }
 

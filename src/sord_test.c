@@ -28,8 +28,8 @@ typedef struct { SordQuad query; int expected_num_results; } QueryTest;
 
 #define USTR(s) ((const uint8_t*)(s))
 
-static SordNode
-uri(SordWorld world, int num)
+static SordNode*
+uri(SordWorld* world, int num)
 {
 	if (num == 0)
 		return 0;
@@ -49,7 +49,7 @@ test_fail()
 }
 
 int
-generate(SordWorld world, SordModel sord, size_t n_quads, size_t n_objects_per)
+generate(SordWorld* world, SordModel* sord, size_t n_quads, size_t n_objects_per)
 {
 	fprintf(stderr, "Generating %zu (S P *) quads with %zu objects each\n",
 			n_quads, n_objects_per);
@@ -57,7 +57,7 @@ generate(SordWorld world, SordModel sord, size_t n_quads, size_t n_objects_per)
 	for (size_t i = 0; i < n_quads; ++i) {
 		int num = (i * n_objects_per) + 1;
 
-		SordNode ids[2 + n_objects_per];
+		SordNode* ids[2 + n_objects_per];
 		for (size_t j = 0; j < 2 + n_objects_per; ++j) {
 			ids[j] = uri(world, num++);
 		}
@@ -129,13 +129,13 @@ generate(SordWorld world, SordModel sord, size_t n_quads, size_t n_objects_per)
 	((t)[2] ? sord_node_get_string((t)[2]) : USTR("*"))
 
 int
-test_read(SordWorld world, SordModel sord, const size_t n_quads, const int n_objects_per)
+test_read(SordWorld* world, SordModel* sord, const size_t n_quads, const int n_objects_per)
 {
 	int ret = EXIT_SUCCESS;
 
 	SordQuad id;
 
-	SordIter iter = sord_begin(sord);
+	SordIter* iter = sord_begin(sord);
 	if (sord_iter_get_model(iter) != sord) {
 		fprintf(stderr, "Fail: Iterator has incorrect sord pointer\n");
 		return test_fail();
@@ -221,7 +221,7 @@ test_read(SordWorld world, SordModel sord, const size_t n_quads, const int n_obj
 	// Test nested queries
 	fprintf(stderr, "Nested Queries... ");
 	pat[0] = pat[1] = pat[2] = 0;
-	SordNode last_subject = 0;
+	SordNode* last_subject = 0;
 	iter = sord_find(sord, pat);
 	for (; !sord_iter_end(iter); sord_iter_next(iter)) {
 		sord_iter_get(iter, id);
@@ -229,7 +229,7 @@ test_read(SordWorld world, SordModel sord, const size_t n_quads, const int n_obj
 			continue;
 
 		SordQuad subpat  = { id[0], 0, 0 };
-		SordIter subiter = sord_find(sord, subpat);
+		SordIter* subiter = sord_find(sord, subpat);
 		int num_sub_results = 0;
 		for (; !sord_iter_end(subiter); sord_iter_next(subiter)) {
 			SordQuad subid;
@@ -264,10 +264,10 @@ main(int argc, char** argv)
 
 	sord_free(NULL); // Shouldn't crash
 
-	SordWorld world = sord_world_new();
+	SordWorld* world = sord_world_new();
 
 	// Create with minimal indexing
-	SordModel sord = sord_new(world, SORD_SPO, false);
+	SordModel* sord = sord_new(world, SORD_SPO, false);
 	generate(world, sord, n_quads, n_objects_per);
 
 	if (test_read(world, sord, n_quads, n_objects_per)) {
@@ -277,13 +277,13 @@ main(int argc, char** argv)
 	}
 
 	// Check interning merges equivalent values
-	SordNode uri_id   = sord_new_uri(world, USTR("http://example.org"));
-	SordNode blank_id = sord_new_uri(world, USTR("testblank"));
-	SordNode lit_id   = sord_new_literal(world, uri_id, USTR("hello"), NULL);
+	SordNode* uri_id   = sord_new_uri(world, USTR("http://example.org"));
+	SordNode* blank_id = sord_new_uri(world, USTR("testblank"));
+	SordNode* lit_id   = sord_new_literal(world, uri_id, USTR("hello"), NULL);
 	//sord_clear_cache(write);
-	SordNode uri_id2   = sord_new_uri(world, USTR("http://example.org"));
-	SordNode blank_id2 = sord_new_uri(world, USTR("testblank"));
-	SordNode lit_id2   = sord_new_literal(world, uri_id, USTR("hello"), NULL);
+	SordNode* uri_id2   = sord_new_uri(world, USTR("http://example.org"));
+	SordNode* blank_id2 = sord_new_uri(world, USTR("testblank"));
+	SordNode* lit_id2   = sord_new_literal(world, uri_id, USTR("hello"), NULL);
 	if (uri_id2 != uri_id) {
 		fprintf(stderr, "Fail: URI interning failed (duplicates)\n");
 		goto fail;
@@ -296,9 +296,9 @@ main(int argc, char** argv)
 	}
 
 	// Check interning doesn't clash non-equivalent values
-	SordNode uri_id3   = sord_new_uri(world, USTR("http://example.orgX"));
-	SordNode blank_id3 = sord_new_uri(world, USTR("testblankX"));
-	SordNode lit_id3   = sord_new_literal(world, uri_id, USTR("helloX"), NULL);
+	SordNode* uri_id3   = sord_new_uri(world, USTR("http://example.orgX"));
+	SordNode* blank_id3 = sord_new_uri(world, USTR("testblankX"));
+	SordNode* lit_id3   = sord_new_literal(world, uri_id, USTR("helloX"), NULL);
 	if (uri_id3 == uri_id) {
 		fprintf(stderr, "Fail: URI interning failed (clash)\n");
 		goto fail;

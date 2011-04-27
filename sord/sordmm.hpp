@@ -97,7 +97,7 @@ public:
 };
 
 /** Sord library state. */
-class World : public boost::noncopyable, public Wrapper<SordWorld> {
+class World : public boost::noncopyable, public Wrapper<SordWorld*> {
 public:
 	inline World()
 		: _next_blank_id(0)
@@ -117,7 +117,7 @@ public:
 	}
 
 	inline const Namespaces& prefixes() const { return _prefixes; }
-	inline SordWorld         world()          { return _c_obj; }
+	inline SordWorld*        world()          { return _c_obj; }
 
 private:
 	Namespaces            _prefixes;
@@ -127,7 +127,7 @@ private:
 
 /** An RDF Node (resource, literal, etc)
  */
-class Node : public Wrapper<SordNode> {
+class Node : public Wrapper<SordNode*> {
 public:
 	enum Type {
 		UNKNOWN  = 0,
@@ -136,11 +136,11 @@ public:
 		LITERAL  = SORD_LITERAL
 	};
 
-	inline Node() : Wrapper<SordNode>(NULL), _world(NULL) {}
+	inline Node() : Wrapper<SordNode*>(NULL), _world(NULL) {}
 
 	inline Node(World& world, Type t, const std::string& s);
 	inline Node(World& world);
-	inline Node(World& world, SordNode node);
+	inline Node(World& world, SordNode* node);
 	inline Node(const Node& other);
 	inline ~Node();
 
@@ -148,7 +148,8 @@ public:
 		return _c_obj ? (Type)sord_node_get_type(_c_obj) : UNKNOWN;
 	}
 
-	inline SordNode get_node() const { return _c_obj; }
+	inline const SordNode* get_node() const { return _c_obj; }
+	inline SordNode*       get_node()       { return _c_obj; }
 
 	inline bool is_valid() const { return type() != UNKNOWN; }
 
@@ -259,7 +260,7 @@ Node::Node(World& world)
 }
 
 inline
-Node::Node(World& world, SordNode node)
+Node::Node(World& world, SordNode* node)
 	: _world(&world)
 {
 	_c_obj = node ? sord_node_copy(node) : NULL;
@@ -267,7 +268,7 @@ Node::Node(World& world, SordNode node)
 
 inline
 Node::Node(const Node& other)
-	: Wrapper<SordNode>()
+	: Wrapper<SordNode*>()
 	, _world(other._world)
 {
 	if (_world) {
@@ -307,7 +308,7 @@ inline bool
 Node::is_literal_type(const char* type_uri) const
 {
 	if (_c_obj && sord_node_get_type(_c_obj) == SORD_LITERAL) {
-		SordNode datatype = sord_node_get_datatype(_c_obj);
+		const SordNode* datatype = sord_node_get_datatype(_c_obj);
 		if (datatype && !strcmp((const char*)sord_node_get_string(datatype),
 		                        type_uri))
 			return true;
@@ -346,24 +347,24 @@ Node::to_bool() const
 	return !strcmp((const char*)sord_node_get_string(_c_obj), "true");
 }
 
-struct Iter : public Wrapper<SordIter> {
-	inline Iter(World& world, SordIter c_obj)
-		: Wrapper<SordIter>(c_obj), _world(world) {}
+struct Iter : public Wrapper<SordIter*> {
+	inline Iter(World& world, SordIter* c_obj)
+		: Wrapper<SordIter*>(c_obj), _world(world) {}
 	inline ~Iter() { sord_iter_free(_c_obj); }
 	inline bool end()  const { return sord_iter_end(_c_obj); }
 	inline bool next() const { return sord_iter_next(_c_obj); }
 	inline Iter& operator++() { assert(!end()); next(); return *this; }
-	inline Node get_subject() const {
+	inline const Node get_subject() const {
 		SordQuad quad;
 		sord_iter_get(_c_obj, quad);
 		return Node(_world, quad[SORD_SUBJECT]);
 	}
-	inline Node get_predicate() const {
+	inline const Node get_predicate() const {
 		SordQuad quad;
 		sord_iter_get(_c_obj, quad);
 		return Node(_world, quad[SORD_PREDICATE]);
 	}
-	inline Node get_object() const {
+	inline const Node get_object() const {
 		SordQuad quad;
 		sord_iter_get(_c_obj, quad);
 		return Node(_world, quad[SORD_OBJECT]);
@@ -373,7 +374,7 @@ struct Iter : public Wrapper<SordIter> {
 
 /** An RDF Model (collection of triples).
  */
-class Model : public boost::noncopyable, public Wrapper<SordModel> {
+class Model : public boost::noncopyable, public Wrapper<SordModel*> {
 public:
 	inline Model(World& world, const Glib::ustring& base_uri=".");
 	inline ~Model();

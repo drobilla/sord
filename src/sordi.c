@@ -27,7 +27,7 @@ typedef struct {
 	SerdEnv*    env;
 	SerdNode    base_uri_node;
 	SerdURI     base_uri;
-	SordModel   sord;
+	SordModel*  sord;
 } State;
 
 int
@@ -61,7 +61,7 @@ file_sink(const void* buf, size_t len, void* stream)
 }
 
 static inline SerdNode
-serd_node_from_sord_node(const SordNode n)
+serd_node_from_sord_node(const SordNode* n)
 {
 	size_t         n_bytes = 0;
 	const uint8_t* buf     = sord_node_get_string_counted(n, &n_bytes);
@@ -116,8 +116,8 @@ main(int argc, char** argv)
 
 	const uint8_t* input = (const uint8_t*)argv[a++];
 
-	SordWorld world = sord_world_new();
-	SordModel sord = sord_new(world, SORD_SPO|SORD_OPS, false);
+	SordWorld* world = sord_world_new();
+	SordModel* sord  = sord_new(world, SORD_SPO|SORD_OPS, false);
 
 	bool success = sord_read_file(sord, input, NULL, NULL);
 
@@ -135,16 +135,16 @@ main(int argc, char** argv)
 
 	// Query
 	SordQuad pat = { 0, 0, 0, 0 };
-	SordIter iter = sord_find(sord, pat);
+	SordIter* iter = sord_find(sord, pat);
 	for (; !sord_iter_end(iter); sord_iter_next(iter)) {
-		SordQuad tup;
+		SordQuadConst tup;
 		sord_iter_get(iter, tup);
-		SordNode s = tup[SORD_SUBJECT];
-		SordNode p = tup[SORD_PREDICATE];
-		SordNode o = tup[SORD_OBJECT];
-		SerdNode ss = serd_node_from_sord_node(s);
-		SerdNode sp = serd_node_from_sord_node(p);
-		SerdNode so = serd_node_from_sord_node(o);
+		const SordNode* s  = tup[SORD_SUBJECT];
+		const SordNode* p  = tup[SORD_PREDICATE];
+		const SordNode* o  = tup[SORD_OBJECT];
+		SerdNode        ss = serd_node_from_sord_node(s);
+		SerdNode        sp = serd_node_from_sord_node(p);
+		SerdNode        so = serd_node_from_sord_node(o);
 		serd_writer_write_statement(
 			writer, NULL, &ss, &sp, &so, NULL, NULL);
 	}

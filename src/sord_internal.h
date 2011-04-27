@@ -25,16 +25,16 @@
 typedef intptr_t SordCount;  ///< Count of nodes or triples
 
 /** Node */
-struct _SordNode {
+struct SordNodeImpl {
 	uint8_t*     buf;       ///< Value (string)
 	const char*  lang;      ///< Literal language (interned string)
-	SordNode     datatype;  ///< Literal data type (ID of a URI node, or 0)
+	SordNode*    datatype;  ///< Literal data type (ID of a URI node, or 0)
 	size_t       n_bytes;   ///< Length of data in bytes (including terminator)
 	SordCount    refs;      ///< Reference count (i.e. number of containing quads)
 	SordNodeType type;      ///< SordNodeType
 };
 
 const char*
-sord_intern_lang(SordWorld world, const char* lang);
+sord_intern_lang(SordWorld* world, const char* lang);
 
 #endif /* SORD_SORD_INTERNAL_H_ */

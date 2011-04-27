@@ -97,7 +97,7 @@ static const int orderings[NUM_ORDERS][TUP_LEN] = {
 };
 
 /** World */
-struct _SordWorld {
+struct SordWorldImpl {
 	GHashTable* names;    ///< URI or blank node identifier string => ID
 	GHashTable* langs;    ///< Language tag => Interned language tag
 	GHashTable* literals; ///< Literal => ID
@@ -105,8 +105,8 @@ struct _SordWorld {
 };
 
 /** Store */
-struct _SordModel {
-	SordWorld world;
+struct SordModelImpl {
+	SordWorld* world;
 
 	/** Index for each possible triple ordering (may or may not exist).
 	 * If an index for e.g. SPO exists, it is a dictionary with
@@ -127,29 +127,29 @@ typedef enum {
 } SearchMode;
 
 /** Iterator over some range of a store */
-struct _SordIter {
-	SordModel      sord;              ///< Store this is an iterator for
-	GSequenceIter* cur;               ///< Current DB cursor
-	SordQuad       pat;               ///< Iteration pattern (in ordering order)
-	int            ordering[TUP_LEN]; ///< Store ordering
-	SearchMode     mode;              ///< Iteration mode
-	int            n_prefix;          ///< Length of range prefix (RANGE, FILTER_RANGE)
-	bool           end;               ///< True iff reached end
-	bool           skip_graphs;       ///< True iff iteration should ignore graphs
+struct SordIterImpl {
+	const SordModel* sord;              ///< Store this is an iterator for
+	GSequenceIter*   cur;               ///< Current DB cursor
+	SordQuad         pat;               ///< Iteration pattern (in ordering order)
+	int              ordering[TUP_LEN]; ///< Store ordering
+	SearchMode       mode;              ///< Iteration mode
+	int              n_prefix;          ///< Length of range prefix (RANGE, FILTER_RANGE)
+	bool             end;               ///< True iff reached end
+	bool             skip_graphs;       ///< True iff iteration should ignore graphs
 };
 
 static unsigned
 sord_literal_hash(const void* n)
 {
-	SordNode node = (SordNode)n;
+	SordNode* node = (SordNode*)n;
 	return g_str_hash(node->buf) + (node->lang ? g_str_hash(node->lang) : 0);
 }
 
 static gboolean
 sord_literal_equal(const void* a, const void* b)
 {
-	SordNode a_node = (SordNode)a;
-	SordNode b_node = (SordNode)b;
+	SordNode* a_node = (SordNode*)a;
+	SordNode* b_node = (SordNode*)b;
 	return (a_node == b_node)
 		|| (g_str_equal(sord_node_get_string(a_node),
 		                sord_node_get_string(b_node))
@@ -157,10 +157,10 @@ sord_literal_equal(const void* a, const void* b)
 		    && (a_node->datatype == b_node->datatype));
 }
 
-SordWorld
+SordWorld*
 sord_world_new(void)
 {
-	SordWorld world = malloc(sizeof(struct _SordWorld));
+	SordWorld* world = malloc(sizeof(struct SordWorldImpl));
 	world->names    = g_hash_table_new_full(g_str_hash, g_str_equal, 0, 0);
 	world->langs    = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, 0);
 	world->literals = g_hash_table_new_full(sord_literal_hash, sord_literal_equal, 0, 0);
@@ -169,7 +169,7 @@ sord_world_new(void)
 }
 
 void
-sord_world_free(SordWorld world)
+sord_world_free(SordWorld* world)
 {
 	g_hash_table_unref(world->names);
 	g_hash_table_unref(world->langs);
@@ -178,7 +178,7 @@ sord_world_free(SordWorld world)
 }
 
 static inline int
-sord_node_compare(const SordNode a, const SordNode b)
+sord_node_compare(const SordNode* a, const SordNode* b)
 {
 	if (a == b) {
 		return 0;
@@ -213,7 +213,7 @@ sord_node_compare(const SordNode a, const SordNode b)
 }
 
 bool
-sord_node_equals(const SordNode a, const SordNode b)
+sord_node_equals(const SordNode* a, const SordNode* b)
 {
 	if (!a || !b) {
 		return (a == b);
@@ -231,7 +231,7 @@ sord_node_equals(const SordNode a, const SordNode b)
  * result set.
  */
 static inline int
-sord_id_compare(SordModel sord, const SordNode a, const SordNode b)
+sord_id_compare(SordModel* sord, const SordNode* a, const SordNode* b)
 {
 	if (a == b || !a || !b) {
 		return (const char*)a - (const char*)b;
@@ -242,7 +242,7 @@ sord_id_compare(SordModel sord, const SordNode a, const SordNode b)
 
 /** Return true iff IDs are equivalent, or one is a wildcard */
 static inline bool
-sord_id_match(const SordNode a, const SordNode b)
+sord_id_match(const SordNode* a, const SordNode* b)
 {
 	return !a || !b || (a == b);
 }
@@ -269,9 +269,9 @@ sord_quad_match(const SordQuad x, const SordQuad y)
 static int
 sord_quad_compare(const void* x_ptr, const void* y_ptr, void* user_data)
 {
-	SordModel const sord = (SordModel)user_data;
-	SordNode* const x    = (SordNode*)x_ptr;
-	SordNode* const y    = (SordNode*)y_ptr;
+	SordModel* const sord = (SordModel*)user_data;
+	SordNode** const x    = (SordNode**)x_ptr;
+	SordNode** const y    = (SordNode**)y_ptr;
 
 	for (int i = 0; i < TUP_LEN; ++i) {
 		const int cmp = sord_id_compare(sord, x[i], y[i]);
@@ -283,21 +283,21 @@ sord_quad_compare(const void* x_ptr, const void* y_ptr, void* user_data)
 }
 
 static inline bool
-sord_iter_forward(SordIter iter)
+sord_iter_forward(SordIter* iter)
 {
 	if (!iter->skip_graphs) {
 		iter->cur = g_sequence_iter_next(iter->cur);
 		return g_sequence_iter_is_end(iter->cur);
 	}
 
-	const SordNode*  key     = (const SordNode*)g_sequence_get(iter->cur);
+	SordNode** key = (SordNode**)g_sequence_get(iter->cur);
 	const SordQuad initial = { key[0], key[1], key[2], key[3] };
 	while (true) {
 		iter->cur = g_sequence_iter_next(iter->cur);
 		if (g_sequence_iter_is_end(iter->cur))
 			return true;
 
-		key = (const SordNode*)g_sequence_get(iter->cur);
+		key = (SordNode**)g_sequence_get(iter->cur);
 		for (int i = 0; i < 3; ++i)
 			if (key[i] != initial[i])
 				return false;
@@ -309,12 +309,12 @@ sord_iter_forward(SordIter iter)
  * @return true iff iterator reached end of valid range.
  */
 static inline bool
-sord_iter_seek_match(SordIter iter)
+sord_iter_seek_match(SordIter* iter)
 {
 	for (iter->end = true;
 	     !g_sequence_iter_is_end(iter->cur);
 	     sord_iter_forward(iter)) {
-		const SordNode* const key = (const SordNode*)g_sequence_get(iter->cur);
+		SordNode** const key = (SordNode**)g_sequence_get(iter->cur);
 		if (sord_quad_match_inline(key, iter->pat))
 			return (iter->end = false);
 	}
@@ -326,13 +326,13 @@ sord_iter_seek_match(SordIter iter)
  * @return true iff iterator reached end of valid range.
  */
 static inline bool
-sord_iter_seek_match_range(SordIter iter)
+sord_iter_seek_match_range(SordIter* iter)
 {
 	if (iter->end)
 		return true;
 
 	do {
-		const SordNode* key = (const SordNode*)g_sequence_get(iter->cur);
+		SordNode** key = (SordNode**)g_sequence_get(iter->cur);
 
 		if (sord_quad_match_inline(key, iter->pat))
 			return false; // Found match
@@ -348,13 +348,13 @@ sord_iter_seek_match_range(SordIter iter)
 	return (iter->end = true); // Reached end
 }
 
-static SordIter
-sord_iter_new(SordModel sord, GSequenceIter* cur, const SordQuad pat,
+static SordIter*
+sord_iter_new(const SordModel* sord, GSequenceIter* cur, const SordQuad pat,
               SordOrder order, SearchMode mode, int n_prefix)
 {
 	const int* ordering = orderings[order];
 
-	SordIter iter = malloc(sizeof(struct _SordIter));
+	SordIter* iter = malloc(sizeof(struct SordIterImpl));
 	iter->sord        = sord;
 	iter->cur         = cur;
 	iter->mode        = mode;
@@ -371,7 +371,7 @@ sord_iter_new(SordModel sord, GSequenceIter* cur, const SordQuad pat,
 	case SINGLE:
 	case RANGE:
 		assert(
-			sord_quad_match_inline((const SordNode*)g_sequence_get(iter->cur),
+			sord_quad_match_inline((SordNode**)g_sequence_get(iter->cur),
 			                       iter->pat));
 		break;
 	case FILTER_RANGE:
@@ -392,16 +392,16 @@ sord_iter_new(SordModel sord, GSequenceIter* cur, const SordQuad pat,
 	return iter;
 }
 
-SordModel
-sord_iter_get_model(SordIter iter)
+const SordModel*
+sord_iter_get_model(SordIter* iter)
 {
 	return iter->sord;
 }
 
 void
-sord_iter_get(SordIter iter, SordQuad id)
+sord_iter_get(const SordIter* iter, SordQuad id)
 {
-	const SordNode* key = (const SordNode*)g_sequence_get(iter->cur);
+	SordNode** key = (SordNode**)g_sequence_get(iter->cur);
 	id[iter->ordering[0]] = key[0];
 	id[iter->ordering[1]] = key[1];
 	id[iter->ordering[2]] = key[2];
@@ -409,12 +409,12 @@ sord_iter_get(SordIter iter, SordQuad id)
 }
 
 bool
-sord_iter_next(SordIter iter)
+sord_iter_next(SordIter* iter)
 {
 	if (iter->end)
 		return true;
 
-	const SordNode* key;
+	const SordNode** key;
 	iter->end = sord_iter_forward(iter);
 	if (!iter->end) {
 		switch (iter->mode) {
@@ -428,7 +428,7 @@ sord_iter_next(SordIter iter)
 		case RANGE:
 			SORD_ITER_LOG("%p range next\n", (void*)iter);
 			// At the end if the MSNs no longer match
-			key = (const SordNode*)g_sequence_get(iter->cur);
+			key = (const SordNode**)g_sequence_get(iter->cur);
 			assert(key);
 			for (int i = 0; i < iter->n_prefix; ++i) {
 				if (!sord_id_match(key[i], iter->pat[i])) {
@@ -465,13 +465,13 @@ sord_iter_next(SordIter iter)
 }
 
 bool
-sord_iter_end(SordIter iter)
+sord_iter_end(const SordIter* iter)
 {
 	return !iter || iter->end;
 }
 
 void
-sord_iter_free(SordIter iter)
+sord_iter_free(SordIter* iter)
 {
 	SORD_ITER_LOG("%p Free\n", (void*)iter);
 	if (iter) {
@@ -484,7 +484,7 @@ sord_iter_free(SordIter iter)
  * corresponding order with a G prepended (so G will be the MSN).
  */
 static inline bool
-sord_has_index(SordModel sord, SordOrder* order, int* n_prefix, bool graph_search)
+sord_has_index(SordModel* sord, SordOrder* order, int* n_prefix, bool graph_search)
 {
 	if (graph_search) {
 		*order    += GSPO;
@@ -501,7 +501,7 @@ sord_has_index(SordModel sord, SordOrder* order, int* n_prefix, bool graph_searc
  *        (for @a mode == RANGE and @a mode == FILTER_RANGE)
  */
 static inline SordOrder
-sord_best_index(SordModel sord, const SordQuad pat, SearchMode* mode, int* n_prefix)
+sord_best_index(SordModel* sord, const SordQuad pat, SearchMode* mode, int* n_prefix)
 {
 	const bool graph_search = (pat[TUP_G] != 0);
 
@@ -559,10 +559,10 @@ sord_best_index(SordModel sord, const SordQuad pat, SearchMode* mode, int* n_pre
 	}
 }
 
-SordModel
-sord_new(SordWorld world, unsigned indices, bool graphs)
+SordModel*
+sord_new(SordWorld* world, unsigned indices, bool graphs)
 {
-	SordModel sord = (SordModel)malloc(sizeof(struct _SordModel));
+	SordModel* sord = (SordModel*)malloc(sizeof(struct SordModelImpl));
 	sord->world   = world;
 	sord->n_quads = 0;
 
@@ -588,7 +588,7 @@ sord_new(SordWorld world, unsigned indices, bool graphs)
 }
 
 static void
-sord_add_quad_ref(SordModel sord, const SordNode node)
+sord_add_quad_ref(SordModel* sord, SordNode* node)
 {
 	if (node) {
 		assert(node->refs > 0);
@@ -597,24 +597,24 @@ sord_add_quad_ref(SordModel sord, const SordNode node)
 }
 
 static void
-sord_drop_quad_ref(SordModel sord, SordNode node)
+sord_drop_quad_ref(SordModel* sord, SordNode* node)
 {
 	sord_node_free(sord_get_world(sord), node);
 }
 
 void
-sord_free(SordModel sord)
+sord_free(SordModel* sord)
 {
 	if (!sord)
 		return;
 
 	// Free nodes
 	SordQuad tup;
-	SordIter i = sord_begin(sord);
+	SordIter* i = sord_begin(sord);
 	for (; !sord_iter_end(i); sord_iter_next(i)) {
 		sord_iter_get(i, tup);
 		for (int i = 0; i < TUP_LEN; ++i) {
-			sord_drop_quad_ref(sord, tup[i]);
+			sord_drop_quad_ref(sord, (SordNode*)tup[i]);
 		}
 	}
 	sord_iter_free(i);
@@ -626,26 +626,26 @@ sord_free(SordModel sord)
 	free(sord);
 }
 
-SordWorld
-sord_get_world(SordModel sord)
+SordWorld*
+sord_get_world(SordModel* sord)
 {
 	return sord->world;
 }
 
 int
-sord_num_quads(SordModel sord)
+sord_num_quads(const SordModel* sord)
 {
 	return sord->n_quads;
 }
 
 int
-sord_num_nodes(SordWorld world)
+sord_num_nodes(const SordWorld* world)
 {
 	return world->n_nodes;
 }
 
-SordIter
-sord_begin(SordModel sord)
+SordIter*
+sord_begin(const SordModel* sord)
 {
 	if (sord_num_quads(sord) == 0) {
 		return NULL;
@@ -656,21 +656,15 @@ sord_begin(SordModel sord)
 	}
 }
 
-SordIter
-sord_graphs_begin(SordModel model)
-{
-	return NULL;
-}
-
 static inline GSequenceIter*
-index_search(SordModel sord, GSequence* db, const SordQuad search_key)
+index_search(SordModel* sord, GSequence* db, const SordQuad search_key)
 {
 	return g_sequence_search(
 		db, (void*)search_key, sord_quad_compare, sord);
 }
 
 static inline GSequenceIter*
-index_lower_bound(SordModel sord, GSequence* db, const SordQuad search_key)
+index_lower_bound(SordModel* sord, GSequence* db, const SordQuad search_key)
 {
 	GSequenceIter* i = g_sequence_search(
 		db, (void*)search_key, sord_quad_compare, sord);
@@ -714,8 +708,8 @@ index_lower_bound(SordModel sord, GSequence* db, const SordQuad search_key)
 	return i;
 }
 
-SordIter
-sord_find(SordModel sord, const SordQuad pat)
+SordIter*
+sord_find(SordModel* sord, const SordQuad pat)
 {
 	if (!pat[0] && !pat[1] && !pat[2] && !pat[3])
 		return sord_begin(sord);
@@ -732,10 +726,10 @@ sord_find(SordModel sord, const SordQuad pat)
 	// It's easiest to think about this algorithm in terms of (S P O) ordering,
 	// assuming (A B C) == (S P O).  For other orderings this is not actually
 	// the case, but it works the same way.
-	const SordNode a = pat[ordering[0]]; // Most Significant Node (MSN)
-	const SordNode b = pat[ordering[1]]; // ...
-	const SordNode c = pat[ordering[2]]; // ...
-	const SordNode d = pat[ordering[3]]; // Least Significant Node (LSN)
+	SordNode* a = pat[ordering[0]]; // Most Significant Node (MSN)
+	SordNode* b = pat[ordering[1]]; // ...
+	SordNode* c = pat[ordering[2]]; // ...
+	SordNode* d = pat[ordering[3]]; // Least Significant Node (LSN)
 
 	if (a && b && c && d)
 		mode = SINGLE; // No duplicate quads (Sord is a set)
@@ -747,7 +741,7 @@ sord_find(SordModel sord, const SordQuad pat)
 		SORD_FIND_LOG("No match found\n");
 		return NULL;
 	}
-	const SordNode* const  key        = (const SordNode*)g_sequence_get(cur);
+	SordNode** const key = (SordNode**)g_sequence_get(cur);
 	if (!key || ( (mode == RANGE || mode == SINGLE)
 	              && !sord_quad_match_inline(search_key, key) )) {
 		SORD_FIND_LOG("No match found\n");
@@ -757,16 +751,16 @@ sord_find(SordModel sord, const SordQuad pat)
 	return sord_iter_new(sord, cur, pat, index_order, mode, prefix_len);
 }
 
-static SordNode
-sord_lookup_name(SordWorld world, const uint8_t* str, size_t str_len)
+static SordNode*
+sord_lookup_name(SordWorld* world, const uint8_t* str, size_t str_len)
 {
 	return g_hash_table_lookup(world->names, str);
 }
 
-static SordNode
+static SordNode*
 sord_new_node(SordNodeType type, const uint8_t* data, size_t n_bytes)
 {
-	SordNode node = malloc(sizeof(struct _SordNode));
+	SordNode* node = malloc(sizeof(struct SordNodeImpl));
 	node->type     = type;
 	node->n_bytes  = n_bytes;
 	node->refs     = 1;
@@ -777,7 +771,7 @@ sord_new_node(SordNodeType type, const uint8_t* data, size_t n_bytes)
 }
 
 const char*
-sord_intern_lang(SordWorld world, const char* lang)
+sord_intern_lang(SordWorld* world, const char* lang)
 {
 	if (lang) {
 		char* ilang = g_hash_table_lookup(world->langs, lang);
@@ -791,24 +785,24 @@ sord_intern_lang(SordWorld world, const char* lang)
 	return lang;
 }
 
-static SordNode
-sord_new_literal_node(SordWorld world, SordNode datatype,
+static SordNode*
+sord_new_literal_node(SordWorld* world, SordNode* datatype,
                       const uint8_t* str,  int str_len,
                       const char*    lang, uint8_t lang_len)
 {
-	SordNode node = sord_new_node(SORD_LITERAL, str, str_len + 1);
+	SordNode* node = sord_new_node(SORD_LITERAL, str, str_len + 1);
 	node->datatype = sord_node_copy(datatype);
 	node->lang     = sord_intern_lang(world, lang);
 	return node;
 }
 
-static SordNode
-sord_lookup_literal(SordWorld world, SordNode type,
+static SordNode*
+sord_lookup_literal(SordWorld* world, SordNode* type,
                     const uint8_t* str,  int     str_len,
                     const char*    lang, uint8_t lang_len)
 {
 	// Make search key (FIXME: ick)
-	struct _SordNode key;
+	struct SordNodeImpl key;
 	key.type     = SORD_LITERAL;
 	key.n_bytes  = str_len;
 	key.refs     = 1;
@@ -816,7 +810,7 @@ sord_lookup_literal(SordWorld world, SordNode type,
 	key.lang     = sord_intern_lang(world, lang);
 	key.buf      = (uint8_t*)str;
 
-	SordNode id = g_hash_table_lookup(world->literals, &key);
+	SordNode* id = g_hash_table_lookup(world->literals, &key);
 	if (id) {
 		return id;
 	} else {
@@ -825,46 +819,46 @@ sord_lookup_literal(SordWorld world, SordNode type,
 }
 
 SordNodeType
-sord_node_get_type(SordNode ref)
+sord_node_get_type(const SordNode* ref)
 {
 	return ref->type;
 }
 
 const uint8_t*
-sord_node_get_string(SordNode ref)
+sord_node_get_string(const SordNode* ref)
 {
 	return (const uint8_t*)ref->buf;
 }
 
 const uint8_t*
-sord_node_get_string_counted(SordNode ref, size_t* n_bytes)
+sord_node_get_string_counted(const SordNode* ref, size_t* n_bytes)
 {
 	*n_bytes = ref->n_bytes;
 	return ref->buf;
 }
 
 const char*
-sord_node_get_language(SordNode ref)
+sord_node_get_language(const SordNode* ref)
 {
 	return ref->lang;
 }
 
-SordNode
-sord_node_get_datatype(SordNode ref)
+SordNode*
+sord_node_get_datatype(const SordNode* ref)
 {
 	return ref->datatype;
 }
 
 static void
-sord_add_node(SordWorld world, SordNode node)
+sord_add_node(SordWorld* world, SordNode* node)
 {
 	++world->n_nodes;
 }
 
-SordNode
-sord_new_uri_counted(SordWorld world, const uint8_t* str, size_t str_len)
+SordNode*
+sord_new_uri_counted(SordWorld* world, const uint8_t* str, size_t str_len)
 {
-	SordNode node = sord_lookup_name(world, str, str_len);
+	SordNode* node = sord_lookup_name(world, str, str_len);
 	if (node) {
 		++node->refs;
 		return node;
@@ -877,16 +871,16 @@ sord_new_uri_counted(SordWorld world, const uint8_t* str, size_t str_len)
 	return node;
 }
 
-SordNode
-sord_new_uri(SordWorld world, const uint8_t* str)
+SordNode*
+sord_new_uri(SordWorld* world, const uint8_t* str)
 {
 	return sord_new_uri_counted(world, str, strlen((const char*)str));
 }
 
-SordNode
-sord_new_blank_counted(SordWorld world, const uint8_t* str, size_t str_len)
+SordNode*
+sord_new_blank_counted(SordWorld* world, const uint8_t* str, size_t str_len)
 {
-	SordNode node = sord_lookup_name(world, str, str_len);
+	SordNode* node = sord_lookup_name(world, str, str_len);
 	if (node) {
 		++node->refs;
 		return node;
@@ -898,41 +892,41 @@ sord_new_blank_counted(SordWorld world, const uint8_t* str, size_t str_len)
 	return node;
 }
 
-SordNode
-sord_new_blank(SordWorld world, const uint8_t* str)
+SordNode*
+sord_new_blank(SordWorld* world, const uint8_t* str)
 {
 	return sord_new_blank_counted(world, str, strlen((const char*)str));
 }
 
-SordNode
-sord_new_literal_counted(SordWorld world, SordNode type,
+SordNode*
+sord_new_literal_counted(SordWorld* world, SordNode* datatype,
                          const uint8_t* str,  size_t  str_len,
                          const char*    lang, uint8_t lang_len)
 {
-	SordNode node = sord_lookup_literal(world, type, str, str_len, lang, lang_len);
+	SordNode* node = sord_lookup_literal(world, datatype, str, str_len, lang, lang_len);
 	if (node) {
 		++node->refs;
 		return node;
 	}
 
-	node = sord_new_literal_node(world, type, str, str_len, lang, lang_len);
+	node = sord_new_literal_node(world, datatype, str, str_len, lang, lang_len);
 	g_hash_table_insert(world->literals, node, node);  // FIXME: correct?
 	sord_add_node(world, node);
 	assert(node->refs == 1);
 	return node;
 }
 
-SordNode
-sord_new_literal(SordWorld world, SordNode type,
+SordNode*
+sord_new_literal(SordWorld* world, SordNode* datatype,
                  const uint8_t* str, const char* lang)
 {
-	return sord_new_literal_counted(world, type,
+	return sord_new_literal_counted(world, datatype,
 	                                str, strlen((const char*)str),
 	                                lang, lang ? strlen(lang) : 0);
 }
 
 void
-sord_node_free(SordWorld world, SordNode node)
+sord_node_free(SordWorld* world, SordNode* node)
 {
 	if (!node) {
 		return;
@@ -957,8 +951,8 @@ sord_node_free(SordWorld world, SordNode node)
 	}
 }
 
-SordNode
-sord_node_copy(SordNode node)
+SordNode*
+sord_node_copy(SordNode* node)
 {
 	if (node) {
 		++node->refs;
@@ -967,7 +961,7 @@ sord_node_copy(SordNode node)
 }
 
 static inline bool
-sord_add_to_index(SordModel sord, const SordQuad tup, SordOrder order)
+sord_add_to_index(SordModel* sord, const SordQuad tup, SordOrder order)
 {
 	assert(sord->indices[order]);
 	const int* const ordering = orderings[order];
@@ -982,14 +976,14 @@ sord_add_to_index(SordModel sord, const SordQuad tup, SordOrder order)
 
 	// FIXME: would be nice to share quads and just use a different comparator
 	// for each index (save significant space overhead per quad)
-	SordNode* key_copy = malloc(sizeof(SordQuad));
+	SordNode** key_copy = malloc(sizeof(SordQuad));
 	memcpy(key_copy, key, sizeof(SordQuad));
 	g_sequence_insert_before(cur, key_copy);
 	return true;
 }
 
 bool
-sord_add(SordModel sord, const SordQuad tup)
+sord_add(SordModel* sord, const SordQuad tup)
 {
 	SORD_WRITE_LOG("Add " TUP_FMT "\n", TUP_FMT_ARGS(tup));
 	if (!tup[0] || !tup[1] || !tup[2]) {
@@ -998,7 +992,8 @@ sord_add(SordModel sord, const SordQuad tup)
 	}
 
 	// FIXME: Remove double search
-	SordIter existing = sord_find(sord, tup);
+	SordQuad pat = { tup[0], tup[1], tup[2], tup[3] };
+	SordIter* existing = sord_find(sord, pat);
 	if (existing) {
 		sord_iter_free(existing);
 		return false;
@@ -1022,7 +1017,7 @@ sord_add(SordModel sord, const SordQuad tup)
 }
 
 void
-sord_remove(SordModel sord, const SordQuad tup)
+sord_remove(SordModel* sord, const SordQuad tup)
 {
 	SORD_WRITE_LOG("Remove " TUP_FMT "\n", TUP_FMT_ARGS(tup));
 

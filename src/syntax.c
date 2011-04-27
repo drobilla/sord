@@ -29,9 +29,9 @@ typedef struct {
 	SerdReader*    reader;
 	SerdEnv*       env;
 	SerdReadState* read_state;
-	SordNode       graph_uri_node;
-	SordWorld      world;
-	SordModel      sord;
+	SordNode*      graph_uri_node;
+	SordWorld*     world;
+	SordModel*     sord;
 } ReadState;
 
 static uint8_t*
@@ -63,12 +63,12 @@ event_prefix(void*           handle,
 	return serd_read_state_set_prefix(state->read_state, name, uri_node);
 }
 
-static inline SordNode
+static inline SordNode*
 sord_node_from_serd_node(ReadState* state, const SerdNode* sn,
                          const SerdNode* datatype, const SerdNode* lang)
 {
-	SordNode datatype_node = NULL;
-	SordNode ret           = NULL;
+	SordNode* datatype_node = NULL;
+	SordNode* ret           = NULL;
 	switch (sn->type) {
 	case SERD_NOTHING:
 		return NULL;
@@ -87,7 +87,7 @@ sord_node_from_serd_node(ReadState* state, const SerdNode* sn,
 		SerdURI  abs_uri;
 		SerdNode abs_uri_node = serd_node_new_uri_from_node(
 			sn, &base_uri, &abs_uri);
-		SordNode ret = sord_new_uri(state->world, abs_uri_node.buf);
+		SordNode* ret = sord_new_uri(state->world, abs_uri_node.buf);
 		serd_node_free(&abs_uri_node);
 		return ret;
 	}
@@ -103,8 +103,8 @@ sord_node_from_serd_node(ReadState* state, const SerdNode* sn,
 		memcpy(buf,                  uri_prefix.buf, uri_prefix.len);
 		memcpy(buf + uri_prefix.len, uri_suffix.buf, uri_suffix.len);
 		buf[uri_len] = '\0';
-		SordNode ret = sord_new_uri_counted(state->world,
-		                                    buf, uri_prefix.len + uri_suffix.len);
+		SordNode* ret = sord_new_uri_counted(state->world,
+		                                     buf, uri_prefix.len + uri_suffix.len);
 		free(buf);
 		return ret;
 	}
@@ -117,7 +117,7 @@ sord_node_from_serd_node(ReadState* state, const SerdNode* sn,
 }
 
 static inline void
-sord_node_to_serd_node(const SordNode node, SerdNode* out)
+sord_node_to_serd_node(const SordNode* node, SerdNode* out)
 {
 	if (!node) {
 		*out = SERD_NODE_NULL;
@@ -160,7 +160,7 @@ event_statement(void*           handle,
 	if (state->graph_uri_node) {
 		assert(graph->type == SERD_NOTHING);
 		tup[3] = sord_node_copy(state->graph_uri_node);
-	} else {
+	} else if (graph && graph->buf) {
 		tup[3] = (graph && graph->buf)
 			? sord_node_from_serd_node(state, graph, NULL, NULL)
 			: NULL;
@@ -202,9 +202,9 @@ sord_file_uri_to_path(const uint8_t* uri)
 
 SORD_API
 bool
-sord_read_file(SordModel      model,
+sord_read_file(SordModel*     model,
                const uint8_t* uri,
-               const SordNode graph,
+               SordNode*      graph,
                const uint8_t* blank_prefix)
 {
 	const uint8_t* const path = sord_file_uri_to_path(uri);
@@ -226,10 +226,10 @@ sord_read_file(SordModel      model,
 
 SORD_API
 bool
-sord_read_file_handle(SordModel      model,
+sord_read_file_handle(SordModel*     model,
                       FILE*          fd,
                       const uint8_t* base_uri_str_in,
-                      const SordNode graph,
+                      SordNode*      graph,
                       const uint8_t* blank_prefix)
 {
 	size_t   base_uri_n_bytes = 0;
@@ -267,7 +267,7 @@ sord_read_file_handle(SordModel      model,
 
 SORD_API
 bool
-sord_read_string(SordModel      model,
+sord_read_string(SordModel*     model,
                  const uint8_t* str,
                  const uint8_t* base_uri_str_in)
 {
@@ -302,10 +302,10 @@ sord_read_string(SordModel      model,
 
 SORD_API
 bool
-sord_write_file(SordModel      model,
+sord_write_file(SordModel*     model,
                 SerdEnv*       env,
                 const uint8_t* uri,
-                const SordNode graph,
+                SordNode*      graph,
                 const uint8_t* blank_prefix)
 {
 	const uint8_t* const path = sord_file_uri_to_path(uri);
@@ -332,13 +332,13 @@ file_sink(const void* buf, size_t len, void* stream)
 }
 
 static void
-sord_write(const SordModel model,
-           const SordNode  graph,
-           SerdWriter*     writer)
+sord_write(const SordModel* model,
+           const SordNode*  graph,
+           SerdWriter*      writer)
 {
 	SerdNode s_graph;
 	sord_node_to_serd_node(graph, &s_graph);
-	for (SordIter i = sord_begin(model); !sord_iter_end(i); sord_iter_next(i)) {
+	for (SordIter* i = sord_begin(model); !sord_iter_end(i); sord_iter_next(i)) {
 		SordQuad quad;
 		sord_iter_get(i, quad);
 
@@ -397,11 +397,11 @@ make_writer(SerdEnv*       env,
 
 SORD_API
 bool
-sord_write_file_handle(SordModel      model,
+sord_write_file_handle(SordModel*     model,
                        SerdEnv*       env,
                        FILE*          fd,
                        const uint8_t* base_uri_str_in,
-                       const SordNode graph,
+                       SordNode*      graph,
                        const uint8_t* blank_prefix)
 {
 	SerdWriter* writer = make_writer(env, base_uri_str_in, file_sink, fd);
@@ -427,7 +427,7 @@ string_sink(const void* buf, size_t len, void* stream)
 
 SORD_API
 uint8_t*
-sord_write_string(SordModel      model,
+sord_write_string(SordModel*     model,
                   SerdEnv*       env,
                   const uint8_t* base_uri)
 {

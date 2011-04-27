@@ -62,7 +62,7 @@ extern "C" {
    Sord World.
    The World represents all library state, including interned strings.
 */
-typedef struct _SordWorld* SordWorld;
+typedef struct SordWorldImpl SordWorld;
 
 /**
    Sord Model.
@@ -71,12 +71,12 @@ typedef struct _SordWorld* SordWorld;
    graphs). It may be searched using various patterns depending on which
    indices are enabled.
 */
-typedef struct _SordModel* SordModel;
+typedef struct SordModelImpl SordModel;
 
 /**
    Model Iterator.
 */
-typedef struct _SordIter* SordIter;
+typedef struct SordIterImpl SordIter;
 
 /**
    RDF Node.
@@ -84,14 +84,14 @@ typedef struct _SordIter* SordIter;
    (in the case of quad objects only) string literals. Literal nodes may
    have an associate language or datatype (but not both).
 */
-typedef struct _SordNode* SordNode;
+typedef struct SordNodeImpl SordNode;
 
 /**
-   Quad of IDs (statement), or a quad pattern.
+   Quad of nodes (i.e. a statement), or a quad pattern.
 
    Nodes are ordered (S P O G). The ID of the default graph is 0.
 */
-typedef SordNode SordQuad[4];
+typedef SordNode* SordQuad[4];
 
 /**
    Index into a SordQuad.
@@ -136,7 +136,7 @@ typedef enum {
    possible for performance reasons.
 */
 SORD_API
-SordWorld
+SordWorld*
 sord_world_new(void);
 
 /**
@@ -144,7 +144,7 @@ sord_world_new(void);
 */
 SORD_API
 void
-sord_world_free(SordWorld world);
+sord_world_free(SordWorld* world);
 
 /**
    @}
@@ -158,15 +158,15 @@ sord_world_free(SordWorld world);
    Use sord_get_uri_counted instead if the length of @c str is known.
 */
 SORD_API
-SordNode
-sord_new_uri(SordWorld world, const uint8_t* str);
+SordNode*
+sord_new_uri(SordWorld* world, const uint8_t* str);
 
 /**
    Find a URI, creating a new one if necessary iff @c create is true.
 */
 SORD_API
-SordNode
-sord_new_uri_counted(SordWorld      world,
+SordNode*
+sord_new_uri_counted(SordWorld*     world,
                      const uint8_t* str,
                      size_t         str_len);
 
@@ -176,15 +176,15 @@ sord_new_uri_counted(SordWorld      world,
    Use sord_get_blank_counted instead if the length of @c str is known.
 */
 SORD_API
-SordNode
-sord_new_blank(SordWorld world, const uint8_t* str);
+SordNode*
+sord_new_blank(SordWorld* world, const uint8_t* str);
 
 /**
    Find a blank, creating a new one if necessary iff @c create is true.
 */
 SORD_API
-SordNode
-sord_new_blank_counted(SordWorld      world,
+SordNode*
+sord_new_blank_counted(SordWorld*     world,
                        const uint8_t* str,
                        size_t         str_len);
 
@@ -194,9 +194,9 @@ sord_new_blank_counted(SordWorld      world,
    Use sord_get_literal_counted instead if the length of @c str is known.
 */
 SORD_API
-SordNode
-sord_new_literal(SordWorld      world,
-                 SordNode       datatype,
+SordNode*
+sord_new_literal(SordWorld*     world,
+                 SordNode*      datatype,
                  const uint8_t* str,
                  const char*    lang);
 
@@ -204,9 +204,9 @@ sord_new_literal(SordWorld      world,
    Find a literal, creating a new one if necessary iff @c create is true.
 */
 SORD_API
-SordNode
-sord_new_literal_counted(SordWorld      world,
-                         SordNode       datatype,
+SordNode*
+sord_new_literal_counted(SordWorld*     world,
+                         SordNode*      datatype,
                          const uint8_t* str,
                          size_t         str_len,
                          const char*    lang,
@@ -214,52 +214,55 @@ sord_new_literal_counted(SordWorld      world,
 
 /**
    Copy a node.
+
+   Node that since nodes are interned and reference counted, this does not
+   actually create a deep copy of @c node.
 */
 SORD_API
-SordNode
-sord_node_copy(SordNode node);
+SordNode*
+sord_node_copy(SordNode* node);
 
 /**
    Free a node.
 */
 SORD_API
 void
-sord_node_free(SordWorld world, SordNode node);
+sord_node_free(SordWorld* world, SordNode* node);
 
 /**
    Return the type of a node (SORD_URI, SORD_BLANK, or SORD_LITERAL).
 */
 SORD_API
 SordNodeType
-sord_node_get_type(SordNode node);
+sord_node_get_type(const SordNode* node);
 
 /**
    Return the string value of a node.
 */
 SORD_API
 const uint8_t*
-sord_node_get_string(SordNode node);
+sord_node_get_string(const SordNode* node);
 
 /**
    Return the string value of a node, and set @c len to its length.
 */
 SORD_API
 const uint8_t*
-sord_node_get_string_counted(SordNode node, size_t* len);
+sord_node_get_string_counted(const SordNode* node, size_t* len);
 
 /**
    Return the language of a literal node (or NULL).
 */
 SORD_API
 const char*
-sord_node_get_language(SordNode node);
+sord_node_get_language(const SordNode* node);
 
 /**
    Return the datatype URI of a literal node (or NULL).
 */
 SORD_API
-SordNode
-sord_node_get_datatype(SordNode node);
+SordNode*
+sord_node_get_datatype(const SordNode* node);
 
 /**
    Return true iff @c a is equal to @c b.
@@ -268,8 +271,8 @@ sord_node_get_datatype(SordNode node);
 */
 SORD_API
 bool
-sord_node_equals(const SordNode a,
-                 const SordNode b);
+sord_node_equals(const SordNode* a,
+                 const SordNode* b);
 
 /**
    @}
@@ -289,8 +292,8 @@ sord_node_equals(const SordNode a,
    @param graphs If true, store (and index) graph contexts.
 */
 SORD_API
-SordModel
-sord_new(SordWorld world,
+SordModel*
+sord_new(SordWorld* world,
          unsigned  indices,
          bool      graphs);
 
@@ -299,14 +302,14 @@ sord_new(SordWorld world,
 */
 SORD_API
 void
-sord_free(SordModel model);
+sord_free(SordModel* model);
 
 /**
    Get the world associated with @c model.
 */
 SORD_API
-SordWorld
-sord_get_world(SordModel model);
+SordWorld*
+sord_get_world(SordModel* model);
 
 /**
    Return the number of nodes stored in @c sord.
@@ -315,52 +318,45 @@ sord_get_world(SordModel model);
 */
 SORD_API
 int
-sord_num_nodes(SordWorld world);
+sord_num_nodes(const SordWorld* world);
 
 /**
    Return the number of quads stored in @c sord.
 */
 SORD_API
 int
-sord_num_quads(SordModel model);
+sord_num_quads(const SordModel* model);
 
 /**
    Return an iterator to the start of the store.
 */
 SORD_API
-SordIter
-sord_begin(SordModel model);
-
-/**
-   Return an iterator that will iterate over each graph URI.
-*/
-SORD_API
-SordIter
-sord_graphs_begin(SordModel model);
+SordIter*
+sord_begin(const SordModel* model);
 
 /**
    Search for a triple pattern.
    @return an iterator to the first match, or NULL if no matches found.
 */
 SORD_API
-SordIter
-sord_find(SordModel model, const SordQuad pat);
+SordIter*
+sord_find(SordModel* model, const SordQuad pat);
 
 /**
    Add a quad to the store.
 */
 SORD_API
 bool
-sord_add(SordModel model, const SordQuad quad);
+sord_add(SordModel* model, const SordQuad quad);
 
 /**
    Remove a quad from the store.
 
-   Note that is it illegal to remove while iterator over @c model.
+   Note that is it illegal to remove while iterating over @c model.
 */
 SORD_API
 void
-sord_remove(SordModel model, const SordQuad quad);
+sord_remove(SordModel* model, const SordQuad quad);
 
 /**
    @}
@@ -373,35 +369,35 @@ sord_remove(SordModel model, const SordQuad quad);
 */
 SORD_API
 void
-sord_iter_get(SordIter iter, SordQuad quad);
+sord_iter_get(const SordIter* iter, SordQuad quad);
 
 /**
    Return the store pointed to by @c iter.
 */
 SORD_API
-SordModel
-sord_iter_get_model(SordIter iter);
+const SordModel*
+sord_iter_get_model(SordIter* iter);
 
 /**
    Increment @c iter to point to the next statement.
 */
 SORD_API
 bool
-sord_iter_next(SordIter iter);
+sord_iter_next(SordIter* iter);
 
 /**
    Return true iff @c iter is at the end of its range.
 */
 SORD_API
 bool
-sord_iter_end(SordIter iter);
+sord_iter_end(const SordIter* iter);
 
 /**
    Free @c iter.
 */
 SORD_API
 void
-sord_iter_free(SordIter iter);
+sord_iter_free(SordIter* iter);
 
 /**
    @}
@@ -428,45 +424,45 @@ sord_quad_match(const SordQuad x, const SordQuad y);
 
 SORD_API
 bool
-sord_read_file(SordModel      model,
-               const uint8_t* uri,
-               const SordNode graph,
-               const uint8_t* blank_prefix);
+sord_read_file(SordModel*      model,
+               const uint8_t*  uri,
+               SordNode*       graph,
+               const uint8_t*  blank_prefix);
 
 SORD_API
 bool
-sord_read_file_handle(SordModel      model,
-                      FILE*          fd,
-                      const uint8_t* base_uri,
-                      const SordNode graph,
-                      const uint8_t* blank_prefix);
+sord_read_file_handle(SordModel*      model,
+                      FILE*           fd,
+                      const uint8_t*  base_uri,
+                      SordNode*       graph,
+                      const uint8_t*  blank_prefix);
 
 SORD_API
 bool
-sord_read_string(SordModel      model,
+sord_read_string(SordModel*     model,
                  const uint8_t* str,
                  const uint8_t* base_uri);
 
 SORD_API
 bool
-sord_write_file(SordModel      model,
-                SerdEnv*       env,
-                const uint8_t* uri,
-                const SordNode graph,
-                const uint8_t* blank_prefix);
+sord_write_file(SordModel*      model,
+                SerdEnv*        env,
+                const uint8_t*  uri,
+                SordNode*       graph,
+                const uint8_t*  blank_prefix);
 
 SORD_API
 bool
-sord_write_file_handle(SordModel      model,
-                       SerdEnv*       env,
-                       FILE*          fd,
-                       const uint8_t* base_uri,
-                       const SordNode graph,
-                       const uint8_t* blank_prefix);
+sord_write_file_handle(SordModel*      model,
+                       SerdEnv*        env,
+                       FILE*           fd,
+                       const uint8_t*  base_uri,
+                       SordNode*       graph,
+                       const uint8_t*  blank_prefix);
 
 SORD_API
 uint8_t*
-sord_write_string(SordModel      model,
+sord_write_string(SordModel*     model,
                   SerdEnv*       env,
                   const uint8_t* base_uri);
 

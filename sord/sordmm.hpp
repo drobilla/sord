@@ -52,9 +52,9 @@ protected:
 };
 
 /** Collection of RDF namespaces with prefixes. */
-class Namespaces : public Wrapper<SerdEnv> {
+class Namespaces : public Wrapper<SerdEnv*> {
 public:
-	Namespaces() : Wrapper<SerdEnv>(serd_env_new()) {}
+	Namespaces() : Wrapper<SerdEnv*>(serd_env_new()) {}
 
 	static inline SerdNode string_to_node(SerdType type, const std::string& s) {
 		SerdNode ret = {
@@ -403,10 +403,10 @@ public:
 	inline World& world() const { return _world; }
 
 private:
-	World&     _world;
-	Node       _base;
-	SerdWriter _writer;
-	size_t     _next_blank_id;
+	World&      _world;
+	Node        _base;
+	SerdWriter* _writer;
+	size_t      _next_blank_id;
 };
 
 /** Create an empty in-memory RDF model.

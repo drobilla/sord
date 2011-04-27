@@ -140,7 +140,7 @@ SordWorld
 sord_world_new(void);
 
 /**
-   Free @a world.
+   Free @c world.
 */
 SORD_API
 void
@@ -153,16 +153,16 @@ sord_world_free(SordWorld world);
 */
 
 /**
-   Find a URI, creating a new one if necessary iff @a create is true.
+   Find a URI, creating a new one if necessary iff @c create is true.
 
-   Use sord_get_uri_counted instead if the length of @a str is known.
+   Use sord_get_uri_counted instead if the length of @c str is known.
 */
 SORD_API
 SordNode
 sord_new_uri(SordWorld world, const uint8_t* str);
 
 /**
-   Find a URI, creating a new one if necessary iff @a create is true.
+   Find a URI, creating a new one if necessary iff @c create is true.
 */
 SORD_API
 SordNode
@@ -171,16 +171,16 @@ sord_new_uri_counted(SordWorld      world,
                      size_t         str_len);
 
 /**
-   Find a blank, creating a new one if necessary iff @a create is true.
+   Find a blank, creating a new one if necessary iff @c create is true.
 
-   Use sord_get_blank_counted instead if the length of @a str is known.
+   Use sord_get_blank_counted instead if the length of @c str is known.
 */
 SORD_API
 SordNode
 sord_new_blank(SordWorld world, const uint8_t* str);
 
 /**
-   Find a blank, creating a new one if necessary iff @a create is true.
+   Find a blank, creating a new one if necessary iff @c create is true.
 */
 SORD_API
 SordNode
@@ -189,9 +189,9 @@ sord_new_blank_counted(SordWorld      world,
                        size_t         str_len);
 
 /**
-   Find a literal, creating a new one if necessary iff @a create is true.
+   Find a literal, creating a new one if necessary iff @c create is true.
 
-   Use sord_get_literal_counted instead if the length of @a str is known.
+   Use sord_get_literal_counted instead if the length of @c str is known.
 */
 SORD_API
 SordNode
@@ -201,7 +201,7 @@ sord_new_literal(SordWorld      world,
                  const char*    lang);
 
 /**
-   Find a literal, creating a new one if necessary iff @a create is true.
+   Find a literal, creating a new one if necessary iff @c create is true.
 */
 SORD_API
 SordNode
@@ -241,7 +241,7 @@ const uint8_t*
 sord_node_get_string(SordNode node);
 
 /**
-   Return the string value of a node, and set @a len to its length.
+   Return the string value of a node, and set @c len to its length.
 */
 SORD_API
 const uint8_t*
@@ -262,7 +262,7 @@ SordNode
 sord_node_get_datatype(SordNode node);
 
 /**
-   Return true iff @a a is equal to @a b.
+   Return true iff @c a is equal to @c b.
 
    Note this is much faster than comparing the node's strings.
 */
@@ -295,30 +295,30 @@ sord_new(SordWorld world,
          bool      graphs);
 
 /**
-   Close and free @a sord.
+   Close and free @c sord.
 */
 SORD_API
 void
 sord_free(SordModel model);
 
 /**
-   Get the world associated with @a model.
+   Get the world associated with @c model.
 */
 SORD_API
 SordWorld
 sord_get_world(SordModel model);
 
 /**
-   Return the number of nodes stored in @a sord.
+   Return the number of nodes stored in @c sord.
 
-   Nodes are included in this count iff they are a part of a quad in @a sord.
+   Nodes are included in this count iff they are a part of a quad in @c sord.
 */
 SORD_API
 int
 sord_num_nodes(SordWorld world);
 
 /**
-   Return the number of quads stored in @a sord.
+   Return the number of quads stored in @c sord.
 */
 SORD_API
 int
@@ -356,7 +356,7 @@ sord_add(SordModel model, const SordQuad quad);
 /**
    Remove a quad from the store.
 
-   Note that is it illegal to remove while iterator over @a model.
+   Note that is it illegal to remove while iterator over @c model.
 */
 SORD_API
 void
@@ -369,35 +369,35 @@ sord_remove(SordModel model, const SordQuad quad);
 */
 
 /**
-   Set @a id to the quad pointed to by @a iter.
+   Set @c id to the quad pointed to by @c iter.
 */
 SORD_API
 void
 sord_iter_get(SordIter iter, SordQuad quad);
 
 /**
-   Return the store pointed to by @a iter.
+   Return the store pointed to by @c iter.
 */
 SORD_API
 SordModel
 sord_iter_get_model(SordIter iter);
 
 /**
-   Increment @a iter to point to the next statement.
+   Increment @c iter to point to the next statement.
 */
 SORD_API
 bool
 sord_iter_next(SordIter iter);
 
 /**
-   Return true iff @a iter is at the end of its range.
+   Return true iff @c iter is at the end of its range.
 */
 SORD_API
 bool
 sord_iter_end(SordIter iter);
 
 /**
-   Free @a iter.
+   Free @c iter.
 */
 SORD_API
 void
@@ -414,7 +414,7 @@ sord_iter_free(SordIter iter);
 
    This function is a straightforward and fast equivalence match with wildcard
    support (ID 0 is a wildcard). It does not actually read node data.
-   @return true iff @a x and @a y match.
+   @return true iff @c x and @c y match.
 */
 SORD_API
 bool

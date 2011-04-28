@@ -3,8 +3,8 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
 
-Name: libsord
+Name: Sord
 Version: @SORD_VERSION@
 Description: A lightweight C library for storing RDF statements in memory.
-Libs: -L${libdir} -lsord
-Cflags: -I${includedir}
+Libs: -L${libdir} -lsord-@SORD_MAJOR_VERSION@
+Cflags: -I${includedir}/sord-@SORD_MAJOR_VERSION@

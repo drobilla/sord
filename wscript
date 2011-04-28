@@ -5,7 +5,8 @@ from waflib.extras import autowaf as autowaf
 import waflib.Logs as Logs, waflib.Options as Options
 
 # Version of this package (even if built as a child)
-SORD_VERSION = '0.1.0'
+SORD_VERSION       = '0.2.0'
+SORD_MAJOR_VERSION = '0'
 
 # Library version (UNIX style major, minor, micro)
 # major increment <=> incompatible changes
@@ -39,8 +40,8 @@ def configure(conf):
     autowaf.check_pkg(conf, 'glib-2.0', uselib_store='GLIB',
                       atleast_version='2.0.0', mandatory=True)
 
-    autowaf.check_pkg(conf, 'serd', uselib_store='SERD',
-                      atleast_version='0.1.0', mandatory=True)
+    autowaf.check_pkg(conf, 'serd-0', uselib_store='SERD',
+                      atleast_version='0.2.0', mandatory=True)
 
     conf.env['BUILD_TESTS'] = Options.options.build_tests
     conf.env['BUILD_UTILS'] = True
@@ -64,11 +65,13 @@ def configure(conf):
 
 def build(bld):
     # C/C++ Headers
-    bld.install_files('${INCLUDEDIR}/sord', bld.path.ant_glob('sord/*.h'))
-    bld.install_files('${INCLUDEDIR}/sord', bld.path.ant_glob('sord/*.hpp'))
+    includedir = '${INCLUDEDIR}/sord-%s/sord' % SORD_MAJOR_VERSION
+    bld.install_files(includedir, bld.path.ant_glob('sord/*.h'))
+    bld.install_files(includedir, bld.path.ant_glob('sord/*.hpp'))
 
     # Pkgconfig file
-    autowaf.build_pc(bld, 'SORD', SORD_VERSION, [])
+    autowaf.build_pc(bld, 'SORD', SORD_VERSION, SORD_MAJOR_VERSION, [],
+                     {'SORD_MAJOR_VERSION' : SORD_MAJOR_VERSION})
 
     # Library
     obj = bld(features        = 'c cshlib',
@@ -76,7 +79,7 @@ def build(bld):
               includes        = ['.', './src'],
               export_includes = ['.'],
               name            = 'libsord',
-              target          = 'sord',
+              target          = 'sord-%s' % SORD_MAJOR_VERSION,
               vnum            = SORD_LIB_VERSION,
               install_path    = '${LIBDIR}',
               libs            = [ 'm' ],

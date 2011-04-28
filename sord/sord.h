@@ -68,7 +68,7 @@ typedef struct SordWorldImpl SordWorld;
    Sord Model.
 
    A model is an indexed set of Quads (i.e. it can contain several RDF
-   graphs). It may be searched using various patterns depending on which
+   graphs).  It may be searched using various patterns depending on which
    indices are enabled.
 */
 typedef struct SordModelImpl SordModel;
@@ -80,7 +80,7 @@ typedef struct SordIterImpl SordIter;
 
 /**
    RDF Node.
-   A Node is a component of a Quad. Nodes may be URIs, blank nodes, or
+   A Node is a component of a Quad.  Nodes may be URIs, blank nodes, or
    (in the case of quad objects only) string literals. Literal nodes may
    have an associate language or datatype (but not both).
 */
@@ -89,7 +89,7 @@ typedef struct SordNodeImpl SordNode;
 /**
    Quad of nodes (i.e. a statement), or a quad pattern.
 
-   Nodes are ordered (S P O G). The ID of the default graph is 0.
+   Nodes are ordered (S P O G).  The ID of the default graph is 0.
 */
 typedef SordNode* SordQuad[4];
 
@@ -153,7 +153,7 @@ sord_world_free(SordWorld* world);
 */
 
 /**
-   Find a URI, creating a new one if necessary iff @c create is true.
+   Get a URI node from a string which will be measured.
 
    Use sord_get_uri_counted instead if the length of @c str is known.
 */
@@ -162,7 +162,7 @@ SordNode*
 sord_new_uri(SordWorld* world, const uint8_t* str);
 
 /**
-   Find a URI, creating a new one if necessary iff @c create is true.
+   Get a URI node from a measured string.
 */
 SORD_API
 SordNode*
@@ -171,7 +171,7 @@ sord_new_uri_counted(SordWorld*     world,
                      size_t         str_len);
 
 /**
-   Find a blank, creating a new one if necessary iff @c create is true.
+   Get a blank node from a string which will be measured.
 
    Use sord_get_blank_counted instead if the length of @c str is known.
 */
@@ -180,7 +180,7 @@ SordNode*
 sord_new_blank(SordWorld* world, const uint8_t* str);
 
 /**
-   Find a blank, creating a new one if necessary iff @c create is true.
+   Get a blank node from a measured string.
 */
 SORD_API
 SordNode*
@@ -189,7 +189,7 @@ sord_new_blank_counted(SordWorld*     world,
                        size_t         str_len);
 
 /**
-   Find a literal, creating a new one if necessary iff @c create is true.
+   Get a literal node from a string which will be measured.
 
    Use sord_get_literal_counted instead if the length of @c str is known.
 */
@@ -201,7 +201,7 @@ sord_new_literal(SordWorld*     world,
                  const char*    lang);
 
 /**
-   Find a literal, creating a new one if necessary iff @c create is true.
+   Get a literal node from a measured string.
 */
 SORD_API
 SordNode*
@@ -213,7 +213,7 @@ sord_new_literal_counted(SordWorld*     world,
                          uint8_t        lang_len);
 
 /**
-   Copy a node.
+   Copy a node (i.e. obtain a reference).
 
    Node that since nodes are interned and reference counted, this does not
    actually create a deep copy of @c node.
@@ -223,7 +223,7 @@ SordNode*
 sord_node_copy(SordNode* node);
 
 /**
-   Free a node.
+   Free a node (i.e. drop a reference).
 */
 SORD_API
 void
@@ -281,11 +281,11 @@ sord_node_equals(const SordNode* a,
 */
 
 /**
-   Create a new store.
+   Create a new model.
 
-   @param world The world in which to make this store.
+   @param world The world in which to make this model.
 
-   @param indices SordIndexOption flags (e.g. SORD_SPO|SORD_OPS). Be sure to
+   @param indices SordIndexOption flags (e.g. SORD_SPO|SORD_OPS).  Be sure to
    enable an index where the most significant node(s) are not variables in your
    queries (e.g. to make (? P O) queries, enable either SORD_OPS or SORD_POS).
 
@@ -298,7 +298,7 @@ sord_new(SordWorld* world,
          bool      graphs);
 
 /**
-   Close and free @c sord.
+   Close and free @c model.
 */
 SORD_API
 void
@@ -312,23 +312,23 @@ SordWorld*
 sord_get_world(SordModel* model);
 
 /**
-   Return the number of nodes stored in @c sord.
+   Return the number of nodes stored in @c world.
 
-   Nodes are included in this count iff they are a part of a quad in @c sord.
+   Nodes are included in this count iff they are a part of a quad in @c world.
 */
 SORD_API
 int
 sord_num_nodes(const SordWorld* world);
 
 /**
-   Return the number of quads stored in @c sord.
+   Return the number of quads stored in @c model.
 */
 SORD_API
 int
 sord_num_quads(const SordModel* model);
 
 /**
-   Return an iterator to the start of the store.
+   Return an iterator to the start of @c model.
 */
 SORD_API
 SordIter*
@@ -343,14 +343,14 @@ SordIter*
 sord_find(SordModel* model, const SordQuad pat);
 
 /**
-   Add a quad to the store.
+   Add a quad to a model.
 */
 SORD_API
 bool
 sord_add(SordModel* model, const SordQuad quad);
 
 /**
-   Remove a quad from the store.
+   Remove a quad from a model.
 
    Note that is it illegal to remove while iterating over @c model.
 */
@@ -365,7 +365,7 @@ sord_remove(SordModel* model, const SordQuad quad);
 */
 
 /**
-   Set @c id to the quad pointed to by @c iter.
+   Set @c quad to the quad pointed to by @c iter.
 */
 SORD_API
 void
@@ -422,6 +422,9 @@ sord_quad_match(const SordQuad x, const SordQuad y);
    @{
 */
 
+/**
+   Read a file into a model.
+*/
 SORD_API
 bool
 sord_read_file(SordModel*      model,
@@ -429,6 +432,9 @@ sord_read_file(SordModel*      model,
                SordNode*       graph,
                const uint8_t*  blank_prefix);
 
+/**
+   Read a file handle into a model.
+*/
 SORD_API
 bool
 sord_read_file_handle(SordModel*      model,
@@ -437,12 +443,18 @@ sord_read_file_handle(SordModel*      model,
                       SordNode*       graph,
                       const uint8_t*  blank_prefix);
 
+/**
+   Read a string into a model.
+*/
 SORD_API
 bool
 sord_read_string(SordModel*     model,
                  const uint8_t* str,
                  const uint8_t* base_uri);
 
+/**
+   Write a model to a file.
+*/
 SORD_API
 bool
 sord_write_file(SordModel*      model,
@@ -451,6 +463,9 @@ sord_write_file(SordModel*      model,
                 SordNode*       graph,
                 const uint8_t*  blank_prefix);
 
+/**
+   Write a model to a file handle.
+*/
 SORD_API
 bool
 sord_write_file_handle(SordModel*      model,
@@ -460,6 +475,11 @@ sord_write_file_handle(SordModel*      model,
                        SordNode*       graph,
                        const uint8_t*  blank_prefix);
 
+/**
+   Write a model to a string.
+
+   Returned string is newly allocated and must be freed with free().
+*/
 SORD_API
 uint8_t*
 sord_write_string(SordModel*     model,

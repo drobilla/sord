@@ -149,7 +149,7 @@ public:
 
 	inline Node(World& world, Type t, const std::string& s);
 	inline Node(World& world);
-	inline Node(World& world, SordNode* node);
+	inline Node(World& world, const SordNode* node);
 	inline Node(const Node& other);
 	inline ~Node();
 
@@ -269,7 +269,7 @@ Node::Node(World& world)
 }
 
 inline
-Node::Node(World& world, SordNode* node)
+Node::Node(World& world, const SordNode* node)
 	: _world(&world)
 {
 	_c_obj = node ? sord_node_copy(node) : NULL;

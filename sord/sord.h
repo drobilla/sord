@@ -91,7 +91,7 @@ typedef struct SordNodeImpl SordNode;
 
    Nodes are ordered (S P O G).  The ID of the default graph is 0.
 */
-typedef SordNode* SordQuad[4];
+typedef const SordNode* SordQuad[4];
 
 /**
    Index into a SordQuad.
@@ -220,7 +220,7 @@ sord_new_literal_counted(SordWorld*     world,
 */
 SORD_API
 SordNode*
-sord_node_copy(SordNode* node);
+sord_node_copy(const SordNode* node);
 
 /**
    Free a node (i.e. drop a reference).

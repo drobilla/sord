@@ -151,26 +151,28 @@ event_statement(void*           handle,
 {
 	ReadState* const state = (ReadState*)handle;
 
-	SordQuad tup;
-	tup[0] = sord_node_from_serd_node(state, subject, NULL, NULL);
-	tup[1] = sord_node_from_serd_node(state, predicate, NULL, NULL);
-	tup[2] = sord_node_from_serd_node(state, object,
-	                                  object_datatype, object_lang);
+	SordNode* s = sord_node_from_serd_node(state, subject, NULL, NULL);
+	SordNode* p = sord_node_from_serd_node(state, predicate, NULL, NULL);
+	SordNode* o = sord_node_from_serd_node(state, object,
+	                                       object_datatype, object_lang);
 
+	SordNode* g = NULL;
 	if (state->graph_uri_node) {
 		assert(graph->type == SERD_NOTHING);
-		tup[3] = sord_node_copy(state->graph_uri_node);
+		g = sord_node_copy(state->graph_uri_node);
 	} else {
-		tup[3] = (graph && graph->buf)
+		g = (graph && graph->buf)
 			? sord_node_from_serd_node(state, graph, NULL, NULL)
 			: NULL;
 	}
 
+	const SordQuad tup = { s, p, o, g };
 	sord_add(state->sord, tup);
-	sord_node_free(state->world, tup[0]);
-	sord_node_free(state->world, tup[1]);
-	sord_node_free(state->world, tup[2]);
-	sord_node_free(state->world, tup[3]);
+
+	sord_node_free(state->world, s);
+	sord_node_free(state->world, p);
+	sord_node_free(state->world, o);
+	sord_node_free(state->world, g);
 
 	return true;
 }

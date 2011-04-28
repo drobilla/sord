@@ -314,7 +314,7 @@ sord_iter_seek_match(SordIter* iter)
 	for (iter->end = true;
 	     !g_sequence_iter_is_end(iter->cur);
 	     sord_iter_forward(iter)) {
-		SordNode** const key = (SordNode**)g_sequence_get(iter->cur);
+		const SordNode** const key = (const SordNode**)g_sequence_get(iter->cur);
 		if (sord_quad_match_inline(key, iter->pat))
 			return (iter->end = false);
 	}
@@ -332,7 +332,7 @@ sord_iter_seek_match_range(SordIter* iter)
 		return true;
 
 	do {
-		SordNode** key = (SordNode**)g_sequence_get(iter->cur);
+		const SordNode** key = (const SordNode**)g_sequence_get(iter->cur);
 
 		if (sord_quad_match_inline(key, iter->pat))
 			return false; // Found match
@@ -371,7 +371,7 @@ sord_iter_new(const SordModel* sord, GSequenceIter* cur, const SordQuad pat,
 	case SINGLE:
 	case RANGE:
 		assert(
-			sord_quad_match_inline((SordNode**)g_sequence_get(iter->cur),
+			sord_quad_match_inline((const SordNode**)g_sequence_get(iter->cur),
 			                       iter->pat));
 		break;
 	case FILTER_RANGE:
@@ -588,18 +588,18 @@ sord_new(SordWorld* world, unsigned indices, bool graphs)
 }
 
 static void
-sord_add_quad_ref(SordModel* sord, SordNode* node)
+sord_add_quad_ref(SordModel* sord, const SordNode* node)
 {
 	if (node) {
 		assert(node->refs > 0);
-		++node->refs;
+		++((SordNode*)node)->refs;
 	}
 }
 
 static void
-sord_drop_quad_ref(SordModel* sord, SordNode* node)
+sord_drop_quad_ref(SordModel* sord, const SordNode* node)
 {
-	sord_node_free(sord_get_world(sord), node);
+	sord_node_free(sord_get_world(sord), (SordNode*)node);
 }
 
 void
@@ -731,10 +731,10 @@ sord_find(SordModel* sord, const SordQuad pat)
 	// It's easiest to think about this algorithm in terms of (S P O) ordering,
 	// assuming (A B C) == (S P O).  For other orderings this is not actually
 	// the case, but it works the same way.
-	SordNode* a = pat[ordering[0]]; // Most Significant Node (MSN)
-	SordNode* b = pat[ordering[1]]; // ...
-	SordNode* c = pat[ordering[2]]; // ...
-	SordNode* d = pat[ordering[3]]; // Least Significant Node (LSN)
+	const SordNode* a = pat[ordering[0]]; // Most Significant Node (MSN)
+	const SordNode* b = pat[ordering[1]]; // ...
+	const SordNode* c = pat[ordering[2]]; // ...
+	const SordNode* d = pat[ordering[3]]; // Least Significant Node (LSN)
 
 	if (a && b && c && d)
 		mode = SINGLE; // No duplicate quads (Sord is a set)
@@ -746,7 +746,7 @@ sord_find(SordModel* sord, const SordQuad pat)
 		SORD_FIND_LOG("No match found\n");
 		return NULL;
 	}
-	SordNode** const key = (SordNode**)g_sequence_get(cur);
+	const SordNode** const key = (const SordNode**)g_sequence_get(cur);
 	if (!key || ( (mode == RANGE || mode == SINGLE)
 	              && !sord_quad_match_inline(search_key, key) )) {
 		SORD_FIND_LOG("No match found\n");
@@ -957,12 +957,13 @@ sord_node_free(SordWorld* world, SordNode* node)
 }
 
 SordNode*
-sord_node_copy(SordNode* node)
+sord_node_copy(const SordNode* node)
 {
-	if (node) {
-		++node->refs;
+	SordNode* copy = (SordNode*)node;
+	if (copy) {
+		++copy->refs;
 	}
-	return node;
+	return copy;
 }
 
 static inline bool

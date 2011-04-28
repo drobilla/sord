@@ -664,11 +664,8 @@ index_search(SordModel* sord, GSequence* db, const SordQuad search_key)
 }
 
 static inline GSequenceIter*
-index_lower_bound(SordModel* sord, GSequence* db, const SordQuad search_key)
+index_lower_bound_iter(SordModel* sord, GSequenceIter* i, const SordQuad search_key)
 {
-	GSequenceIter* i = g_sequence_search(
-		db, (void*)search_key, sord_quad_compare, sord);
-
 	/* i is now at the position where search_key would be inserted,
 	   but this is not necessarily a match, and we need the leftmost...
 	*/
@@ -706,6 +703,14 @@ index_lower_bound(SordModel* sord, GSequence* db, const SordQuad search_key)
 	}
 
 	return i;
+}
+
+static inline GSequenceIter*
+index_lower_bound(SordModel* sord, GSequence* db, const SordQuad search_key)
+{
+	GSequenceIter* i = g_sequence_search(
+		db, (void*)search_key, sord_quad_compare, sord);
+	return index_lower_bound_iter(sord, i, search_key);
 }
 
 SordIter*
@@ -968,9 +973,10 @@ sord_add_to_index(SordModel* sord, const SordQuad tup, SordOrder order)
 	const SordQuad key = {
 		tup[ordering[0]], tup[ordering[1]], tup[ordering[2]], tup[ordering[3]]
 	};
-	GSequenceIter* const cur = index_search(sord, sord->indices[order], key);
-	if (!g_sequence_iter_is_end(cur)
-	    && !sord_quad_compare(g_sequence_get(cur), key, sord)) {
+	GSequenceIter* const cur   = index_search(sord, sord->indices[order], key);
+	GSequenceIter* const match = index_lower_bound_iter(sord, cur, key);
+	if (!g_sequence_iter_is_end(match)
+	    && !sord_quad_compare(g_sequence_get(match), key, sord)) {
 		return false;  // Quad already stored in this index
 	}
 
@@ -988,14 +994,6 @@ sord_add(SordModel* sord, const SordQuad tup)
 	SORD_WRITE_LOG("Add " TUP_FMT "\n", TUP_FMT_ARGS(tup));
 	if (!tup[0] || !tup[1] || !tup[2]) {
 		fprintf(stderr, "Attempt to add quad with NULL field.\n");
-		return false;
-	}
-
-	// FIXME: Remove double search
-	SordQuad pat = { tup[0], tup[1], tup[2], tup[3] };
-	SordIter* existing = sord_find(sord, pat);
-	if (existing) {
-		sord_iter_free(existing);
 		return false;
 	}
 

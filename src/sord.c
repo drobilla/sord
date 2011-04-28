@@ -101,7 +101,7 @@ struct SordWorldImpl {
 	GHashTable* names;    ///< URI or blank node identifier string => ID
 	GHashTable* langs;    ///< Language tag => Interned language tag
 	GHashTable* literals; ///< Literal => ID
-	SordCount   n_nodes;  ///< Number of nodes
+	size_t      n_nodes;  ///< Number of nodes
 };
 
 /** Store */
@@ -114,7 +114,7 @@ struct SordModelImpl {
 	 */
 	GSequence* indices[NUM_ORDERS];
 
-	SordCount n_quads;
+	size_t n_quads;
 };
 
 /** Mode for searching or iteration */
@@ -632,13 +632,13 @@ sord_get_world(SordModel* sord)
 	return sord->world;
 }
 
-int
+size_t
 sord_num_quads(const SordModel* sord)
 {
 	return sord->n_quads;
 }
 
-int
+size_t
 sord_num_nodes(const SordWorld* world)
 {
 	return world->n_nodes;
@@ -1010,7 +1010,7 @@ sord_add(SordModel* sord, const SordQuad tup)
 		sord_add_quad_ref(sord, tup[i]);
 
 	++sord->n_quads;
-	assert(sord->n_quads == g_sequence_get_length(sord->indices[SPO]));
+	assert(sord->n_quads == (size_t)g_sequence_get_length(sord->indices[SPO]));
 	return true;
 }
 

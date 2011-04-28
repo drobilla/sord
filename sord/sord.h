@@ -317,14 +317,14 @@ sord_get_world(SordModel* model);
    Nodes are included in this count iff they are a part of a quad in @c world.
 */
 SORD_API
-int
+size_t
 sord_num_nodes(const SordWorld* world);
 
 /**
    Return the number of quads stored in @c model.
 */
 SORD_API
-int
+size_t
 sord_num_quads(const SordModel* model);
 
 /**

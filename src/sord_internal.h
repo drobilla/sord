@@ -22,15 +22,13 @@
 
 #include "sord/sord.h"
 
-typedef intptr_t SordCount;  ///< Count of nodes or triples
-
 /** Node */
 struct SordNodeImpl {
 	uint8_t*     buf;       ///< Value (string)
 	const char*  lang;      ///< Literal language (interned string)
 	SordNode*    datatype;  ///< Literal data type (ID of a URI node, or 0)
 	size_t       n_bytes;   ///< Length of data in bytes (including terminator)
-	SordCount    refs;      ///< Reference count (i.e. number of containing quads)
+	size_t       refs;      ///< Reference count (i.e. number of containing quads)
 	SordNodeType type;      ///< SordNodeType
 };
 

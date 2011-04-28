@@ -121,7 +121,7 @@ main(int argc, char** argv)
 
 	bool success = sord_read_file(sord, input, NULL, NULL);
 
-	printf("loaded %u statements\n", sord_num_nodes(world));
+	printf("loaded %zu statements\n", sord_num_nodes(world));
 
 	SerdURI base_uri;
 	if (!serd_uri_parse(input, &base_uri)) {

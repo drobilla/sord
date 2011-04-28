@@ -82,16 +82,16 @@ generate(SordWorld* world, SordModel* sord, size_t n_quads, size_t n_objects_per
 	tup[2] = sord_new_literal(world, 0, USTR("hello"), NULL);
 	tup[3] = 0;
 	sord_add(sord, tup);
-	sord_node_free(world, tup[2]);
+	sord_node_free(world, (SordNode*)tup[2]);
 	tup[2] = sord_new_literal(world, 0, USTR("hi"), NULL);
 	sord_add(sord, tup);
 
-	sord_node_free(world, tup[0]);
-	sord_node_free(world, tup[2]);
+	sord_node_free(world, (SordNode*)tup[0]);
+	sord_node_free(world, (SordNode*)tup[2]);
 	tup[0] = uri(world, 14);
 	tup[2] = sord_new_literal(world, 0, USTR("bonjour"), "fr");
 	sord_add(sord, tup);
-	sord_node_free(world, tup[2]);
+	sord_node_free(world, (SordNode*)tup[2]);
 	tup[2] = sord_new_literal(world, 0, USTR("salut"), "fr");
 	sord_add(sord, tup);
 
@@ -106,18 +106,18 @@ generate(SordWorld* world, SordModel* sord, size_t n_quads, size_t n_objects_per
 	}
 
 	// Add a blank node subject
-	sord_node_free(world, tup[0]);
+	sord_node_free(world, (SordNode*)tup[0]);
 	tup[0] = sord_new_blank(world, USTR("ablank"));
 	sord_add(sord, tup);
 
-	sord_node_free(world, tup[1]);
-	sord_node_free(world, tup[2]);
+	sord_node_free(world, (SordNode*)tup[1]);
+	sord_node_free(world, (SordNode*)tup[2]);
 	tup[1] = uri(world, 6);
 	tup[2] = uri(world, 7);
 	sord_add(sord, tup);
-	sord_node_free(world, tup[0]);
-	sord_node_free(world, tup[1]);
-	sord_node_free(world, tup[2]);
+	sord_node_free(world, (SordNode*)tup[0]);
+	sord_node_free(world, (SordNode*)tup[1]);
+	sord_node_free(world, (SordNode*)tup[2]);
 
 	return EXIT_SUCCESS;
 }
@@ -211,7 +211,7 @@ test_read(SordWorld* world, SordModel* sord, const size_t n_quads, const int n_o
 		}
 	}
 	fprintf(stderr, "OK\n");
-	sord_node_free(world, pat[0]);
+	sord_node_free(world, (SordNode*)pat[0]);
 	sord_iter_free(iter);
 	if (num_results != 2) {
 		fprintf(stderr, "Blank node subject query failed\n");
@@ -221,7 +221,7 @@ test_read(SordWorld* world, SordModel* sord, const size_t n_quads, const int n_o
 	// Test nested queries
 	fprintf(stderr, "Nested Queries... ");
 	pat[0] = pat[1] = pat[2] = 0;
-	SordNode* last_subject = 0;
+	const SordNode* last_subject = 0;
 	iter = sord_find(sord, pat);
 	for (; !sord_iter_end(iter); sord_iter_next(iter)) {
 		sord_iter_get(iter, id);

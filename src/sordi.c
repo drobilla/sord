@@ -124,7 +124,7 @@ main(int argc, char** argv)
 	printf("Loaded %zu statements\n", sord_num_nodes(world));
 
 	SerdURI base_uri;
-	if (!serd_uri_parse(input, &base_uri)) {
+	if (serd_uri_parse(input, &base_uri)) {
 		fprintf(stderr, "Bad input URI <%s>\n", input);
 		return 1;
 	}

@@ -44,7 +44,7 @@ copy_string(const uint8_t* str, size_t* n_bytes)
 	return ret;
 }
 
-static bool
+static SerdStatus
 event_base(void*           handle,
            const SerdNode* uri_node)
 {
@@ -53,7 +53,7 @@ event_base(void*           handle,
 	return serd_read_state_set_base_uri(state->read_state, uri_node);
 }
 
-static bool
+static SerdStatus
 event_prefix(void*           handle,
              const SerdNode* name,
              const SerdNode* uri_node)
@@ -94,7 +94,7 @@ sord_node_from_serd_node(ReadState* state, const SerdNode* sn,
 	case SERD_CURIE: {
 		SerdChunk uri_prefix;
 		SerdChunk uri_suffix;
-		if (!serd_env_expand(state->env, sn, &uri_prefix, &uri_suffix)) {
+		if (serd_env_expand(state->env, sn, &uri_prefix, &uri_suffix)) {
 			fprintf(stderr, "Failed to expand qname `%s'\n", sn->buf);
 			return NULL;
 		}
@@ -140,7 +140,7 @@ sord_node_to_serd_node(const SordNode* node, SerdNode* out)
 	out->n_chars = len - 1; // FIXME: UTF-8
 }
 
-static bool
+static SerdStatus
 event_statement(void*           handle,
                 const SerdNode* graph,
                 const SerdNode* subject,
@@ -174,7 +174,7 @@ event_statement(void*           handle,
 	sord_node_free(state->world, o);
 	sord_node_free(state->world, g);
 
-	return true;
+	return SERD_SUCCESS;
 }
 
 static const uint8_t*
@@ -238,7 +238,7 @@ sord_read_file_handle(SordModel*     model,
 	uint8_t* base_uri_str     = copy_string(base_uri_str_in, &base_uri_n_bytes);
 
 	SerdURI  base_uri;
-	if (!serd_uri_parse(base_uri_str, &base_uri)) {
+	if (serd_uri_parse(base_uri_str, &base_uri)) {
 		fprintf(stderr, "Invalid base URI <%s>\n", base_uri_str);
 	}
 
@@ -257,14 +257,14 @@ sord_read_file_handle(SordModel*     model,
 		serd_reader_set_blank_prefix(state.reader, blank_prefix);
 	}
 
-	const bool success = serd_reader_read_file(state.reader, fd, base_uri_str);
+	const SerdStatus ret = serd_reader_read_file(state.reader, fd, base_uri_str);
 
 	serd_reader_free(state.reader);
 	serd_read_state_free(state.read_state);
 	serd_env_free(env);
 	free(base_uri_str);
 
-	return success;
+	return (ret == SERD_SUCCESS);
 }
 
 SORD_API
@@ -277,7 +277,7 @@ sord_read_string(SordModel*     model,
 	uint8_t* base_uri_str     = copy_string(base_uri_str_in, &base_uri_n_bytes);
 
 	SerdURI  base_uri;
-	if (!serd_uri_parse(base_uri_str, &base_uri)) {
+	if (serd_uri_parse(base_uri_str, &base_uri)) {
 		fprintf(stderr, "Invalid base URI <%s>\n", base_uri_str);
 	}
 
@@ -292,14 +292,14 @@ sord_read_string(SordModel*     model,
 		SERD_TURTLE, &state,
 		event_base, event_prefix, event_statement, NULL);
 
-	const bool success = serd_reader_read_string(state.reader, str);
+	const SerdStatus status = serd_reader_read_string(state.reader, str);
 
 	serd_reader_free(state.reader);
 	serd_read_state_free(state.read_state);
 	serd_env_free(env);
 	free(base_uri_str);
 
-	return success;
+	return (status == SERD_SUCCESS);
 }
 
 SORD_API
@@ -379,7 +379,7 @@ make_writer(SerdEnv*       env,
 	size_t   base_uri_n_bytes = 0;
 	uint8_t* base_uri_str     = copy_string(base_uri_str_in, &base_uri_n_bytes);
 	SerdURI  base_uri;
-	if (!serd_uri_parse(base_uri_str, &base_uri)) {
+	if (serd_uri_parse(base_uri_str, &base_uri)) {
 		fprintf(stderr, "Invalid base URI <%s>\n", base_uri_str);
 	}
 

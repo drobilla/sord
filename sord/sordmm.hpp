@@ -95,7 +95,7 @@ public:
 		SerdNode  curie_node = string_to_node(SERD_CURIE, curie);
 		SerdChunk uri_prefix;
 		SerdChunk uri_suffix;
-		if (serd_env_expand(_c_obj, &curie_node, &uri_prefix, &uri_suffix)) {
+		if (!serd_env_expand(_c_obj, &curie_node, &uri_prefix, &uri_suffix)) {
 			std::string ret((const char*)uri_prefix.buf, uri_prefix.len);
 			ret.append((const char*)uri_suffix.buf, uri_suffix.len);
 			return ret;

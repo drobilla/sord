@@ -95,7 +95,7 @@ sord_node_from_serd_node(ReadState* state, const SerdNode* sn,
 		SerdChunk uri_prefix;
 		SerdChunk uri_suffix;
 		if (!serd_env_expand(state->env, sn, &uri_prefix, &uri_suffix)) {
-			fprintf(stderr, "ERROR: failed to expand qname `%s'\n", sn->buf);
+			fprintf(stderr, "Failed to expand qname `%s'\n", sn->buf);
 			return NULL;
 		}
 		const size_t uri_len = uri_prefix.len + uri_suffix.len;
@@ -184,7 +184,7 @@ sord_file_uri_to_path(const uint8_t* uri)
 	if (serd_uri_string_has_scheme(uri)) {
 		// Absolute URI, ensure it a file and chop scheme
 		if (strncmp((const char*)uri, "file:", 5)) {
-			fprintf(stderr, "unsupported URI scheme `%s'\n", uri);
+			fprintf(stderr, "Unsupported URI scheme `%s'\n", uri);
 			return NULL;
 #ifdef __WIN32__
 		} else if (!strncmp((const char*)uri, "file:///", 8)) {
@@ -211,13 +211,13 @@ sord_read_file(SordModel*     model,
 {
 	const uint8_t* const path = sord_file_uri_to_path(uri);
 	if (!path) {
-		fprintf(stderr, "unable to read non-file URI `%s'\n", uri);
+		fprintf(stderr, "Unable to read non-file URI <%s>\n", uri);
 		return false;
 	}
 
 	FILE* const fd = fopen((const char*)path, "r");
 	if (!fd) {
-		fprintf(stderr, "failed to open file `%s'\n", path);
+		fprintf(stderr, "Failed to open file %s\n", path);
 		return false;
 	}
 
@@ -239,7 +239,7 @@ sord_read_file_handle(SordModel*     model,
 
 	SerdURI  base_uri;
 	if (!serd_uri_parse(base_uri_str, &base_uri)) {
-		fprintf(stderr, "invalid base URI `%s'\n", base_uri_str);
+		fprintf(stderr, "Invalid base URI <%s>\n", base_uri_str);
 	}
 
 	SerdEnv* env = serd_env_new();
@@ -278,7 +278,7 @@ sord_read_string(SordModel*     model,
 
 	SerdURI  base_uri;
 	if (!serd_uri_parse(base_uri_str, &base_uri)) {
-		fprintf(stderr, "invalid base URI `%s'\n", base_uri_str);
+		fprintf(stderr, "Invalid base URI <%s>\n", base_uri_str);
 	}
 
 	SerdEnv* env = serd_env_new();
@@ -315,9 +315,9 @@ sord_write_file(SordModel*     model,
 		return false;
 	}
 
-	FILE* const fd = fopen((const char*)path,  "w");
+	FILE* const fd = fopen((const char*)path, "w");
 	if (!fd) {
-		fprintf(stderr, "failed to open file %s\n", path);
+		fprintf(stderr, "Failed to open file %s\n", path);
 		return false;
 	}
 
@@ -380,7 +380,7 @@ make_writer(SerdEnv*       env,
 	uint8_t* base_uri_str     = copy_string(base_uri_str_in, &base_uri_n_bytes);
 	SerdURI  base_uri;
 	if (!serd_uri_parse(base_uri_str, &base_uri)) {
-		fprintf(stderr, "invalid base URI `%s'\n", base_uri_str);
+		fprintf(stderr, "Invalid base URI <%s>\n", base_uri_str);
 	}
 
 	SerdWriter* writer = serd_writer_new(SERD_TURTLE,

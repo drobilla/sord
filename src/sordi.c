@@ -34,7 +34,7 @@ int
 print_version()
 {
 	printf("sordi " SORD_VERSION " <http://drobilla.net/software/sord>\n");
-	printf("Copyright 2011-2011 David Robillard <http://drobilla.net>.\n"
+	printf("Copyright 2011 David Robillard <http://drobilla.net>.\n"
 	       "\nLicense: Simplified BSD License.\n"
 	       "This is free software; you are free to change and redistribute it."
 	       "\nThere is NO WARRANTY, to the extent permitted by law.\n");
@@ -97,7 +97,7 @@ main(int argc, char** argv)
 			return print_version();
 		} else if (argv[a][1] == 'o') {
 			if (++a == argc) {
-				fprintf(stderr, "missing value for -o\n");
+				fprintf(stderr, "Missing value for -o\n");
 				return 1;
 			}
 			if (!strcmp(argv[a], "turtle")) {
@@ -105,11 +105,11 @@ main(int argc, char** argv)
 			} else if (!strcmp(argv[a], "ntriples")) {
 				output_syntax = SERD_NTRIPLES;
 			} else {
-				fprintf(stderr, "unknown output format `%s'\n",  argv[a]);
+				fprintf(stderr, "Unknown output format `%s'\n",  argv[a]);
 				return 1;
 			}
 		} else {
-			fprintf(stderr, "unknown option `%s'\n", argv[a]);
+			fprintf(stderr, "Unknown option `%s'\n", argv[a]);
 			return print_usage(argv[0], true);
 		}
 	}
@@ -121,11 +121,11 @@ main(int argc, char** argv)
 
 	bool success = sord_read_file(sord, input, NULL, NULL);
 
-	printf("loaded %zu statements\n", sord_num_nodes(world));
+	printf("Loaded %zu statements\n", sord_num_nodes(world));
 
 	SerdURI base_uri;
 	if (!serd_uri_parse(input, &base_uri)) {
-		fprintf(stderr, "bad input URI `%s'\n", input);
+		fprintf(stderr, "Bad input URI <%s>\n", input);
 		return 1;
 	}
 

@@ -103,8 +103,8 @@ sord_node_from_serd_node(ReadState* state, const SerdNode* sn,
 		memcpy(buf,                  uri_prefix.buf, uri_prefix.len);
 		memcpy(buf + uri_prefix.len, uri_suffix.buf, uri_suffix.len);
 		buf[uri_len] = '\0';
-		SordNode* ret = sord_new_uri_counted(state->world,
-		                                     buf, uri_prefix.len + uri_suffix.len);
+		SordNode* ret = sord_new_uri_counted(
+			state->world, buf, uri_prefix.len + uri_suffix.len);
 		free(buf);
 		return ret;
 	}

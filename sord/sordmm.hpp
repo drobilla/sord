@@ -75,7 +75,7 @@ public:
 	                const std::string& uri) {
 		const SerdNode name_node = string_to_node(SERD_LITERAL, name);
 		const SerdNode uri_node  = string_to_node(SERD_URI,     uri);
-		serd_env_add(_c_obj, &name_node, &uri_node);
+		serd_env_set_prefix(_c_obj, &name_node, &uri_node);
 	}
 
 	inline std::string qualify(std::string uri) const {

@@ -26,12 +26,11 @@
 #include "sord_internal.h"
 
 typedef struct {
-	SerdReader*    reader;
-	SerdEnv*       env;
-	SerdReadState* read_state;
-	SordNode*      graph_uri_node;
-	SordWorld*     world;
-	SordModel*     sord;
+	SerdReader* reader;
+	SerdEnv*    env;
+	SordNode*   graph_uri_node;
+	SordWorld*  world;
+	SordModel*  sord;
 } ReadState;
 
 static uint8_t*
@@ -50,7 +49,7 @@ event_base(void*           handle,
 {
 	ReadState* const state = (ReadState*)handle;
 
-	return serd_read_state_set_base_uri(state->read_state, uri_node);
+	return serd_env_set_base_uri(state->env, uri_node);
 }
 
 static SerdStatus
@@ -60,7 +59,7 @@ event_prefix(void*           handle,
 {
 	ReadState* const state = (ReadState*)handle;
 
-	return serd_read_state_set_prefix(state->read_state, name, uri_node);
+	return serd_env_set_prefix(state->env, name, uri_node);
 }
 
 static inline SordNode*
@@ -83,7 +82,7 @@ sord_node_from_serd_node(ReadState* state, const SerdNode* sn,
 		return ret;
 	case SERD_URI: {
 		SerdURI base_uri;
-		serd_read_state_get_base_uri(state->read_state, &base_uri);
+		serd_env_get_base_uri(state->env, &base_uri);
 		SerdURI  abs_uri;
 		SerdNode abs_uri_node = serd_node_new_uri_from_node(
 			sn, &base_uri, &abs_uri);
@@ -244,9 +243,10 @@ sord_read_file_handle(SordModel*     model,
 
 	SerdEnv* env = serd_env_new();
 
-	SerdReadState* read_state = serd_read_state_new(env, base_uri_str);
+	SerdNode base_uri_node = serd_node_from_string(SERD_URI, base_uri_str);
+	serd_env_set_base_uri(env, &base_uri_node);
 
-	ReadState state = { NULL, env, read_state, graph,
+	ReadState state = { NULL, env, graph,
 	                    sord_get_world(model), model };
 
 	state.reader = serd_reader_new(
@@ -260,7 +260,6 @@ sord_read_file_handle(SordModel*     model,
 	const SerdStatus ret = serd_reader_read_file(state.reader, fd, base_uri_str);
 
 	serd_reader_free(state.reader);
-	serd_read_state_free(state.read_state);
 	serd_env_free(env);
 	free(base_uri_str);
 
@@ -283,9 +282,10 @@ sord_read_string(SordModel*     model,
 
 	SerdEnv* env = serd_env_new();
 
-	SerdReadState* read_state = serd_read_state_new(env, base_uri_str);
+	SerdNode base_uri_node = serd_node_from_string(SERD_URI, base_uri_str);
+	serd_env_set_base_uri(env, &base_uri_node);
 
-	ReadState state = { NULL, env, read_state, NULL,
+	ReadState state = { NULL, env, NULL,
 	                    sord_get_world(model), model };
 
 	state.reader = serd_reader_new(
@@ -295,7 +295,6 @@ sord_read_string(SordModel*     model,
 	const SerdStatus status = serd_reader_read_string(state.reader, str);
 
 	serd_reader_free(state.reader);
-	serd_read_state_free(state.read_state);
 	serd_env_free(env);
 	free(base_uri_str);
 

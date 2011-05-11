@@ -120,8 +120,9 @@ main(int argc, char** argv)
 
 	SordWorld* world = sord_world_new();
 	SordModel* sord  = sord_new(world, SORD_SPO|SORD_OPS, false);
+	SerdEnv*   env   = serd_env_new();
 
-	bool success = sord_read_file(sord, input, NULL, NULL);
+	bool success = sord_read_file(sord, env, input, NULL, NULL);
 
 	printf("Loaded %zu statements\n", sord_num_nodes(world));
 
@@ -131,13 +132,20 @@ main(int argc, char** argv)
 		return 1;
 	}
 
-	SerdEnv*    env    = serd_env_new();
-	SerdWriter* writer = serd_writer_new(
-		SERD_TURTLE, SERD_STYLE_ABBREVIATED|SERD_STYLE_RESOLVED,
-		env, &base_uri, file_sink, stdout);
+	SerdEnv* write_env = serd_env_new();
 
-	// Query
-	SordQuad pat = { 0, 0, 0, 0 };
+	SerdWriter* writer = serd_writer_new(
+		SERD_TURTLE,
+		SERD_STYLE_ABBREVIATED|SERD_STYLE_RESOLVED|SERD_STYLE_CURIED,
+		write_env, &base_uri, file_sink, stdout);
+
+	// Write @prefix directives
+	serd_env_foreach(env,
+	                 (SerdPrefixSink)serd_writer_set_prefix,
+	                 writer);
+
+	// Write statements
+	SordQuad  pat  = { 0, 0, 0, 0 };
 	SordIter* iter = sord_find(sord, pat);
 	for (; !sord_iter_end(iter); sord_iter_next(iter)) {
 		SordQuad tup;
@@ -156,6 +164,7 @@ main(int argc, char** argv)
 	serd_writer_free(writer);
 
 	serd_env_free(env);
+	serd_env_free(write_env);
 
 	sord_free(sord);
 

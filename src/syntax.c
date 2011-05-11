@@ -207,6 +207,7 @@ sord_file_uri_to_path(const uint8_t* uri)
 SORD_API
 bool
 sord_read_file(SordModel*     model,
+               SerdEnv*       env,
                const uint8_t* uri,
                SordNode*      graph,
                const uint8_t* blank_prefix)
@@ -223,7 +224,8 @@ sord_read_file(SordModel*     model,
 		return false;
 	}
 
-	const bool ret = sord_read_file_handle(model, fd, uri, graph, blank_prefix);
+	const bool ret = sord_read_file_handle(
+		model, env, fd, uri, graph, blank_prefix);
 	fclose(fd);
 	return ret;
 }
@@ -231,6 +233,7 @@ sord_read_file(SordModel*     model,
 SORD_API
 bool
 sord_read_file_handle(SordModel*     model,
+                      SerdEnv*       env,
                       FILE*          fd,
                       const uint8_t* base_uri_str_in,
                       SordNode*      graph,
@@ -243,8 +246,6 @@ sord_read_file_handle(SordModel*     model,
 	if (serd_uri_parse(base_uri_str, &base_uri)) {
 		fprintf(stderr, "Invalid base URI <%s>\n", base_uri_str);
 	}
-
-	SerdEnv* env = serd_env_new();
 
 	SerdNode base_uri_node = serd_node_from_string(SERD_URI, base_uri_str);
 	serd_env_set_base_uri(env, &base_uri_node);
@@ -263,7 +264,6 @@ sord_read_file_handle(SordModel*     model,
 	const SerdStatus ret = serd_reader_read_file(state.reader, fd, base_uri_str);
 
 	serd_reader_free(state.reader);
-	serd_env_free(env);
 	free(base_uri_str);
 
 	return (ret == SERD_SUCCESS);
@@ -272,6 +272,7 @@ sord_read_file_handle(SordModel*     model,
 SORD_API
 bool
 sord_read_string(SordModel*     model,
+                 SerdEnv*       env,
                  const uint8_t* str,
                  const uint8_t* base_uri_str_in)
 {
@@ -282,8 +283,6 @@ sord_read_string(SordModel*     model,
 	if (serd_uri_parse(base_uri_str, &base_uri)) {
 		fprintf(stderr, "Invalid base URI <%s>\n", base_uri_str);
 	}
-
-	SerdEnv* env = serd_env_new();
 
 	SerdNode base_uri_node = serd_node_from_string(SERD_URI, base_uri_str);
 	serd_env_set_base_uri(env, &base_uri_node);
@@ -298,7 +297,6 @@ sord_read_string(SordModel*     model,
 	const SerdStatus status = serd_reader_read_string(state.reader, str);
 
 	serd_reader_free(state.reader);
-	serd_env_free(env);
 	free(base_uri_str);
 
 	return (status == SERD_SUCCESS);

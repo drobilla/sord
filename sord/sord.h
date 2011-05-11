@@ -435,6 +435,7 @@ sord_quad_match(const SordQuad x, const SordQuad y);
 SORD_API
 bool
 sord_read_file(SordModel*     model,
+               SerdEnv*       env,
                const uint8_t* uri,
                SordNode*      graph,
                const uint8_t* blank_prefix);
@@ -445,6 +446,7 @@ sord_read_file(SordModel*     model,
 SORD_API
 bool
 sord_read_file_handle(SordModel*     model,
+                      SerdEnv*       env,
                       FILE*          fd,
                       const uint8_t* base_uri,
                       SordNode*      graph,
@@ -456,6 +458,7 @@ sord_read_file_handle(SordModel*     model,
 SORD_API
 bool
 sord_read_string(SordModel*     model,
+                 SerdEnv*       env,
                  const uint8_t* str,
                  const uint8_t* base_uri);
 

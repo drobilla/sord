@@ -763,7 +763,8 @@ sord_lookup_name(SordWorld* world, const uint8_t* str, size_t str_len)
 }
 
 static SordNode*
-sord_new_node(SordNodeType type, const uint8_t* data, size_t n_bytes)
+sord_new_node(SordNodeType type, const uint8_t* data,
+              size_t n_bytes, SerdNodeFlags flags)
 {
 	SordNode* node = malloc(sizeof(struct SordNodeImpl));
 	node->type     = type;
@@ -771,6 +772,7 @@ sord_new_node(SordNodeType type, const uint8_t* data, size_t n_bytes)
 	node->refs     = 1;
 	node->datatype = 0;
 	node->lang     = 0;
+	node->flags    = flags;
 	node->buf      = (uint8_t*)g_strdup((const char*)data); // TODO: no-copy
 	return node;
 }
@@ -792,10 +794,10 @@ sord_intern_lang(SordWorld* world, const char* lang)
 
 static SordNode*
 sord_new_literal_node(SordWorld* world, SordNode* datatype,
-                      const uint8_t* str,  int str_len,
-                      const char*    lang, uint8_t lang_len)
+                      const uint8_t* str,  size_t str_len, SerdNodeFlags flags,
+                      const char*    lang)
 {
-	SordNode* node = sord_new_node(SORD_LITERAL, str, str_len + 1);
+	SordNode* node = sord_new_node(SORD_LITERAL, str, str_len + 1, flags);
 	node->datatype = sord_node_copy(datatype);
 	node->lang     = sord_intern_lang(world, lang);
 	return node;
@@ -803,8 +805,8 @@ sord_new_literal_node(SordWorld* world, SordNode* datatype,
 
 static SordNode*
 sord_lookup_literal(SordWorld* world, SordNode* type,
-                    const uint8_t* str,  int     str_len,
-                    const char*    lang, uint8_t lang_len)
+                    const uint8_t* str, size_t str_len,
+                    const char*    lang)
 {
 	// Make search key (FIXME: ick)
 	struct SordNodeImpl key;
@@ -814,6 +816,7 @@ sord_lookup_literal(SordWorld* world, SordNode* type,
 	key.datatype = type;
 	key.lang     = sord_intern_lang(world, lang);
 	key.buf      = (uint8_t*)str;
+	key.flags    = 0;
 
 	SordNode* id = g_hash_table_lookup(world->literals, &key);
 	if (id) {
@@ -854,6 +857,12 @@ sord_node_get_datatype(const SordNode* ref)
 	return ref->datatype;
 }
 
+SerdNodeFlags
+sord_node_get_flags(const SordNode* node)
+{
+	return node->flags;
+}
+
 static void
 sord_add_node(SordWorld* world, SordNode* node)
 {
@@ -869,7 +878,7 @@ sord_new_uri_counted(SordWorld* world, const uint8_t* str, size_t str_len)
 		return node;
 	}
 
-	node = sord_new_node(SORD_URI, str, str_len + 1);
+	node = sord_new_node(SORD_URI, str, str_len + 1, 0);
 	assert(!g_hash_table_lookup(world->names, node->buf));
 	g_hash_table_insert(world->names, node->buf, node);
 	sord_add_node(world, node);
@@ -891,7 +900,7 @@ sord_new_blank_counted(SordWorld* world, const uint8_t* str, size_t str_len)
 		return node;
 	}
 
-	node = sord_new_node(SORD_BLANK, str, str_len + 1);
+	node = sord_new_node(SORD_BLANK, str, str_len + 1, 0);
 	g_hash_table_insert(world->names, node->buf, node);
 	sord_add_node(world, node);
 	return node;
@@ -905,16 +914,16 @@ sord_new_blank(SordWorld* world, const uint8_t* str)
 
 SordNode*
 sord_new_literal_counted(SordWorld* world, SordNode* datatype,
-                         const uint8_t* str,  size_t  str_len,
-                         const char*    lang, uint8_t lang_len)
+                         const uint8_t* str,  size_t  str_len, SerdNodeFlags flags,
+                         const char*    lang)
 {
-	SordNode* node = sord_lookup_literal(world, datatype, str, str_len, lang, lang_len);
+	SordNode* node = sord_lookup_literal(world, datatype, str, str_len, lang);
 	if (node) {
 		++node->refs;
 		return node;
 	}
 
-	node = sord_new_literal_node(world, datatype, str, str_len, lang, lang_len);
+	node = sord_new_literal_node(world, datatype, str, str_len, flags, lang);
 	g_hash_table_insert(world->literals, node, node);  // FIXME: correct?
 	sord_add_node(world, node);
 	assert(node->refs == 1);
@@ -925,9 +934,12 @@ SordNode*
 sord_new_literal(SordWorld* world, SordNode* datatype,
                  const uint8_t* str, const char* lang)
 {
+	SerdNodeFlags flags   = 0;
+	size_t        n_bytes = 0;
+	size_t        n_chars = serd_strlen(str, &n_bytes, &flags);
 	return sord_new_literal_counted(world, datatype,
-	                                str, strlen((const char*)str),
-	                                lang, lang ? strlen(lang) : 0);
+	                                str, n_bytes - 1, flags,
+	                                lang);
 }
 
 void

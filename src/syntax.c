@@ -73,10 +73,12 @@ sord_node_from_serd_node(ReadState* state, const SerdNode* sn,
 		return NULL;
 	case SERD_LITERAL:
 		datatype_node = sord_node_from_serd_node(state, datatype, NULL, NULL),
-		ret = sord_new_literal(
+		ret = sord_new_literal_counted(
 			state->world,
 			datatype_node,
 			sn->buf,
+			sn->n_bytes - 1,
+			sn->flags,
 			sord_intern_lang(state->world, (const char*)lang->buf));
 		sord_node_free(state->world, datatype_node);
 		return ret;
@@ -86,7 +88,8 @@ sord_node_from_serd_node(ReadState* state, const SerdNode* sn,
 		SerdURI  abs_uri;
 		SerdNode abs_uri_node = serd_node_new_uri_from_node(
 			sn, &base_uri, &abs_uri);
-		SordNode* ret = sord_new_uri(state->world, abs_uri_node.buf);
+		SordNode* ret = sord_new_uri_counted(state->world, abs_uri_node.buf,
+		                                     abs_uri_node.n_bytes - 1);
 		serd_node_free(&abs_uri_node);
 		return ret;
 	}
@@ -110,7 +113,7 @@ sord_node_from_serd_node(ReadState* state, const SerdNode* sn,
 	case SERD_BLANK_ID:
 	case SERD_ANON_BEGIN:
 	case SERD_ANON:
-		return sord_new_blank(state->world, sn->buf);
+		return sord_new_blank_counted(state->world, sn->buf, sn->n_bytes - 1);
 	}
 	return NULL;
 }

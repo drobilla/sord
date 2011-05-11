@@ -209,8 +209,8 @@ sord_new_literal_counted(SordWorld*     world,
                          SordNode*      datatype,
                          const uint8_t* str,
                          size_t         str_len,
-                         const char*    lang,
-                         uint8_t        lang_len);
+                         SerdNodeFlags  flags,
+                         const char*    lang);
 
 /**
    Copy a node (i.e. obtain a reference).
@@ -263,6 +263,13 @@ sord_node_get_language(const SordNode* node);
 SORD_API
 SordNode*
 sord_node_get_datatype(const SordNode* node);
+
+/**
+   Return the flags (string attributes) of a node.
+*/
+SORD_API
+SerdNodeFlags
+sord_node_get_flags(const SordNode* node);
 
 /**
    Return true iff @c a is equal to @c b.

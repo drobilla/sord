@@ -124,7 +124,7 @@ main(int argc, char** argv)
 
 	bool success = sord_read_file(sord, env, input, NULL, NULL);
 
-	printf("Loaded %zu statements\n", sord_num_nodes(world));
+	fprintf(stderr, "Loaded %zu statements\n", sord_num_nodes(world));
 
 	SerdURI base_uri;
 	if (serd_uri_parse(input, &base_uri)) {
@@ -156,9 +156,31 @@ main(int argc, char** argv)
 		SerdNode        ss = serd_node_from_sord_node(s);
 		SerdNode        sp = serd_node_from_sord_node(p);
 		SerdNode        so = serd_node_from_sord_node(o);
-		serd_writer_write_statement(
-			writer, NULL, &ss, &sp, &so, NULL, NULL);
+		if (sord_node_is_inline_object(o)) {
+			so.type = SERD_ANON_BEGIN;
+			serd_writer_write_statement(
+				writer, NULL, &ss, &sp, &so, NULL, NULL);
+			so.type = SERD_ANON;
+			SordQuad  sub_pat  = { o, 0, 0, 0 };
+			SordIter* sub_iter = sord_find(sord, sub_pat);
+			for (; !sord_iter_end(sub_iter); sord_iter_next(sub_iter)) {
+				SordQuad sub_tup;
+				sord_iter_get(sub_iter, sub_tup);
+				const SordNode* sub_p  = sub_tup[SORD_PREDICATE];
+				const SordNode* sub_o  = sub_tup[SORD_OBJECT];
+				SerdNode        sub_sp = serd_node_from_sord_node(sub_p);
+				SerdNode        sub_so = serd_node_from_sord_node(sub_o);
+				serd_writer_write_statement(
+					writer, NULL, &so, &sub_sp, &sub_so, NULL, NULL);
+			}
+			sord_iter_free(sub_iter);
+			serd_writer_end_anon(writer, &so);
+		} else if (!sord_node_is_inline_object(s)) {
+			serd_writer_write_statement(
+				writer, NULL, &ss, &sp, &so, NULL, NULL);
+		}
 	}
+	sord_iter_free(iter);
 
 	serd_writer_finish(writer);
 	serd_writer_free(writer);

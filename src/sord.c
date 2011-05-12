@@ -588,18 +588,52 @@ sord_new(SordWorld* world, unsigned indices, bool graphs)
 }
 
 static void
-sord_add_quad_ref(SordModel* sord, const SordNode* node)
+sord_node_free_internal(SordWorld* world, SordNode* node)
+{
+	assert(node->refs == 0);
+	if (node->type == SORD_LITERAL) {
+		if (!g_hash_table_remove(world->literals, node)) {
+			fprintf(stderr, "Failed to remove literal from hash.\n");
+			return;
+		}
+		sord_node_free(world, node->datatype);
+	} else {
+		if (!g_hash_table_remove(world->names, node->buf)) {
+			fprintf(stderr, "Failed to remove resource from hash.\n");
+			return;
+		}
+	}
+	g_free(node->buf);
+	free(node);
+}
+
+static void
+sord_add_quad_ref(SordModel* sord, const SordNode* node, SordQuadIndex i)
 {
 	if (node) {
 		assert(node->refs > 0);
 		++((SordNode*)node)->refs;
+		if (i == SORD_OBJECT) {
+			++((SordNode*)node)->refs_as_obj;
+		}
 	}
 }
 
 static void
-sord_drop_quad_ref(SordModel* sord, const SordNode* node)
+sord_drop_quad_ref(SordModel* sord, const SordNode* node, SordQuadIndex i)
 {
-	sord_node_free(sord_get_world(sord), (SordNode*)node);
+	if (!node) {
+		return;
+	}
+
+	assert(node->refs > 0);
+	if (i == SORD_OBJECT) {
+		assert(node->refs_as_obj > 0);
+		--((SordNode*)node)->refs_as_obj;
+	}
+	if (--((SordNode*)node)->refs == 0) {
+		sord_node_free_internal(sord_get_world(sord), (SordNode*)node);
+	}
 }
 
 void
@@ -614,7 +648,7 @@ sord_free(SordModel* sord)
 	for (; !sord_iter_end(i); sord_iter_next(i)) {
 		sord_iter_get(i, tup);
 		for (int i = 0; i < TUP_LEN; ++i) {
-			sord_drop_quad_ref(sord, (SordNode*)tup[i]);
+			sord_drop_quad_ref(sord, (SordNode*)tup[i], i);
 		}
 	}
 	sord_iter_free(i);
@@ -767,13 +801,14 @@ sord_new_node(SordNodeType type, const uint8_t* data,
               size_t n_bytes, SerdNodeFlags flags)
 {
 	SordNode* node = malloc(sizeof(struct SordNodeImpl));
-	node->type     = type;
-	node->n_bytes  = n_bytes;
-	node->refs     = 1;
-	node->datatype = 0;
-	node->lang     = 0;
-	node->flags    = flags;
-	node->buf      = (uint8_t*)g_strdup((const char*)data); // TODO: no-copy
+	node->type        = type;
+	node->n_bytes     = n_bytes;
+	node->refs        = 1;
+	node->refs_as_obj = 0;
+	node->datatype    = 0;
+	node->lang        = 0;
+	node->flags       = flags;
+	node->buf         = (uint8_t*)g_strdup((const char*)data); // TODO: no-copy
 	return node;
 }
 
@@ -861,6 +896,12 @@ SerdNodeFlags
 sord_node_get_flags(const SordNode* node)
 {
 	return node->flags;
+}
+
+bool
+sord_node_is_inline_object(const SordNode* node)
+{
+	return (node->type == SORD_BLANK) && (node->refs_as_obj == 1);
 }
 
 static void
@@ -951,20 +992,7 @@ sord_node_free(SordWorld* world, SordNode* node)
 
 	assert(node->refs > 0);
 	if (--node->refs == 0) {
-		if (node->type == SORD_LITERAL) {
-			if (!g_hash_table_remove(world->literals, node)) {
-				fprintf(stderr, "Failed to remove literal from hash.\n");
-				return;
-			}
-			sord_node_free(world, node->datatype);
-		} else {
-			if (!g_hash_table_remove(world->names, node->buf)) {
-				fprintf(stderr, "Failed to remove resource from hash.\n");
-				return;
-			}
-		}
-		g_free(node->buf);
-		free(node);
+		sord_node_free_internal(world, node);
 	}
 }
 
@@ -1019,8 +1047,8 @@ sord_add(SordModel* sord, const SordQuad tup)
 		}
 	}
 
-	for (int i = 0; i < TUP_LEN; ++i)
-		sord_add_quad_ref(sord, tup[i]);
+	for (SordQuadIndex i = 0; i < TUP_LEN; ++i)
+		sord_add_quad_ref(sord, tup[i], i);
 
 	++sord->n_quads;
 	assert(sord->n_quads == (size_t)g_sequence_get_length(sord->indices[SPO]));
@@ -1048,8 +1076,8 @@ sord_remove(SordModel* sord, const SordQuad tup)
 		}
 	}
 
-	for (int i = 0; i < TUP_LEN; ++i)
-		sord_drop_quad_ref(sord, tup[i]);
+	for (SordQuadIndex i = 0; i < TUP_LEN; ++i)
+		sord_drop_quad_ref(sord, tup[i], i);
 
 	--sord->n_quads;
 }

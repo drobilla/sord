@@ -272,6 +272,17 @@ SerdNodeFlags
 sord_node_get_flags(const SordNode* node);
 
 /**
+   Return true iff node can be serialised as an inline object.
+
+   More specifically, this returns true iff the node is the object field
+   of exactly one statement, and therefore can be inlined since it needn't
+   be referred to by name.
+*/
+SORD_API
+bool
+sord_node_is_inline_object(const SordNode* node);
+
+/**
    Return true iff @c a is equal to @c b.
 
    Note this is much faster than comparing the node's strings.

@@ -153,45 +153,30 @@ sord_world_free(SordWorld* world);
 */
 
 /**
-   Get a URI node from a string which will be measured.
+   Get a URI node from a string.
 
-   Use sord_get_uri_counted instead if the length of @c str is known.
+   Note this function measures @a str, which is a common bottleneck.
+   Use sord_node_from_serd_node instead if @a str is already measured.
 */
 SORD_API
 SordNode*
 sord_new_uri(SordWorld* world, const uint8_t* str);
 
 /**
-   Get a URI node from a measured string.
-*/
-SORD_API
-SordNode*
-sord_new_uri_counted(SordWorld*     world,
-                     const uint8_t* str,
-                     size_t         str_len);
+   Get a blank node from a string.
 
-/**
-   Get a blank node from a string which will be measured.
-
-   Use sord_get_blank_counted instead if the length of @c str is known.
+   Note this function measures @a str, which is a common bottleneck.
+   Use sord_node_from_serd_node instead if @a str is already measured.
 */
 SORD_API
 SordNode*
 sord_new_blank(SordWorld* world, const uint8_t* str);
 
 /**
-   Get a blank node from a measured string.
-*/
-SORD_API
-SordNode*
-sord_new_blank_counted(SordWorld*     world,
-                       const uint8_t* str,
-                       size_t         str_len);
+   Get a literal node from a string.
 
-/**
-   Get a literal node from a string which will be measured.
-
-   Use sord_get_literal_counted instead if the length of @c str is known.
+   Note this function measures @a str, which is a common bottleneck.
+   Use sord_node_from_serd_node instead if @a str is already measured.
 */
 SORD_API
 SordNode*
@@ -199,18 +184,6 @@ sord_new_literal(SordWorld*     world,
                  SordNode*      datatype,
                  const uint8_t* str,
                  const char*    lang);
-
-/**
-   Get a literal node from a measured string.
-*/
-SORD_API
-SordNode*
-sord_new_literal_counted(SordWorld*     world,
-                         SordNode*      datatype,
-                         const uint8_t* str,
-                         size_t         str_len,
-                         SerdNodeFlags  flags,
-                         const char*    lang);
 
 /**
    Copy a node (i.e. obtain a reference).
@@ -291,6 +264,18 @@ SORD_API
 bool
 sord_node_equals(const SordNode* a,
                  const SordNode* b);
+
+SORD_API
+const SerdNode*
+sord_node_to_serd_node(const SordNode* node);
+
+SORD_API
+SordNode*
+sord_node_from_serd_node(SordWorld*      world,
+                         SerdEnv*        env,
+                         const SerdNode* node,
+                         const SerdNode* datatype,
+                         const SerdNode* lang);
 
 /**
    @}

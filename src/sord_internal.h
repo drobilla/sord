@@ -24,14 +24,11 @@
 
 /** Node */
 struct SordNodeImpl {
-	uint8_t*      buf;          ///< Value (string)
-	const char*   lang;         ///< Literal language (interned string)
-	SordNode*     datatype;     ///< Literal data type (ID of a URI node, or 0)
-	size_t        n_bytes;      ///< Length of data in bytes (including NULL)
-	size_t        refs;         ///< Reference count (# of containing quads)
-	size_t        refs_as_obj;  ///< References as a quad object
-	SerdNodeFlags flags;        ///< String properties
-	SordNodeType  type;         ///< SordNodeType
+	const char* lang;         ///< Literal language (interned string)
+	SordNode*   datatype;     ///< Literal data type (ID of a URI node, or 0)
+	size_t      refs;         ///< Reference count (# of containing quads)
+	size_t      refs_as_obj;  ///< References as a quad object
+	SerdNode    node;         ///< Serd node
 };
 
 const char*

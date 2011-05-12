@@ -142,7 +142,7 @@ static unsigned
 sord_literal_hash(const void* n)
 {
 	SordNode* node = (SordNode*)n;
-	return g_str_hash(node->buf) + (node->lang ? g_str_hash(node->lang) : 0);
+	return g_str_hash(node->node.buf) + (node->lang ? g_str_hash(node->lang) : 0);
 }
 
 static gboolean
@@ -184,16 +184,16 @@ sord_node_compare(const SordNode* a, const SordNode* b)
 		return 0;
 	} else if (!a || !b) {
 		return a - b;
-	} else if (a->type != b->type) {
-		return a->type - b->type;
+	} else if (a->node.type != b->node.type) {
+		return a->node.type - b->node.type;
 	}
 
 	int cmp;
-	switch ((SordNodeType)a->type) {
-	case SORD_URI:
-	case SORD_BLANK:
-		return strcmp((const char*)a->buf, (const char*)b->buf);
-	case SORD_LITERAL:
+	switch (a->node.type) {
+	case SERD_URI:
+	case SERD_BLANK_ID:
+		return strcmp((const char*)a->node.buf, (const char*)b->node.buf);
+	case SERD_LITERAL:
 		cmp = strcmp((const char*)sord_node_get_string(a),
 		             (const char*)sord_node_get_string(b));
 		if (cmp == 0) {
@@ -207,6 +207,8 @@ sord_node_compare(const SordNode* a, const SordNode* b)
 			}
 		}
 		return cmp;
+	default:
+		break; // never reached
 	}
 	assert(false);
 	return 0;
@@ -591,19 +593,19 @@ static void
 sord_node_free_internal(SordWorld* world, SordNode* node)
 {
 	assert(node->refs == 0);
-	if (node->type == SORD_LITERAL) {
+	if (node->node.type == SERD_LITERAL) {
 		if (!g_hash_table_remove(world->literals, node)) {
 			fprintf(stderr, "Failed to remove literal from hash.\n");
 			return;
 		}
 		sord_node_free(world, node->datatype);
 	} else {
-		if (!g_hash_table_remove(world->names, node->buf)) {
+		if (!g_hash_table_remove(world->names, node->node.buf)) {
 			fprintf(stderr, "Failed to remove resource from hash.\n");
 			return;
 		}
 	}
-	g_free(node->buf);
+	g_free((uint8_t*)node->node.buf);
 	free(node);
 }
 
@@ -791,24 +793,27 @@ sord_find(SordModel* sord, const SordQuad pat)
 }
 
 static SordNode*
-sord_lookup_name(SordWorld* world, const uint8_t* str, size_t str_len)
+sord_lookup_name(SordWorld* world, const uint8_t* str)
 {
 	return g_hash_table_lookup(world->names, str);
 }
 
 static SordNode*
-sord_new_node(SordNodeType type, const uint8_t* data,
-              size_t n_bytes, SerdNodeFlags flags)
+sord_new_node(SerdType type, const uint8_t* data,
+              size_t n_bytes, size_t n_chars, SerdNodeFlags flags,
+              SordNode* datatype, const char* lang)
 {
 	SordNode* node = malloc(sizeof(struct SordNodeImpl));
-	node->type        = type;
-	node->n_bytes     = n_bytes;
-	node->refs        = 1;
-	node->refs_as_obj = 0;
-	node->datatype    = 0;
-	node->lang        = 0;
-	node->flags       = flags;
-	node->buf         = (uint8_t*)g_strdup((const char*)data); // TODO: no-copy
+	node->lang         = lang;
+	node->datatype     = datatype;
+	node->refs         = 1;
+	node->refs_as_obj  = 0;
+	node->node.buf     = (uint8_t*)g_strdup((const char*)data);
+	node->node.n_bytes = n_bytes;
+	node->node.n_chars = n_chars;
+	node->node.flags   = flags;
+	node->node.type    = type;
+
 	return node;
 }
 
@@ -828,30 +833,20 @@ sord_intern_lang(SordWorld* world, const char* lang)
 }
 
 static SordNode*
-sord_new_literal_node(SordWorld* world, SordNode* datatype,
-                      const uint8_t* str,  size_t str_len, SerdNodeFlags flags,
-                      const char*    lang)
-{
-	SordNode* node = sord_new_node(SORD_LITERAL, str, str_len + 1, flags);
-	node->datatype = sord_node_copy(datatype);
-	node->lang     = sord_intern_lang(world, lang);
-	return node;
-}
-
-static SordNode*
 sord_lookup_literal(SordWorld* world, SordNode* type,
-                    const uint8_t* str, size_t str_len,
+                    const uint8_t* str, size_t n_bytes, size_t n_chars,
                     const char*    lang)
 {
-	// Make search key (FIXME: ick)
 	struct SordNodeImpl key;
-	key.type     = SORD_LITERAL;
-	key.n_bytes  = str_len;
-	key.refs     = 1;
-	key.datatype = type;
-	key.lang     = sord_intern_lang(world, lang);
-	key.buf      = (uint8_t*)str;
-	key.flags    = 0;
+	key.lang         = lang;
+	key.datatype     = type;
+	key.refs         = 1;
+	key.refs_as_obj  = 1;
+	key.node.buf     = (uint8_t*)str;
+	key.node.n_bytes = n_bytes;
+	key.node.n_chars = n_chars;
+	key.node.flags   = 0;
+	key.node.type    = SERD_LITERAL;
 
 	SordNode* id = g_hash_table_lookup(world->literals, &key);
 	if (id) {
@@ -862,22 +857,32 @@ sord_lookup_literal(SordWorld* world, SordNode* type,
 }
 
 SordNodeType
-sord_node_get_type(const SordNode* ref)
+sord_node_get_type(const SordNode* node)
 {
-	return ref->type;
+	switch (node->node.type) {
+	case SERD_BLANK_ID:
+		return SORD_BLANK;
+	case SERD_LITERAL:
+		return SORD_LITERAL;
+	case SERD_URI:
+		return SORD_URI;
+	default:
+		fprintf(stderr, "sord: error: Illegal node type.\n");
+		return (SordNodeType)0;
+	}
 }
 
 const uint8_t*
 sord_node_get_string(const SordNode* ref)
 {
-	return (const uint8_t*)ref->buf;
+	return ref->node.buf;
 }
 
 const uint8_t*
-sord_node_get_string_counted(const SordNode* ref, size_t* n_bytes)
+sord_node_get_string_counted(const SordNode* ref, size_t* len)
 {
-	*n_bytes = ref->n_bytes;
-	return ref->buf;
+	*len = ref->node.n_chars;
+	return ref->node.buf;
 }
 
 const char*
@@ -895,13 +900,13 @@ sord_node_get_datatype(const SordNode* ref)
 SerdNodeFlags
 sord_node_get_flags(const SordNode* node)
 {
-	return node->flags;
+	return node->node.flags;
 }
 
 bool
 sord_node_is_inline_object(const SordNode* node)
 {
-	return (node->type == SORD_BLANK) && (node->refs_as_obj == 1);
+	return (node->node.type == SERD_BLANK_ID) && (node->refs_as_obj == 1);
 }
 
 static void
@@ -910,18 +915,18 @@ sord_add_node(SordWorld* world, SordNode* node)
 	++world->n_nodes;
 }
 
-SordNode*
+static SordNode*
 sord_new_uri_counted(SordWorld* world, const uint8_t* str, size_t str_len)
 {
-	SordNode* node = sord_lookup_name(world, str, str_len);
+	SordNode* node = sord_lookup_name(world, str);
 	if (node) {
 		++node->refs;
 		return node;
 	}
 
-	node = sord_new_node(SORD_URI, str, str_len + 1, 0);
-	assert(!g_hash_table_lookup(world->names, node->buf));
-	g_hash_table_insert(world->names, node->buf, node);
+	node = sord_new_node(SERD_URI, str, str_len + 1, str_len, 0, 0, 0);
+	assert(!g_hash_table_lookup(world->names, node->node.buf));
+	g_hash_table_insert(world->names, (char*)node->node.buf, node);
 	sord_add_node(world, node);
 	return node;
 }
@@ -932,17 +937,17 @@ sord_new_uri(SordWorld* world, const uint8_t* str)
 	return sord_new_uri_counted(world, str, strlen((const char*)str));
 }
 
-SordNode*
+static SordNode*
 sord_new_blank_counted(SordWorld* world, const uint8_t* str, size_t str_len)
 {
-	SordNode* node = sord_lookup_name(world, str, str_len);
+	SordNode* node = sord_lookup_name(world, str);
 	if (node) {
 		++node->refs;
 		return node;
 	}
 
-	node = sord_new_node(SORD_BLANK, str, str_len + 1, 0);
-	g_hash_table_insert(world->names, node->buf, node);
+	node = sord_new_node(SERD_BLANK_ID, str, str_len + 1, str_len, 0, 0, 0);
+	g_hash_table_insert(world->names, (char*)node->node.buf, node);
 	sord_add_node(world, node);
 	return node;
 }
@@ -953,18 +958,22 @@ sord_new_blank(SordWorld* world, const uint8_t* str)
 	return sord_new_blank_counted(world, str, strlen((const char*)str));
 }
 
-SordNode*
+static SordNode*
 sord_new_literal_counted(SordWorld* world, SordNode* datatype,
-                         const uint8_t* str,  size_t  str_len, SerdNodeFlags flags,
-                         const char*    lang)
+                         const uint8_t* str, size_t n_bytes, size_t n_chars,
+                         SerdNodeFlags flags,
+                         const char* lang)
 {
-	SordNode* node = sord_lookup_literal(world, datatype, str, str_len, lang);
+	lang = sord_intern_lang(world, lang);
+	SordNode* node = sord_lookup_literal(world, datatype, str, n_bytes, n_chars, lang);
 	if (node) {
 		++node->refs;
 		return node;
 	}
 
-	node = sord_new_literal_node(world, datatype, str, str_len, flags, lang);
+	node = sord_new_node(SERD_LITERAL,
+	                     str, n_bytes, n_chars, flags,
+	                     sord_node_copy(datatype), lang);
 	g_hash_table_insert(world->literals, node, node);  // FIXME: correct?
 	sord_add_node(world, node);
 	assert(node->refs == 1);
@@ -979,8 +988,74 @@ sord_new_literal(SordWorld* world, SordNode* datatype,
 	size_t        n_bytes = 0;
 	size_t        n_chars = serd_strlen(str, &n_bytes, &flags);
 	return sord_new_literal_counted(world, datatype,
-	                                str, n_bytes - 1, flags,
+	                                str, n_bytes, n_chars, flags,
 	                                lang);
+}
+
+SordNode*
+sord_node_from_serd_node(SordWorld*      world,
+                         SerdEnv*        env,
+                         const SerdNode* sn,
+                         const SerdNode* datatype,
+                         const SerdNode* lang)
+{
+	SordNode* datatype_node = NULL;
+	SordNode* ret           = NULL;
+	switch (sn->type) {
+	case SERD_NOTHING:
+		return NULL;
+	case SERD_LITERAL:
+		datatype_node = sord_node_from_serd_node(world, env, datatype, NULL, NULL),
+		ret = sord_new_literal_counted(
+			world,
+			datatype_node,
+			sn->buf,
+			sn->n_bytes,
+			sn->n_chars,
+			sn->flags,
+			sord_intern_lang(world, (const char*)lang->buf));
+		sord_node_free(world, datatype_node);
+		return ret;
+	case SERD_URI: {
+		SerdURI base_uri;
+		serd_env_get_base_uri(env, &base_uri);
+		SerdURI  abs_uri;
+		SerdNode abs_uri_node = serd_node_new_uri_from_node(
+			sn, &base_uri, &abs_uri);
+		SordNode* ret = sord_new_uri_counted(world, abs_uri_node.buf,
+		                                     abs_uri_node.n_bytes - 1);
+		serd_node_free(&abs_uri_node);
+		return ret;
+	}
+	case SERD_CURIE: {
+		SerdChunk uri_prefix;
+		SerdChunk uri_suffix;
+		if (serd_env_expand(env, sn, &uri_prefix, &uri_suffix)) {
+			fprintf(stderr, "Failed to expand qname `%s'\n", sn->buf);
+			return NULL;
+		}
+		const size_t uri_len = uri_prefix.len + uri_suffix.len;
+		uint8_t*     buf     = malloc(uri_len + 1);
+		memcpy(buf,                  uri_prefix.buf, uri_prefix.len);
+		memcpy(buf + uri_prefix.len, uri_suffix.buf, uri_suffix.len);
+		buf[uri_len] = '\0';
+		SordNode* ret = sord_new_uri_counted(
+			world, buf, uri_prefix.len + uri_suffix.len);
+		free(buf);
+		return ret;
+	}
+	case SERD_BLANK_ID:
+	case SERD_ANON_BEGIN:
+	case SERD_ANON:
+		return sord_new_blank_counted(world, sn->buf, sn->n_bytes - 1);
+	}
+	return NULL;
+}
+
+const SerdNode*
+sord_node_to_serd_node(const SordNode* node)
+{
+	return &node->node;
 }
 
 void

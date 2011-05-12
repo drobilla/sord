@@ -34,11 +34,10 @@ uri(SordWorld* world, int num)
 	if (num == 0)
 		return 0;
 
-	char         uri[]   = "eg:000";
-	const size_t uri_len = 3 + DIGITS;
-	char*        uri_num = uri + 3; // First `0'
+	char  uri[]   = "eg:000";
+	char* uri_num = uri + 3; // First `0'
 	snprintf(uri_num, DIGITS + 1, "%0*d", DIGITS, num);
-	return sord_new_uri_counted(world, (const uint8_t*)uri, uri_len);
+	return sord_new_uri(world, (const uint8_t*)uri);
 }
 
 /** Trivial function to return EXIT_FAILURE (useful as a breakpoint) */

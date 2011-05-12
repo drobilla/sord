@@ -62,86 +62,6 @@ event_prefix(void*           handle,
 	return serd_env_set_prefix(state->env, name, uri_node);
 }
 
-static inline SordNode*
-sord_node_from_serd_node(ReadState* state, const SerdNode* sn,
-                         const SerdNode* datatype, const SerdNode* lang)
-{
-	SordNode* datatype_node = NULL;
-	SordNode* ret           = NULL;
-	switch (sn->type) {
-	case SERD_NOTHING:
-		return NULL;
-	case SERD_LITERAL:
-		datatype_node = sord_node_from_serd_node(state, datatype, NULL, NULL),
-		ret = sord_new_literal_counted(
-			state->world,
-			datatype_node,
-			sn->buf,
-			sn->n_bytes - 1,
-			sn->flags,
-			sord_intern_lang(state->world, (const char*)lang->buf));
-		sord_node_free(state->world, datatype_node);
-		return ret;
-	case SERD_URI: {
-		SerdURI base_uri;
-		serd_env_get_base_uri(state->env, &base_uri);
-		SerdURI  abs_uri;
-		SerdNode abs_uri_node = serd_node_new_uri_from_node(
-			sn, &base_uri, &abs_uri);
-		SordNode* ret = sord_new_uri_counted(state->world, abs_uri_node.buf,
-		                                     abs_uri_node.n_bytes - 1);
-		serd_node_free(&abs_uri_node);
-		return ret;
-	}
-	case SERD_CURIE: {
-		SerdChunk uri_prefix;
-		SerdChunk uri_suffix;
-		if (serd_env_expand(state->env, sn, &uri_prefix, &uri_suffix)) {
-			fprintf(stderr, "Failed to expand qname `%s'\n", sn->buf);
-			return NULL;
-		}
-		const size_t uri_len = uri_prefix.len + uri_suffix.len;
-		uint8_t*     buf     = malloc(uri_len + 1);
-		memcpy(buf,                  uri_prefix.buf, uri_prefix.len);
-		memcpy(buf + uri_prefix.len, uri_suffix.buf, uri_suffix.len);
-		buf[uri_len] = '\0';
-		SordNode* ret = sord_new_uri_counted(
-			state->world, buf, uri_prefix.len + uri_suffix.len);
-		free(buf);
-		return ret;
-	}
-	case SERD_BLANK_ID:
-	case SERD_ANON_BEGIN:
-	case SERD_ANON:
-		return sord_new_blank_counted(state->world, sn->buf, sn->n_bytes - 1);
-	}
-	return NULL;
-}
-
-static inline void
-sord_node_to_serd_node(const SordNode* node, SerdNode* out)
-{
-	if (!node) {
-		*out = SERD_NODE_NULL;
-		return;
-	}
-	switch (node->type) {
-	case SORD_URI:
-		out->type = SERD_URI;
-		break;
-	case SORD_BLANK:
-		out->type = SERD_BLANK_ID;
-		break;
-	case SORD_LITERAL:
-		out->type = SERD_LITERAL;
-		break;
-	}
-	size_t len;
-	out->buf = sord_node_get_string_counted(node, &len);
-	out->n_bytes = len;
-	out->n_chars = len - 1; // FIXME: UTF-8
-}
-
 static SerdStatus
 event_statement(void*           handle,
                 const SerdNode* graph,
@@ -153,10 +73,12 @@ event_statement(void*           handle,
 {
 	ReadState* const state = (ReadState*)handle;
 
-	SordNode* s = sord_node_from_serd_node(state, subject, NULL, NULL);
-	SordNode* p = sord_node_from_serd_node(state, predicate, NULL, NULL);
-	SordNode* o = sord_node_from_serd_node(state, object,
-	                                       object_datatype, object_lang);
+	SordNode* s = sord_node_from_serd_node(state->world, state->env,
+	                                       subject, NULL, NULL);
+	SordNode* p = sord_node_from_serd_node(state->world, state->env,
+	                                       predicate, NULL, NULL);
+	SordNode* o = sord_node_from_serd_node(state->world, state->env,
+	                                       object, object_datatype, object_lang);
 
 	SordNode* g = NULL;
 	if (state->graph_uri_node) {
@@ -164,7 +86,8 @@ event_statement(void*           handle,
 		g = sord_node_copy(state->graph_uri_node);
 	} else {
 		g = (graph && graph->buf)
-			? sord_node_from_serd_node(state, graph, NULL, NULL)
+			? sord_node_from_serd_node(state->world, state->env,
+			                           graph, NULL, NULL)
 			: NULL;
 	}
 
@@ -338,21 +261,17 @@ sord_write(const SordModel* model,
            const SordNode*  graph,
            SerdWriter*      writer)
 {
-	SerdNode s_graph;
-	sord_node_to_serd_node(graph, &s_graph);
+	const SerdNode* g = sord_node_to_serd_node(graph);
 	for (SordIter* i = sord_begin(model); !sord_iter_end(i); sord_iter_next(i)) {
 		SordQuad quad;
 		sord_iter_get(i, quad);
 
-		SerdNode subject;
-		SerdNode predicate;
-		SerdNode object;
-		SerdNode datatype;
-		sord_node_to_serd_node(quad[SORD_SUBJECT],   &subject);
-		sord_node_to_serd_node(quad[SORD_PREDICATE], &predicate);
-		sord_node_to_serd_node(quad[SORD_OBJECT],    &object);
+		const SerdNode* s = sord_node_to_serd_node(quad[SORD_SUBJECT]);
+		const SerdNode* p = sord_node_to_serd_node(quad[SORD_PREDICATE]);
+		const SerdNode* o = sord_node_to_serd_node(quad[SORD_OBJECT]);
+		const SerdNode* d = sord_node_to_serd_node(
+			sord_node_get_datatype(quad[SORD_OBJECT]));
 
-		sord_node_to_serd_node(sord_node_get_datatype(quad[SORD_OBJECT]), &datatype);
 		const char* lang_str = sord_node_get_language(quad[SORD_OBJECT]);
 		size_t      lang_len = lang_str ? strlen(lang_str) : 0;
 
@@ -360,13 +279,11 @@ sord_write(const SordModel* model,
 		if (lang_str) {
 			language.type    = SERD_LITERAL;
 			language.n_bytes = lang_len + 1;
-			language.n_chars = lang_len; // FIXME: UTF-8
+			language.n_chars = lang_len;
 			language.buf     = (const uint8_t*)lang_str;
 		};
 
-		serd_writer_write_statement(writer, &s_graph,
-		                            &subject, &predicate, &object,
-		                            &datatype, &language);
+		serd_writer_write_statement(writer, g, s, p, o, d, &language);
 	}
 }
 

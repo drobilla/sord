@@ -822,12 +822,11 @@ sord_intern_lang(SordWorld* world, const char* lang)
 {
 	if (lang) {
 		char* ilang = g_hash_table_lookup(world->langs, lang);
-		if (ilang) {
-			lang = ilang;
-		} else {
+		if (!ilang) {
 			ilang = g_strdup(lang);
 			g_hash_table_insert(world->langs, ilang, ilang);
 		}
+		lang = ilang;
 	}
 	return lang;
 }
@@ -1017,22 +1016,26 @@ sord_node_from_serd_node(SordWorld*      world,
 			sn->n_bytes,
 			sn->n_chars,
 			sn->flags,
-			sord_intern_lang(world, (const char*)lang->buf));
+			(const char*)lang->buf);
 		sord_node_free(world, datatype_node);
 		return ret;
-	case SERD_URI: {
-		SerdURI base_uri;
-		serd_env_get_base_uri(env, &base_uri);
-		SerdURI  abs_uri;
-		SerdNode abs_uri_node = serd_node_new_uri_from_node(
-			sn, &base_uri, &abs_uri);
-		SordNode* ret = sord_new_uri_counted(world,
-		                                     abs_uri_node.buf,
-		                                     abs_uri_node.n_bytes,
-		                                     abs_uri_node.n_chars);
-		serd_node_free(&abs_uri_node);
-		return ret;
-	}
+	case SERD_URI:
+		if (serd_uri_string_has_scheme(sn->buf)) {
+			return sord_new_uri_counted(world,
+			                            sn->buf, sn->n_bytes, sn->n_chars);
+		} else {
+			SerdURI base_uri;
+			serd_env_get_base_uri(env, &base_uri);
+			SerdURI  abs_uri;
+			SerdNode abs_uri_node = serd_node_new_uri_from_node(
+				sn, &base_uri, &abs_uri);
+			SordNode* ret = sord_new_uri_counted(world,
+			                                     abs_uri_node.buf,
+			                                     abs_uri_node.n_bytes,
+			                                     abs_uri_node.n_chars);
+			serd_node_free(&abs_uri_node);
+			return ret;
+		}
 	case SERD_CURIE: {
 		SerdChunk uri_prefix;
 		SerdChunk uri_suffix;
@@ -1041,14 +1044,13 @@ sord_node_from_serd_node(SordWorld*      world,
 			return NULL;
 		}
 		const size_t uri_len = uri_prefix.len + uri_suffix.len;
-		uint8_t*     buf     = malloc(uri_len + 1);
+		uint8_t      buf[uri_len + 1];
 		memcpy(buf,                  uri_prefix.buf, uri_prefix.len);
 		memcpy(buf + uri_prefix.len, uri_suffix.buf, uri_suffix.len);
 		buf[uri_len] = '\0';
 		SordNode* ret = sord_new_uri_counted(
 			world, buf, uri_prefix.len + uri_suffix.len,
 			uri_prefix.len + uri_suffix.len); // FIXME: UTF-8
-		free(buf);
 		return ret;
 	}
 	case SERD_BLANK_ID:

@@ -132,9 +132,14 @@ bool
 sord_read_file(SordModel*     model,
                SerdEnv*       env,
                const uint8_t* uri,
+               const uint8_t* base_uri,
                SordNode*      graph,
                const uint8_t* blank_prefix)
 {
+	if (!base_uri) {
+		base_uri = uri;
+	}
+
 	const uint8_t* const path = sord_file_uri_to_path(uri);
 	if (!path) {
 		fprintf(stderr, "Unable to read non-file URI <%s>\n", uri);
@@ -148,7 +153,7 @@ sord_read_file(SordModel*     model,
 	}
 
 	const bool ret = sord_read_file_handle(
-		model, env, fd, uri, graph, blank_prefix);
+		model, env, fd, base_uri, graph, blank_prefix);
 	fclose(fd);
 	return ret;
 }
@@ -257,34 +262,70 @@ file_sink(const void* buf, size_t len, void* stream)
 }
 
 static void
-sord_write(const SordModel* model,
-           const SordNode*  graph,
-           SerdWriter*      writer)
+write_statement(SordModel* sord, SerdWriter* writer, SordQuad tup,
+                const SordNode* anon_subject)
 {
-	const SerdNode* g = sord_node_to_serd_node(graph);
-	for (SordIter* i = sord_begin(model); !sord_iter_end(i); sord_iter_next(i)) {
-		SordQuad quad;
-		sord_iter_get(i, quad);
+	const SordNode* s  = tup[SORD_SUBJECT];
+	const SordNode* p  = tup[SORD_PREDICATE];
+	const SordNode* o  = tup[SORD_OBJECT];
+	const SordNode* d  = sord_node_get_datatype(o);
+	const SerdNode* ss = sord_node_to_serd_node(s);
+	const SerdNode* sp = sord_node_to_serd_node(p);
+	const SerdNode* so = sord_node_to_serd_node(o);
+	const SerdNode* sd = sord_node_to_serd_node(d);
 
-		const SerdNode* s = sord_node_to_serd_node(quad[SORD_SUBJECT]);
-		const SerdNode* p = sord_node_to_serd_node(quad[SORD_PREDICATE]);
-		const SerdNode* o = sord_node_to_serd_node(quad[SORD_OBJECT]);
-		const SerdNode* d = sord_node_to_serd_node(
-			sord_node_get_datatype(quad[SORD_OBJECT]));
+	const char* lang_str = sord_node_get_language(o);
+	size_t      lang_len = lang_str ? strlen(lang_str) : 0;
+	SerdNode    language = SERD_NODE_NULL;
+	if (lang_str) {
+		language.type    = SERD_LITERAL;
+		language.n_bytes = lang_len;
+		language.n_chars = lang_len;
+		language.buf     = (const uint8_t*)lang_str;
+	};
 
-		const char* lang_str = sord_node_get_language(quad[SORD_OBJECT]);
-		size_t      lang_len = lang_str ? strlen(lang_str) : 0;
-
-		SerdNode language = SERD_NODE_NULL;
-		if (lang_str) {
-			language.type    = SERD_LITERAL;
-			language.n_bytes = lang_len + 1;
-			language.n_chars = lang_len;
-			language.buf     = (const uint8_t*)lang_str;
-		};
-
-		serd_writer_write_statement(writer, g, s, p, o, d, &language);
+	SerdNode subject = *ss;
+	if (anon_subject) {
+		assert(s == anon_subject);
+		subject.type = SERD_ANON;
+	} else if (sord_node_is_inline_object(s)) {
+		return;
 	}
+
+	if (sord_node_is_inline_object(o)) {
+		SerdNode anon = *so;
+		anon.type = SERD_ANON_BEGIN;
+		serd_writer_write_statement(
+			writer, NULL, &subject, sp, &anon, sd, &language);
+		SordQuad  sub_pat  = { o, 0, 0, 0 };
+		SordIter* sub_iter = sord_find(sord, sub_pat);
+		for (; !sord_iter_end(sub_iter); sord_iter_next(sub_iter)) {
+			SordQuad sub_tup;
+			sord_iter_get(sub_iter, sub_tup);
+			write_statement(sord, writer, sub_tup, o);
+		}
+		sord_iter_free(sub_iter);
+		serd_writer_end_anon(writer, so);
+	} else if (!sord_node_is_inline_object(s) || s == anon_subject) {
+		serd_writer_write_statement(
+			writer, NULL, &subject, sp, so, sd, &language);
+	}
+}
+
+bool
+sord_write_writer(SordModel*  model,
+                  SerdWriter* writer,
+                  SordNode*   graph)
+{
+	SordQuad  pat  = { 0, 0, 0, graph };
+	SordIter* iter = sord_find(model, pat);
+	for (; !sord_iter_end(iter); sord_iter_next(iter)) {
+		SordQuad tup;
+		sord_iter_get(iter, tup);
+		write_statement(model, writer, tup, NULL);
+	}
+	sord_iter_free(iter);
+	return true;
 }
 
 static SerdWriter*
@@ -324,7 +365,7 @@ sord_write_file_handle(SordModel*     model,
                        const uint8_t* blank_prefix)
 {
 	SerdWriter* writer = make_writer(env, base_uri_str_in, file_sink, fd);
-	sord_write(model, graph, writer);
+	sord_write_writer(model, writer, graph);
 	serd_writer_free(writer);
 	return true;
 }
@@ -352,7 +393,7 @@ sord_write_string(SordModel*     model,
 {
 	struct SerdBuffer buf = { NULL, 0 };
 	SerdWriter* writer = make_writer(env, base_uri, string_sink, &buf);
-	sord_write(model, NULL, writer);
+	sord_write_writer(model, writer, NULL);
 	serd_writer_free(writer);
 	string_sink("", 1, &buf);
 	return buf.buf;

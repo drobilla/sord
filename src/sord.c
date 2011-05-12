@@ -916,7 +916,8 @@ sord_add_node(SordWorld* world, SordNode* node)
 }
 
 static SordNode*
-sord_new_uri_counted(SordWorld* world, const uint8_t* str, size_t str_len)
+sord_new_uri_counted(SordWorld* world, const uint8_t* str,
+                     size_t n_bytes, size_t n_chars)
 {
 	SordNode* node = sord_lookup_name(world, str);
 	if (node) {
@@ -924,7 +925,7 @@ sord_new_uri_counted(SordWorld* world, const uint8_t* str, size_t str_len)
 		return node;
 	}
 
-	node = sord_new_node(SERD_URI, str, str_len + 1, str_len, 0, 0, 0);
+	node = sord_new_node(SERD_URI, str, n_bytes, n_chars, 0, 0, 0);
 	assert(!g_hash_table_lookup(world->names, node->node.buf));
 	g_hash_table_insert(world->names, (char*)node->node.buf, node);
 	sord_add_node(world, node);
@@ -934,11 +935,13 @@ sord_new_uri_counted(SordWorld* world, const uint8_t* str, size_t str_len)
 SordNode*
 sord_new_uri(SordWorld* world, const uint8_t* str)
 {
-	return sord_new_uri_counted(world, str, strlen((const char*)str));
+	const SerdNode node = serd_node_from_string(SERD_URI, str);
+	return sord_new_uri_counted(world, str, node.n_bytes, node.n_chars);
 }
 
 static SordNode*
-sord_new_blank_counted(SordWorld* world, const uint8_t* str, size_t str_len)
+sord_new_blank_counted(SordWorld* world, const uint8_t* str,
+                       size_t n_bytes, size_t n_chars)
 {
 	SordNode* node = sord_lookup_name(world, str);
 	if (node) {
@@ -946,7 +949,7 @@ sord_new_blank_counted(SordWorld* world, const uint8_t* str, size_t str_len)
 		return node;
 	}
 
-	node = sord_new_node(SERD_BLANK_ID, str, str_len + 1, str_len, 0, 0, 0);
+	node = sord_new_node(SERD_BLANK_ID, str, n_bytes, n_chars, 0, 0, 0);
 	g_hash_table_insert(world->names, (char*)node->node.buf, node);
 	sord_add_node(world, node);
 	return node;
@@ -955,7 +958,8 @@ sord_new_blank_counted(SordWorld* world, const uint8_t* str, size_t str_len)
 SordNode*
 sord_new_blank(SordWorld* world, const uint8_t* str)
 {
-	return sord_new_blank_counted(world, str, strlen((const char*)str));
+	const SerdNode node = serd_node_from_string(SERD_URI, str);
+	return sord_new_blank_counted(world, str, node.n_bytes, node.n_chars);
 }
 
 static SordNode*
@@ -1022,8 +1026,10 @@ sord_node_from_serd_node(SordWorld*      world,
 		SerdURI  abs_uri;
 		SerdNode abs_uri_node = serd_node_new_uri_from_node(
 			sn, &base_uri, &abs_uri);
-		SordNode* ret = sord_new_uri_counted(world, abs_uri_node.buf,
-		                                     abs_uri_node.n_bytes - 1);
+		SordNode* ret = sord_new_uri_counted(world,
+		                                     abs_uri_node.buf,
+		                                     abs_uri_node.n_bytes,
+		                                     abs_uri_node.n_chars);
 		serd_node_free(&abs_uri_node);
 		return ret;
 	}
@@ -1040,14 +1046,15 @@ sord_node_from_serd_node(SordWorld*      world,
 		memcpy(buf + uri_prefix.len, uri_suffix.buf, uri_suffix.len);
 		buf[uri_len] = '\0';
 		SordNode* ret = sord_new_uri_counted(
-			world, buf, uri_prefix.len + uri_suffix.len);
+			world, buf, uri_prefix.len + uri_suffix.len,
+			uri_prefix.len + uri_suffix.len); // FIXME: UTF-8
 		free(buf);
 		return ret;
 	}
 	case SERD_BLANK_ID:
 	case SERD_ANON_BEGIN:
 	case SERD_ANON:
-		return sord_new_blank_counted(world, sn->buf, sn->n_bytes - 1);
+		return sord_new_blank_counted(world, sn->buf, sn->n_bytes, sn->n_chars);
 	}
 	return NULL;
 }
@@ -1055,7 +1062,7 @@ sord_node_from_serd_node(SordWorld*      world,
 const SerdNode*
 sord_node_to_serd_node(const SordNode* node)
 {
-	return &node->node;
+	return node ? &node->node : &SERD_NODE_NULL;
 }
 
 void

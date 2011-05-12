@@ -427,12 +427,15 @@ sord_quad_match(const SordQuad x, const SordQuad y);
 
 /**
    Read a file into a model.
+
+   The @c base_uri may be NULL, in which case @c uri will be used.
 */
 SORD_API
 bool
 sord_read_file(SordModel*     model,
                SerdEnv*       env,
                const uint8_t* uri,
+               const uint8_t* base_uri,
                SordNode*      graph,
                const uint8_t* blank_prefix);
 
@@ -480,6 +483,12 @@ sord_write_file_handle(SordModel*     model,
                        const uint8_t* base_uri,
                        SordNode*      graph,
                        const uint8_t* blank_prefix);
+
+SORD_API
+bool
+sord_write_writer(SordModel*  model,
+                  SerdWriter* writer,
+                  SordNode*   graph);
 
 /**
    Write a model to a string.

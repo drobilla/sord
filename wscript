@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import glob
 import os
 
 from waflib.extras import autowaf as autowaf
@@ -118,6 +119,16 @@ def build(bld):
                   cflags       = test_cflags)
         autowaf.use_lib(bld, obj, 'GLIB SERD')
 
+        # Static sordi build
+        obj = bld(features = 'c cprogram')
+        obj.source       = 'src/sordi.c'
+        obj.includes     = ['.', './src']
+        obj.use          = 'libsord_static'
+        obj.linkflags    = '-lgcov'
+        obj.target       = 'sordi_static'
+        obj.install_path = ''
+        obj.cflags       = [ '-fprofile-arcs',  '-ftest-coverage' ]
+
         # C++ build test
         obj = bld(features     = 'cxx cxxprogram',
                   source       = 'src/sordmm_test.cpp',
@@ -170,6 +181,54 @@ def upload_docs(ctx):
     os.system("rsync -avz --delete -e ssh build/doc/html/* drobilla@drobilla.net:~/drobilla.net/docs/sord")
 
 def test(ctx):
+    blddir = ""
+    top_level = (len(ctx.stack_path) > 1)
+    if top_level:
+        blddir = 'build/sord/tests'
+    else:
+        blddir = 'build/tests'
+
+    try:
+        os.makedirs(blddir)
+    except:
+        pass
+
+    for i in glob.glob('build/tests/*.*'):
+        os.remove(i)
+
+    srcdir   = ctx.path.abspath()
+    orig_dir = os.path.abspath(os.curdir)
+
+    os.chdir(srcdir)
+
+    good_tests = glob.glob('tests/test-*.ttl')
+    good_tests.sort()
+
+    os.chdir(orig_dir)
+
     autowaf.pre_test(ctx, APPNAME)
+
     autowaf.run_tests(ctx, APPNAME, ['./sord_test'])
+
+    commands = []
+    for test in good_tests:
+        base_uri = 'http://www.w3.org/2001/sw/DataAccess/df1/' + test
+        commands += [ './sordi_static %s/%s \'%s\' > %s.out' % (srcdir, test, base_uri, test) ]
+
+    autowaf.run_tests(ctx, APPNAME, commands, 0, name='good')
+
+    Logs.pprint('BOLD', '\nVerifying turtle => ntriples')
+    for test in good_tests:
+        out_filename = test + '.out'
+        cmp_filename = srcdir + '/' + test.replace('.ttl', '.out')
+        if not os.access(out_filename, os.F_OK):
+            Logs.pprint('RED', 'FAIL: %s output is missing' % test)
+        else:
+            out_lines = sorted(open(out_filename).readlines())
+            cmp_lines = sorted(open(cmp_filename).readlines())
+            if out_lines != cmp_lines:
+                Logs.pprint('RED', 'FAIL: %s is incorrect' % out_filename)
+            else:
+                Logs.pprint('GREEN', 'Pass: %s' % test)
+
     autowaf.post_test(ctx, APPNAME)

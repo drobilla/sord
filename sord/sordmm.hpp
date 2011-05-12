@@ -390,13 +390,15 @@ public:
 
 	inline const Node& base_uri() const { return _base; }
 
-	inline void load_file(SerdEnv* env, const std::string& uri);
+	inline void load_file(SerdEnv*           env,
+	                      const std::string& uri,
+	                      const std::string& base_uri="");
 
 	inline void load_string(SerdEnv*           env,
 	                        const char*        str,
 	                        size_t             len,
 	                        const std::string& base_uri,
-	                        const std::string  lang = "turtle");
+	                        const std::string  lang="turtle");
 
 	inline void  write_to_file_handle(FILE* fd, const char* lang);
 	inline void  write_to_file(const std::string& uri, const char* lang);
@@ -451,11 +453,14 @@ inline Model::~Model()
 }
 
 inline void
-Model::load_file(SerdEnv* env, const std::string& data_uri)
+Model::load_file(SerdEnv*           env,
+                 const std::string& data_uri,
+                 const std::string& base_uri)
 {
 	// FIXME: blank prefix
-	sord_read_file(_c_obj, env, (const uint8_t*)data_uri.c_str(), NULL,
-	               (const uint8_t*)"b");
+	sord_read_file(_c_obj, env, (const uint8_t*)data_uri.c_str(),
+	               (base_uri == "") ? NULL : (const uint8_t*)base_uri.c_str(),
+	               NULL, (const uint8_t*)"b");
 }
 
 inline void

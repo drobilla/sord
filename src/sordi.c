@@ -118,25 +118,47 @@ main(int argc, char** argv)
 
 	const uint8_t* input = (const uint8_t*)argv[a++];
 
+	const uint8_t* base_uri_str = NULL;
+	SerdURI        base_uri;
+	if (a < argc) {  // Base URI given on command line
+		const uint8_t* const in_base_uri = (const uint8_t*)argv[a++];
+		if (serd_uri_parse((const uint8_t*)in_base_uri, &base_uri)) {
+			fprintf(stderr, "Invalid base URI <%s>\n", argv[2]);
+			return 1;
+		}
+		base_uri_str = in_base_uri;
+	} else  {  // Use input file URI
+		base_uri_str = input;
+	}
+
+	if (serd_uri_parse(base_uri_str, &base_uri)) {
+		fprintf(stderr, "Invalid base URI <%s>\n", base_uri_str);
+		return 1;
+	}
+
 	SordWorld* world = sord_world_new();
 	SordModel* sord  = sord_new(world, SORD_SPO|SORD_OPS, false);
 	SerdEnv*   env   = serd_env_new();
 
-	bool success = sord_read_file(sord, env, input, NULL, NULL);
+	bool success = sord_read_file(sord, env, input, base_uri_str, NULL, NULL);
 
-	fprintf(stderr, "Loaded %zu statements\n", sord_num_nodes(world));
-
-	SerdURI base_uri;
-	if (serd_uri_parse(input, &base_uri)) {
-		fprintf(stderr, "Bad input URI <%s>\n", input);
-		return 1;
-	}
+	fprintf(stderr, "Loaded %zu statements\n", sord_num_quads(sord));
 
 	SerdEnv* write_env = serd_env_new();
+	SerdNode base_uri_node = serd_node_from_string(SERD_URI, base_uri_str);
+	serd_env_set_base_uri(write_env, &base_uri_node);
+	serd_env_get_base_uri(write_env, &base_uri);
+
+	SerdStyle output_style = SERD_STYLE_RESOLVED;
+	if (output_syntax == SERD_NTRIPLES) {
+		output_style |= SERD_STYLE_ASCII;
+	} else {
+		output_style |= SERD_STYLE_CURIED | SERD_STYLE_ABBREVIATED;
+	}
 
 	SerdWriter* writer = serd_writer_new(
-		SERD_TURTLE,
-		SERD_STYLE_ABBREVIATED|SERD_STYLE_RESOLVED|SERD_STYLE_CURIED,
+		output_syntax,
+		output_style,
 		write_env, &base_uri, file_sink, stdout);
 
 	// Write @prefix directives
@@ -145,42 +167,7 @@ main(int argc, char** argv)
 	                 writer);
 
 	// Write statements
-	SordQuad  pat  = { 0, 0, 0, 0 };
-	SordIter* iter = sord_find(sord, pat);
-	for (; !sord_iter_end(iter); sord_iter_next(iter)) {
-		SordQuad tup;
-		sord_iter_get(iter, tup);
-		const SordNode* s  = tup[SORD_SUBJECT];
-		const SordNode* p  = tup[SORD_PREDICATE];
-		const SordNode* o  = tup[SORD_OBJECT];
-		SerdNode        ss = serd_node_from_sord_node(s);
-		SerdNode        sp = serd_node_from_sord_node(p);
-		SerdNode        so = serd_node_from_sord_node(o);
-		if (sord_node_is_inline_object(o)) {
-			so.type = SERD_ANON_BEGIN;
-			serd_writer_write_statement(
-				writer, NULL, &ss, &sp, &so, NULL, NULL);
-			so.type = SERD_ANON;
-			SordQuad  sub_pat  = { o, 0, 0, 0 };
-			SordIter* sub_iter = sord_find(sord, sub_pat);
-			for (; !sord_iter_end(sub_iter); sord_iter_next(sub_iter)) {
-				SordQuad sub_tup;
-				sord_iter_get(sub_iter, sub_tup);
-				const SordNode* sub_p  = sub_tup[SORD_PREDICATE];
-				const SordNode* sub_o  = sub_tup[SORD_OBJECT];
-				SerdNode        sub_sp = serd_node_from_sord_node(sub_p);
-				SerdNode        sub_so = serd_node_from_sord_node(sub_o);
-				serd_writer_write_statement(
-					writer, NULL, &so, &sub_sp, &sub_so, NULL, NULL);
-			}
-			sord_iter_free(sub_iter);
-			serd_writer_end_anon(writer, &so);
-		} else if (!sord_node_is_inline_object(s)) {
-			serd_writer_write_statement(
-				writer, NULL, &ss, &sp, &so, NULL, NULL);
-		}
-	}
-	sord_iter_free(iter);
+	sord_write_writer(sord, writer, NULL);
 
 	serd_writer_finish(writer);
 	serd_writer_free(writer);

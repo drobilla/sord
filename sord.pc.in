@@ -6,5 +6,5 @@ includedir=@includedir@
 Name: Sord
 Version: @SORD_VERSION@
 Description: A lightweight C library for storing RDF statements in memory.
-Libs: @SORD_LIBS@ @SERD_LIBS@
-Cflags: @SORD_CFLAGS@ @SERD_CFLAGS@
+Libs: -L@LIBPATH_SERD@ -l@LIB_SERD@ -L@LIBPATH_SORD@ -l@LIB_SORD@
+Cflags: -I@INCLUDES_SERD@ -I@INCLUDES_SORD@

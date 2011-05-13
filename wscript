@@ -59,10 +59,10 @@ def configure(conf):
     autowaf.define(conf, 'SORD_VERSION', SORD_VERSION)
     conf.write_config_header('sord-config.h', remove=False)
 
-    conf.env['SORD_CFLAGS'] = '-I%s/sord-%s' % (
-        conf.env['INCLUDEDIR'], SORD_MAJOR_VERSION)
-    conf.env['SORD_LIBS'] = '-L%s -lsord-%s' % (
-        conf.env['LIBDIR'], SORD_MAJOR_VERSION)
+    conf.env['INCLUDES_SORD'] = ['%s/sord-%s' % (
+        conf.env['INCLUDEDIR'], SORD_MAJOR_VERSION)]
+    conf.env['LIBPATH_SORD'] = [conf.env['LIBDIR']]
+    conf.env['LIB_SORD'] = ['sord-%s' % SORD_MAJOR_VERSION];
 
     autowaf.display_msg(conf, "Utilities", bool(conf.env['BUILD_UTILS']))
     autowaf.display_msg(conf, "Unit tests", bool(conf.env['BUILD_TESTS']))

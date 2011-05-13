@@ -180,10 +180,8 @@ sord_world_free(SordWorld* world)
 static inline int
 sord_node_compare(const SordNode* a, const SordNode* b)
 {
-	if (a == b) {
-		return 0;
-	} else if (!a || !b) {
-		return a - b;
+	if (a == b || !a || !b) {
+		return (const char*)a - (const char*)b;
 	} else if (a->node.type != b->node.type) {
 		return a->node.type - b->node.type;
 	}
@@ -225,23 +223,6 @@ sord_node_equals(const SordNode* a, const SordNode* b)
 	}
 }
 
-/** Compare two IDs (dereferencing if necessary).
- * The null ID, 0, is treated as a minimum (it is less than every other
- * possible ID, except itself).  This allows it to be used as a wildcard
- * when searching, ensuring the search will reach the minimum possible
- * key in the tree and iteration from that point will produce the entire
- * result set.
- */
-static inline int
-sord_id_compare(SordModel* sord, const SordNode* a, const SordNode* b)
-{
-	if (a == b || !a || !b) {
-		return (const char*)a - (const char*)b;
-	} else {
-		return sord_node_compare(a, b);
-	}
-}
-
 /** Return true iff IDs are equivalent, or one is a wildcard */
 static inline bool
 sord_id_match(const SordNode* a, const SordNode* b)
@@ -271,12 +252,11 @@ sord_quad_match(const SordQuad x, const SordQuad y)
 static int
 sord_quad_compare(const void* x_ptr, const void* y_ptr, void* user_data)
 {
-	SordModel* const sord = (SordModel*)user_data;
-	SordNode** const x    = (SordNode**)x_ptr;
-	SordNode** const y    = (SordNode**)y_ptr;
+	SordNode** const x = (SordNode**)x_ptr;
+	SordNode** const y = (SordNode**)y_ptr;
 
 	for (int i = 0; i < TUP_LEN; ++i) {
-		const int cmp = sord_id_compare(sord, x[i], y[i]);
+		const int cmp = sord_node_compare(x[i], y[i]);
 		if (cmp)
 			return cmp;
 	}

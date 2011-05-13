@@ -254,11 +254,13 @@ sord_quad_match(const SordQuad x, const SordQuad y)
 static int
 sord_quad_compare(const void* x_ptr, const void* y_ptr, void* user_data)
 {
-	SordNode** const x = (SordNode**)x_ptr;
-	SordNode** const y = (SordNode**)y_ptr;
+	const int* const ordering = (const int*)user_data;
+	SordNode** const x        = (SordNode**)x_ptr;
+	SordNode** const y        = (SordNode**)y_ptr;
 
 	for (int i = 0; i < TUP_LEN; ++i) {
-		const int cmp = sord_node_compare(x[i], y[i]);
+		const int idx = ordering[i];
+		const int cmp = sord_node_compare(x[idx], y[idx]);
 		if (cmp)
 			return cmp;
 	}
@@ -324,7 +326,8 @@ sord_iter_seek_match_range(SordIter* iter)
 			return false; // Found match
 
 		for (int i = 0; i < iter->n_prefix; ++i) {
-			if (!sord_id_match(key[i], iter->pat[i])) {
+			const int idx = iter->ordering[i];
+			if (!sord_id_match(key[idx], iter->pat[idx])) {
 				iter->end = true; // Reached end of valid range
 				return true;
 			}
@@ -348,7 +351,7 @@ sord_iter_new(const SordModel* sord, GSequenceIter* cur, const SordQuad pat,
 	iter->end         = false;
 	iter->skip_graphs = order < GSPO;
 	for (int i = 0; i < TUP_LEN; ++i) {
-		iter->pat[i]      = pat[ordering[i]];
+		iter->pat[i]      = pat[i];
 		iter->ordering[i] = ordering[i];
 	}
 
@@ -388,10 +391,9 @@ void
 sord_iter_get(const SordIter* iter, SordQuad id)
 {
 	SordNode** key = (SordNode**)g_sequence_get(iter->cur);
-	id[iter->ordering[0]] = key[0];
-	id[iter->ordering[1]] = key[1];
-	id[iter->ordering[2]] = key[2];
-	id[iter->ordering[3]] = key[3];
+	for (int i = 0; i < TUP_LEN; ++i) {
+		id[i] = key[i];
+	}
 }
 
 bool
@@ -417,7 +419,8 @@ sord_iter_next(SordIter* iter)
 			key = (const SordNode**)g_sequence_get(iter->cur);
 			assert(key);
 			for (int i = 0; i < iter->n_prefix; ++i) {
-				if (!sord_id_match(key[i], iter->pat[i])) {
+				const int idx = iter->ordering[i];
+				if (!sord_id_match(key[idx], iter->pat[idx])) {
 					iter->end = true;
 					SORD_ITER_LOG("%p reached non-match end\n", (void*)iter);
 					break;
@@ -556,9 +559,9 @@ sord_new(SordWorld* world, unsigned indices, bool graphs)
 
 	for (unsigned i = 0; i < (NUM_ORDERS / 2); ++i) {
 		if (indices & (1 << i)) {
-			sord->indices[i] = g_sequence_new(free);
+			sord->indices[i] = g_sequence_new(NULL);
 			if (graphs) {
-				sord->indices[i + (NUM_ORDERS / 2)] = g_sequence_new(free);
+				sord->indices[i + (NUM_ORDERS / 2)] = g_sequence_new(NULL);
 			} else {
 				sord->indices[i + (NUM_ORDERS / 2)] = NULL;
 			}
@@ -569,7 +572,7 @@ sord_new(SordWorld* world, unsigned indices, bool graphs)
 	}
 
 	if (!sord->indices[DEFAULT_ORDER]) {
-		sord->indices[DEFAULT_ORDER] = g_sequence_new(free);
+		sord->indices[DEFAULT_ORDER] = g_sequence_new(NULL);
 	}
 
 	return sord;
@@ -641,6 +644,14 @@ sord_free(SordModel* sord)
 	}
 	sord_iter_free(i);
 
+	// Free quads
+	for (GSequenceIter* i = g_sequence_get_begin_iter(sord->indices[DEFAULT_ORDER]);
+	     !g_sequence_iter_is_end(i);
+	     i = g_sequence_iter_next(i)) {
+		free(g_sequence_get(i));
+	}
+
+	// Free indices
 	for (unsigned i = 0; i < NUM_ORDERS; ++i)
 		if (sord->indices[i])
 			g_sequence_free(sord->indices[i]);
@@ -679,14 +690,14 @@ sord_begin(const SordModel* sord)
 }
 
 static inline GSequenceIter*
-index_search(SordModel* sord, GSequence* db, const SordQuad search_key)
+index_search(GSequence* db, const SordQuad search_key, const int* ordering)
 {
 	return g_sequence_search(
-		db, (void*)search_key, sord_quad_compare, sord);
+		db, (void*)search_key, sord_quad_compare, (void*)ordering);
 }
 
 static inline GSequenceIter*
-index_lower_bound_iter(SordModel* sord, GSequenceIter* i, const SordQuad search_key)
+index_lower_bound_iter(GSequenceIter* i, const SordQuad search_key)
 {
 	/* i is now at the position where search_key would be inserted,
 	   but this is not necessarily a match, and we need the leftmost...
@@ -728,11 +739,11 @@ index_lower_bound_iter(SordModel* sord, GSequenceIter* i, const SordQuad search_
 }
 
 static inline GSequenceIter*
-index_lower_bound(SordModel* sord, GSequence* db, const SordQuad search_key)
+index_lower_bound(GSequence* db, const SordQuad search_key, const int* ordering)
 {
 	GSequenceIter* i = g_sequence_search(
-		db, (void*)search_key, sord_quad_compare, sord);
-	return index_lower_bound_iter(sord, i, search_key);
+		db, (void*)search_key, sord_quad_compare, (void*)ordering);
+	return index_lower_bound_iter(i, search_key);
 }
 
 SordIter*
@@ -750,28 +761,18 @@ sord_find(SordModel* sord, const SordQuad pat)
 	              TUP_FMT_ARGS(pat), order_names[index_order], mode, prefix_len,
 	              ordering[0], ordering[1], ordering[2], ordering[3]);
 
-	/* It's easiest to think about this algorithm in terms of (S P O) ordering,
-	   assuming (A B C) == (S P O).  For other orderings this is not actually
-	   the case, but it works the same way.
-	*/
-	const SordNode* a = pat[ordering[0]]; // Most Significant Node (MSN)
-	const SordNode* b = pat[ordering[1]]; // ...
-	const SordNode* c = pat[ordering[2]]; // ...
-	const SordNode* d = pat[ordering[3]]; // Least Significant Node (LSN)
-
-	if (a && b && c && d)
+	if (pat[0] && pat[1] && pat[2] && pat[3])
 		mode = SINGLE; // No duplicate quads (Sord is a set)
 
-	SordQuad             search_key = { a, b, c, d };
-	GSequence* const     db         = sord->indices[index_order];
-	GSequenceIter* const cur        = index_lower_bound(sord, db, search_key);
+	GSequence* const     db  = sord->indices[index_order];
+	GSequenceIter* const cur = index_lower_bound(db, pat, ordering);
 	if (g_sequence_iter_is_end(cur)) {
 		SORD_FIND_LOG("No match found\n");
 		return NULL;
 	}
 	const SordNode** const key = (const SordNode**)g_sequence_get(cur);
 	if (!key || ( (mode == RANGE || mode == SINGLE)
-	              && !sord_quad_match_inline(search_key, key) )) {
+	              && !sord_quad_match_inline(pat, key) )) {
 		SORD_FIND_LOG("No match found\n");
 		return NULL;
 	}
@@ -1078,25 +1079,18 @@ sord_node_copy(const SordNode* node)
 }
 
 static inline bool
-sord_add_to_index(SordModel* sord, const SordQuad tup, SordOrder order)
+sord_add_to_index(SordModel* sord, const SordNode** tup, SordOrder order)
 {
 	assert(sord->indices[order]);
-	const int* const ordering = orderings[order];
-	const SordQuad key = {
-		tup[ordering[0]], tup[ordering[1]], tup[ordering[2]], tup[ordering[3]]
-	};
-	GSequenceIter* const cur   = index_search(sord, sord->indices[order], key);
-	GSequenceIter* const match = index_lower_bound_iter(sord, cur, key);
+	const int* const     ordering = orderings[order];
+	GSequenceIter* const cur      = index_search(sord->indices[order], tup, ordering);
+	GSequenceIter* const match    = index_lower_bound_iter(cur, tup);
 	if (!g_sequence_iter_is_end(match)
-	    && !sord_quad_compare(g_sequence_get(match), key, sord)) {
+	    && !sord_quad_compare(g_sequence_get(match), tup, (void*)ordering)) {
 		return false;  // Quad already stored in this index
 	}
 
-	// FIXME: would be nice to share quads and just use a different comparator
-	// for each index (save significant space overhead per quad)
-	SordNode** key_copy = malloc(sizeof(SordQuad));
-	memcpy(key_copy, key, sizeof(SordQuad));
-	g_sequence_insert_before(cur, key_copy);
+	g_sequence_insert_before(cur, tup);
 	return true;
 }
 
@@ -1109,10 +1103,14 @@ sord_add(SordModel* sord, const SordQuad tup)
 		return false;
 	}
 
+	const SordNode** quad = malloc(sizeof(SordQuad));
+	memcpy(quad, tup, sizeof(SordQuad));
+
 	for (unsigned i = 0; i < NUM_ORDERS; ++i) {
 		if (sord->indices[i]) {
-			if (!sord_add_to_index(sord, tup, i)) {
+			if (!sord_add_to_index(sord, quad, i)) {
 				assert(i == 0); // Assuming index coherency
+				free(quad);
 				return false; // Quad already stored, do nothing
 			}
 		}
@@ -1131,14 +1129,15 @@ sord_remove(SordModel* sord, const SordQuad tup)
 {
 	SORD_WRITE_LOG("Remove " TUP_FMT "\n", TUP_FMT_ARGS(tup));
 
+	SordNode** quad = NULL;
 	for (unsigned i = 0; i < NUM_ORDERS; ++i) {
 		if (sord->indices[i]) {
-			const int* const ordering = orderings[i];
-			const SordQuad key = {
-				tup[ordering[0]], tup[ordering[1]], tup[ordering[2]], tup[ordering[3]]
-			};
-			GSequenceIter* const cur = index_search(sord, sord->indices[i], key);
+			const int* const     ordering = orderings[i];
+			GSequenceIter* const cur      = index_search(sord->indices[i], tup, ordering);
 			if (!g_sequence_iter_is_end(cur)) {
+				if (!quad) {
+					quad = g_sequence_get(cur);
+				}
 				g_sequence_remove(cur);
 			} else {
 				assert(i == 0); // Assuming index coherency
@@ -1146,6 +1145,8 @@ sord_remove(SordModel* sord, const SordQuad tup)
 			}
 		}
 	}
+
+	free(quad);
 
 	for (SordQuadIndex i = 0; i < TUP_LEN; ++i)
 		sord_drop_quad_ref(sord, tup[i], i);

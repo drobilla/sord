@@ -35,7 +35,7 @@ print_version()
 {
 	printf("sordi " SORD_VERSION " <http://drobilla.net/software/sord>\n");
 	printf("Copyright 2011 David Robillard <http://drobilla.net>.\n"
-	       "\nLicense: Simplified BSD License.\n"
+	       "License: <http://www.opensource.org/licenses/isc-license>\n"
 	       "This is free software; you are free to change and redistribute it."
 	       "\nThere is NO WARRANTY, to the extent permitted by law.\n");
 	return 0;
@@ -58,29 +58,6 @@ file_sink(const void* buf, size_t len, void* stream)
 {
 	FILE* file = (FILE*)stream;
 	return fwrite(buf, 1, len, file);
-}
-
-static inline SerdNode
-serd_node_from_sord_node(const SordNode* n)
-{
-	size_t         n_bytes = 0;
-	const uint8_t* buf     = sord_node_get_string_counted(n, &n_bytes);
-	SerdNode       sn      = {
-		(const uint8_t*)buf, n_bytes, n_bytes - 1, sord_node_get_flags(n), SERD_NOTHING
-	};
-	// FIXME: UTF-8
-	switch (sord_node_get_type(n)) {
-	case SORD_URI:
-		sn.type = SERD_URI;
-		break;
-	case SORD_BLANK:
-		sn.type = SERD_BLANK_ID;
-		break;
-	case SORD_LITERAL:
-		sn.type = SERD_LITERAL;
-		break;
-	}
-	return sn;
 }
 
 int

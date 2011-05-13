@@ -128,7 +128,8 @@ generate(SordWorld* world, SordModel* sord, size_t n_quads, size_t n_objects_per
 	((t)[2] ? sord_node_get_string((t)[2]) : USTR("*"))
 
 int
-test_read(SordWorld* world, SordModel* sord, const size_t n_quads, const int n_objects_per)
+test_read(SordWorld* world, SordModel* sord,
+          const size_t n_quads, const int n_objects_per)
 {
 	int ret = EXIT_SUCCESS;
 

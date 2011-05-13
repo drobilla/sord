@@ -88,9 +88,10 @@ static const char* const order_names[NUM_ORDERS] = {
 	"gspo", "gsop", "gops", "gosp", "gpso", "gpos"
 };
 
-/** Quads of indices for each order, from most to least significant
- * (array indexed by SordOrder)
- */
+/**
+   Quads of indices for each order, from most to least significant
+   (array indexed by SordOrder)
+*/
 static const int orderings[NUM_ORDERS][TUP_LEN] = {
 	{  0,1,2,3}, {  0,2,1,3}, {  2,1,0,3}, {  2,0,1,3}, {  1,0,2,3}, {  1,2,0,3},
 	{3,0,1,2  }, {3,0,2,1  }, {3,2,1,0  }, {3,2,0,1  }, {3,1,0,2  }, {3,1,2,0  }
@@ -245,10 +246,11 @@ sord_quad_match(const SordQuad x, const SordQuad y)
 	return sord_quad_match_inline(x, y);
 }
 
-/** Compare two quad IDs lexicographically.
- * NULL IDs (equal to 0) are treated as wildcards, always less than every
- * other possible ID, except itself.
- */
+/**
+   Compare two quad IDs lexicographically.
+   NULL IDs (equal to 0) are treated as wildcards, always less than every
+   other possible ID, except itself.
+*/
 static int
 sord_quad_compare(const void* x_ptr, const void* y_ptr, void* user_data)
 {
@@ -287,9 +289,10 @@ sord_iter_forward(SordIter* iter)
 	assert(false);
 }
 
-/** Seek forward as necessary until @a iter points at a match.
- * @return true iff iterator reached end of valid range.
- */
+/**
+   Seek forward as necessary until @a iter points at a match.
+   @return true iff iterator reached end of valid range.
+*/
 static inline bool
 sord_iter_seek_match(SordIter* iter)
 {
@@ -303,10 +306,11 @@ sord_iter_seek_match(SordIter* iter)
 	return true;
 }
 
-/** Seek forward as necessary until @a iter points at a match, or the prefix
- * no longer matches iter->pat.
- * @return true iff iterator reached end of valid range.
- */
+/**
+   Seek forward as necessary until @a iter points at a match, or the prefix
+   no longer matches iter->pat.
+   @return true iff iterator reached end of valid range.
+*/
 static inline bool
 sord_iter_seek_match_range(SordIter* iter)
 {
@@ -461,10 +465,11 @@ sord_iter_free(SordIter* iter)
 	}
 }
 
-/** Return true iff @a sord has an index for @a order.
- * If @a graph_search is true, @a order will be modified to be the
- * corresponding order with a G prepended (so G will be the MSN).
- */
+/**
+   Return true iff @a sord has an index for @a order.
+   If @a graph_search is true, @a order will be modified to be the
+   corresponding order with a G prepended (so G will be the MSN).
+*/
 static inline bool
 sord_has_index(SordModel* sord, SordOrder* order, int* n_prefix, bool graph_search)
 {
@@ -476,12 +481,13 @@ sord_has_index(SordModel* sord, SordOrder* order, int* n_prefix, bool graph_sear
 	return sord->indices[*order];
 }
 
-/** Return the best available index for a pattern.
- * @param pat Pattern in standard (S P O G) order
- * @param mode Set to the (best) iteration mode for iterating over results
- * @param n_prefix Set to the length of the range prefix
- *        (for @a mode == RANGE and @a mode == FILTER_RANGE)
- */
+/**
+   Return the best available index for a pattern.
+   @param pat Pattern in standard (S P O G) order
+   @param mode Set to the (best) iteration mode for iterating over results
+   @param n_prefix Set to the length of the range prefix
+   (for @a mode == RANGE and @a mode == FILTER_RANGE)
+*/
 static inline SordOrder
 sord_best_index(SordModel* sord, const SordQuad pat, SearchMode* mode, int* n_prefix)
 {
@@ -744,9 +750,10 @@ sord_find(SordModel* sord, const SordQuad pat)
 	              TUP_FMT_ARGS(pat), order_names[index_order], mode, prefix_len,
 	              ordering[0], ordering[1], ordering[2], ordering[3]);
 
-	// It's easiest to think about this algorithm in terms of (S P O) ordering,
-	// assuming (A B C) == (S P O).  For other orderings this is not actually
-	// the case, but it works the same way.
+	/* It's easiest to think about this algorithm in terms of (S P O) ordering,
+	   assuming (A B C) == (S P O).  For other orderings this is not actually
+	   the case, but it works the same way.
+	*/
 	const SordNode* a = pat[ordering[0]]; // Most Significant Node (MSN)
 	const SordNode* b = pat[ordering[1]]; // ...
 	const SordNode* c = pat[ordering[2]]; // ...

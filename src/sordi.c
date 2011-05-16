@@ -161,10 +161,10 @@ main(int argc, char** argv)
 
 	bool success = false;
 	if (from_file) {
-		sord_read_file_handle(sord, env, in_fd, in_name,
-		                      base_uri_str, NULL, NULL);
+		success = sord_read_file_handle(sord, env, in_fd, in_name,
+		                                base_uri_str, NULL, NULL);
 	} else {
-		sord_read_string(sord, env, input, base_uri_str);
+		success = sord_read_string(sord, env, input, base_uri_str);
 	}
 
 	fprintf(stderr, "Loaded %zu statements\n", sord_num_quads(sord));

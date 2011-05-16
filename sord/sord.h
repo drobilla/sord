@@ -447,6 +447,7 @@ bool
 sord_read_file_handle(SordModel*     model,
                       SerdEnv*       env,
                       FILE*          fd,
+                      const uint8_t* name,
                       const uint8_t* base_uri,
                       SordNode*      graph,
                       const uint8_t* blank_prefix);

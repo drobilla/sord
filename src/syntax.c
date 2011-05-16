@@ -153,7 +153,7 @@ sord_read_file(SordModel*     model,
 	}
 
 	const bool ret = sord_read_file_handle(
-		model, env, fd, base_uri, graph, blank_prefix);
+		model, env, fd, path, base_uri, graph, blank_prefix);
 	fclose(fd);
 	return ret;
 }
@@ -163,6 +163,7 @@ bool
 sord_read_file_handle(SordModel*     model,
                       SerdEnv*       env,
                       FILE*          fd,
+                      const uint8_t* name,
                       const uint8_t* base_uri_str_in,
                       SordNode*      graph,
                       const uint8_t* blank_prefix)
@@ -189,7 +190,7 @@ sord_read_file_handle(SordModel*     model,
 		serd_reader_set_blank_prefix(state.reader, blank_prefix);
 	}
 
-	const SerdStatus ret = serd_reader_read_file(state.reader, fd, base_uri_str);
+	const SerdStatus ret = serd_reader_read_file(state.reader, fd, name);
 
 	serd_reader_free(state.reader);
 	free(base_uri_str);

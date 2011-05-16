@@ -33,6 +33,7 @@ def options(opt):
 
 def configure(conf):
     autowaf.configure(conf)
+    conf.line_just = 32
     autowaf.display_header('Sord configuration')
 
     conf.load('compiler_cc')

@@ -62,6 +62,20 @@ file_sink(const void* buf, size_t len, void* stream)
 	return fwrite(buf, 1, len, file);
 }
 
+bool
+set_syntax(SerdSyntax* syntax, const char* name)
+{
+	if (!strcmp(name, "turtle")) {
+		*syntax = SERD_TURTLE;
+	} else if (!strcmp(name, "ntriples")) {
+		*syntax = SERD_NTRIPLES;
+	} else {
+		fprintf(stderr, "Unknown input format `%s'\n", name);
+		return false;
+	}
+	return true;
+}
+
 int
 main(int argc, char** argv)
 {
@@ -70,6 +84,7 @@ main(int argc, char** argv)
 	}
 
 	FILE*          in_fd         = NULL;
+	SerdSyntax     input_syntax  = SERD_TURTLE;
 	SerdSyntax     output_syntax = SERD_NTRIPLES;
 	bool           from_file     = true;
 	const uint8_t* in_name       = NULL;
@@ -88,17 +103,20 @@ main(int argc, char** argv)
 			from_file = false;
 			++a;
 			break;
+		} else if (argv[a][1] == 'i') {
+			if (++a == argc) {
+				fprintf(stderr, "Missing value for -i\n");
+				return 1;
+			}
+			if (!set_syntax(&input_syntax, argv[a])) {
+				return 1;
+			}
 		} else if (argv[a][1] == 'o') {
 			if (++a == argc) {
 				fprintf(stderr, "Missing value for -o\n");
 				return 1;
 			}
-			if (!strcmp(argv[a], "turtle")) {
-				output_syntax = SERD_TURTLE;
-			} else if (!strcmp(argv[a], "ntriples")) {
-				output_syntax = SERD_NTRIPLES;
-			} else {
-				fprintf(stderr, "Unknown output format `%s'\n",  argv[a]);
+			if (!set_syntax(&output_syntax, argv[a])) {
 				return 1;
 			}
 		} else {
@@ -136,43 +154,40 @@ main(int argc, char** argv)
 	}
 
 	const uint8_t* base_uri_str = NULL;
-	SerdURI        base_uri;
 	if (a < argc) {  // Base URI given on command line
-		const uint8_t* const in_base_uri = (const uint8_t*)argv[a];
-		if (serd_uri_parse((const uint8_t*)in_base_uri, &base_uri)) {
-			fprintf(stderr, "Invalid base URI <%s>\n", argv[2]);
-			return 1;
-		}
-		base_uri_str = in_base_uri;
+		base_uri_str = (const uint8_t*)argv[a];
 	} else if (from_file) {  // Use input file URI
 		base_uri_str = input;
 	} else {
 		base_uri_str = (const uint8_t*)"";
 	}
 
-	if (serd_uri_parse(base_uri_str, &base_uri)) {
+	SerdURI  base_uri = SERD_URI_NULL;
+	SerdNode base_uri_node = serd_node_new_uri_from_string(
+		base_uri_str, &base_uri, &base_uri);
+	
+	if (!base_uri_node.buf) {
 		fprintf(stderr, "Invalid base URI <%s>\n", base_uri_str);
 		return 1;
 	}
-	
-	SordWorld* world = sord_world_new();
-	SordModel* sord  = sord_new(world, SORD_SPO|SORD_OPS, false);
-	SerdEnv*   env   = serd_env_new();
+
+	SordWorld*  world  = sord_world_new();
+	SordModel*  sord   = sord_new(world, SORD_SPO|SORD_OPS, false);
+	SerdEnv*    env    = serd_env_new(&base_uri_node);
+	SerdReader* reader = sord_new_reader(sord, env, input_syntax, NULL);
 
 	bool success = false;
 	if (from_file) {
-		success = sord_read_file_handle(sord, env, in_fd, in_name,
-		                                base_uri_str, NULL, NULL);
+		success = !serd_reader_read_file_handle(reader, in_fd, in_name);
 	} else {
-		success = sord_read_string(sord, env, input, base_uri_str);
+		success = !serd_reader_read_string(reader, input);
 	}
+
+	serd_reader_free(reader);
 
 	fprintf(stderr, "Loaded %zu statements\n", sord_num_quads(sord));
 
-	SerdEnv* write_env = serd_env_new();
-	SerdNode base_uri_node = serd_node_from_string(SERD_URI, base_uri_str);
-	serd_env_set_base_uri(write_env, &base_uri_node);
-	serd_env_get_base_uri(write_env, &base_uri);
+	SerdEnv* write_env = serd_env_new(&base_uri_node);
 
 	SerdStyle output_style = SERD_STYLE_RESOLVED;
 	if (output_syntax == SERD_NTRIPLES) {
@@ -199,8 +214,10 @@ main(int argc, char** argv)
 
 	serd_env_free(env);
 	serd_env_free(write_env);
+	serd_node_free(&base_uri_node);
 
 	sord_free(sord);
+	sord_world_free(world);
 
 	return success ? 0 : 1;
 }

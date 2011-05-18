@@ -63,7 +63,7 @@ protected:
 /** Collection of RDF namespaces with prefixes. */
 class Namespaces : public Wrapper<SerdEnv*> {
 public:
-	Namespaces() : Wrapper<SerdEnv*>(serd_env_new()) {}
+	Namespaces() : Wrapper<SerdEnv*>(serd_env_new(NULL)) {}
 
 	static inline SerdNode string_to_node(SerdType type, const std::string& s) {
 		SerdNode ret = {
@@ -391,19 +391,19 @@ public:
 	inline const Node& base_uri() const { return _base; }
 
 	inline void load_file(SerdEnv*           env,
+	                      SerdSyntax         syntax,
 	                      const std::string& uri,
 	                      const std::string& base_uri="");
 
 	inline void load_string(SerdEnv*           env,
+	                        SerdSyntax         syntax,
 	                        const char*        str,
 	                        size_t             len,
-	                        const std::string& base_uri,
-	                        const std::string  lang="turtle");
+	                        const std::string& base_uri);
 
-	inline void  write_to_file_handle(FILE* fd, const char* lang);
-	inline void  write_to_file(const std::string& uri, const char* lang);
+	inline void  write_to_file(const std::string& uri, SerdSyntax syntax);
 
-	inline std::string write_to_string(const char* lang);
+	inline std::string write_to_string(SerdSyntax syntax);
 
 	inline void add_statement(const Node& subject,
 	                          const Node& predicate,
@@ -436,15 +436,14 @@ Model::Model(World& world, const std::string& base_uri)
 
 inline void
 Model::load_string(SerdEnv*           env,
+                   SerdSyntax         syntax,
                    const char*        str,
                    size_t             len,
-                   const std::string& base_uri,
-                   const std::string  lang)
+                   const std::string& base_uri)
 {
-	sord_read_string(_c_obj,
-	                 env,
-	                 (const uint8_t*)str,
-	                 (const uint8_t*)base_uri.c_str());
+	SerdReader* reader = sord_new_reader(_c_obj, env, syntax, NULL);
+	serd_reader_read_string(reader, (const uint8_t*)str);
+	serd_reader_free(reader);
 }
 
 inline Model::~Model()
@@ -454,41 +453,37 @@ inline Model::~Model()
 
 inline void
 Model::load_file(SerdEnv*           env,
+                 SerdSyntax         syntax,
                  const std::string& data_uri,
                  const std::string& base_uri)
 {
-	// FIXME: blank prefix
-	sord_read_file(_c_obj, env, (const uint8_t*)data_uri.c_str(),
-	               (base_uri == "") ? NULL : (const uint8_t*)base_uri.c_str(),
-	               NULL, (const uint8_t*)"b");
+	if (data_uri.substr(0, 5) != "file:") {
+		return;
+	}
+
+	// FIXME: blank prefix parameter?
+	SerdReader* reader = sord_new_reader(_c_obj, env, syntax, NULL);
+	serd_reader_read_file(reader, (const uint8_t*)(data_uri.c_str() + 5));
+	serd_reader_free(reader);
 }
 
 inline void
-Model::write_to_file_handle(FILE* fd, const char* lang)
-{
-	sord_write_file_handle(_c_obj,
-	                       _world.prefixes().c_obj(),
-	                       fd,
-	                       _base.to_u_string(),
-	                       NULL,
-	                       NULL);
-}
-
-inline void
-Model::write_to_file(const std::string& uri, const char* lang)
+Model::write_to_file(const std::string& uri, SerdSyntax syntax)
 {
 	sord_write_file(_c_obj,
 	                _world.prefixes().c_obj(),
+	                syntax,
 	                (const uint8_t*)uri.c_str(),
 	                NULL,
 	                NULL);
 }
 
 inline std::string
-Model::write_to_string(const char* lang)
+Model::write_to_string(SerdSyntax syntax)
 {
 	uint8_t* const c_str = sord_write_string(_c_obj,
 	                                         _world.prefixes().c_obj(),
+	                                         syntax,
 	                                         base_uri().to_u_string());
 	std::string ret((const char*)c_str);
 	free(c_str);

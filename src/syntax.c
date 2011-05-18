@@ -26,11 +26,10 @@
 #include "sord_internal.h"
 
 typedef struct {
-	SerdReader* reader;
-	SerdEnv*    env;
-	SordNode*   graph_uri_node;
-	SordWorld*  world;
-	SordModel*  sord;
+	SerdEnv*   env;
+	SordNode*  graph_uri_node;
+	SordWorld* world;
+	SordModel* sord;
 } ReadState;
 
 static uint8_t*
@@ -77,8 +76,8 @@ event_statement(void*           handle,
 	                                       subject, NULL, NULL);
 	SordNode* p = sord_node_from_serd_node(state->world, state->env,
 	                                       predicate, NULL, NULL);
-	SordNode* o = sord_node_from_serd_node(state->world, state->env,
-	                                       object, object_datatype, object_lang);
+	SordNode* o = sord_node_from_serd_node(
+		state->world, state->env, object, object_datatype, object_lang);
 
 	SordNode* g = NULL;
 	if (state->graph_uri_node) {
@@ -128,113 +127,82 @@ sord_file_uri_to_path(const uint8_t* uri)
 }
 
 SORD_API
-bool
-sord_read_file(SordModel*     model,
-               SerdEnv*       env,
-               const uint8_t* uri,
-               const uint8_t* base_uri,
-               SordNode*      graph,
-               const uint8_t* blank_prefix)
+SerdReader*
+sord_new_reader(SordModel* model,
+                SerdEnv*   env,
+                SerdSyntax syntax,
+                SordNode*  graph)
 {
-	if (!base_uri) {
-		base_uri = uri;
-	}
+	ReadState* state = malloc(sizeof(ReadState));
+	state->env            = env;
+	state->graph_uri_node = graph;
+	state->world          = sord_get_world(model);
+	state->sord           = model;
 
-	const uint8_t* const path = sord_file_uri_to_path(uri);
-	if (!path) {
-		fprintf(stderr, "Unable to read non-file URI <%s>\n", uri);
-		return false;
-	}
+	SerdReader* reader = serd_reader_new(
+		syntax, state, free,
+		event_base, event_prefix, event_statement, NULL);
 
-	FILE* const fd = fopen((const char*)path, "r");
-	if (!fd) {
-		fprintf(stderr, "Failed to open file %s\n", path);
-		return false;
-	}
-
-	const bool ret = sord_read_file_handle(
-		model, env, fd, path, base_uri, graph, blank_prefix);
-	fclose(fd);
-	return ret;
+	return reader;
 }
 
-SORD_API
-bool
-sord_read_file_handle(SordModel*     model,
-                      SerdEnv*       env,
-                      FILE*          fd,
-                      const uint8_t* name,
-                      const uint8_t* base_uri_str_in,
-                      SordNode*      graph,
-                      const uint8_t* blank_prefix)
+static SerdWriter*
+make_writer(SerdEnv*       env,
+            SerdSyntax     syntax,
+            const uint8_t* base_uri_str_in,
+            SerdSink       sink,
+            void*          stream)
 {
 	size_t   base_uri_n_bytes = 0;
 	uint8_t* base_uri_str     = copy_string(base_uri_str_in, &base_uri_n_bytes);
-
 	SerdURI  base_uri;
 	if (serd_uri_parse(base_uri_str, &base_uri)) {
 		fprintf(stderr, "Invalid base URI <%s>\n", base_uri_str);
 	}
 
-	SerdNode base_uri_node = serd_node_from_string(SERD_URI, base_uri_str);
-	serd_env_set_base_uri(env, &base_uri_node);
+	SerdWriter* writer = serd_writer_new(
+		syntax,
+		SERD_STYLE_ABBREVIATED|SERD_STYLE_CURIED,
+		env,
+		&base_uri,
+		sink,
+		stream);
 
-	ReadState state = { NULL, env, graph,
-	                    sord_get_world(model), model };
+	serd_env_foreach(env,
+	                 (SerdPrefixSink)serd_writer_set_prefix,
+	                 writer);
 
-	state.reader = serd_reader_new(
-		SERD_TURTLE, &state,
-		event_base, event_prefix, event_statement, NULL);
-
-	if (blank_prefix) {
-		serd_reader_set_blank_prefix(state.reader, blank_prefix);
-	}
-
-	const SerdStatus ret = serd_reader_read_file(state.reader, fd, name);
-
-	serd_reader_free(state.reader);
-	free(base_uri_str);
-
-	return (ret == SERD_SUCCESS);
+	return writer;
 }
 
-SORD_API
-bool
-sord_read_string(SordModel*     model,
-                 SerdEnv*       env,
-                 const uint8_t* str,
-                 const uint8_t* base_uri_str_in)
+static size_t
+file_sink(const void* buf, size_t len, void* stream)
 {
-	size_t   base_uri_n_bytes = 0;
-	uint8_t* base_uri_str     = copy_string(base_uri_str_in, &base_uri_n_bytes);
+	FILE* file = (FILE*)stream;
+	return fwrite(buf, 1, len, file);
+}
 
-	SerdURI  base_uri;
-	if (serd_uri_parse(base_uri_str, &base_uri)) {
-		fprintf(stderr, "Invalid base URI <%s>\n", base_uri_str);
-	}
-
-	SerdNode base_uri_node = serd_node_from_string(SERD_URI, base_uri_str);
-	serd_env_set_base_uri(env, &base_uri_node);
-
-	ReadState state = { NULL, env, NULL,
-	                    sord_get_world(model), model };
-
-	state.reader = serd_reader_new(
-		SERD_TURTLE, &state,
-		event_base, event_prefix, event_statement, NULL);
-
-	const SerdStatus status = serd_reader_read_string(state.reader, str);
-
-	serd_reader_free(state.reader);
-	free(base_uri_str);
-
-	return (status == SERD_SUCCESS);
+static bool
+sord_write_file_handle(SordModel*     model,
+                       SerdEnv*       env,
+                       SerdSyntax     syntax,
+                       FILE*          fd,
+                       const uint8_t* base_uri_str_in,
+                       SordNode*      graph,
+                       const uint8_t* blank_prefix)
+{
+	SerdWriter* writer = make_writer(env, syntax, base_uri_str_in,
+	                                 file_sink, fd);
+	sord_write_writer(model, writer, graph);
+	serd_writer_free(writer);
+	return true;
 }
 
 SORD_API
 bool
 sord_write_file(SordModel*     model,
                 SerdEnv*       env,
+                SerdSyntax     syntax,
                 const uint8_t* uri,
                 SordNode*      graph,
                 const uint8_t* blank_prefix)
@@ -250,16 +218,10 @@ sord_write_file(SordModel*     model,
 		return false;
 	}
 
-	const bool ret = sord_write_file_handle(model, env, fd, uri, graph, blank_prefix);
+	const bool ret = sord_write_file_handle(model, env, syntax, fd,
+	                                        uri, graph, blank_prefix);
 	fclose(fd);
 	return ret;
-}
-
-static size_t
-file_sink(const void* buf, size_t len, void* stream)
-{
-	FILE* file = (FILE*)stream;
-	return fwrite(buf, 1, len, file);
 }
 
 static void
@@ -329,48 +291,6 @@ sord_write_writer(SordModel*  model,
 	return true;
 }
 
-static SerdWriter*
-make_writer(SerdEnv*       env,
-            const uint8_t* base_uri_str_in,
-            SerdSink       sink,
-            void*          stream)
-{
-	size_t   base_uri_n_bytes = 0;
-	uint8_t* base_uri_str     = copy_string(base_uri_str_in, &base_uri_n_bytes);
-	SerdURI  base_uri;
-	if (serd_uri_parse(base_uri_str, &base_uri)) {
-		fprintf(stderr, "Invalid base URI <%s>\n", base_uri_str);
-	}
-
-	SerdWriter* writer = serd_writer_new(SERD_TURTLE,
-	                                     SERD_STYLE_ABBREVIATED|SERD_STYLE_CURIED,
-	                                     env,
-	                                     &base_uri,
-	                                     sink,
-	                                     stream);
-
-	serd_env_foreach(env,
-	                 (SerdPrefixSink)serd_writer_set_prefix,
-	                 writer);
-
-	return writer;
-}
-
-SORD_API
-bool
-sord_write_file_handle(SordModel*     model,
-                       SerdEnv*       env,
-                       FILE*          fd,
-                       const uint8_t* base_uri_str_in,
-                       SordNode*      graph,
-                       const uint8_t* blank_prefix)
-{
-	SerdWriter* writer = make_writer(env, base_uri_str_in, file_sink, fd);
-	sord_write_writer(model, writer, graph);
-	serd_writer_free(writer);
-	return true;
-}
-
 struct SerdBuffer {
 	uint8_t* buf;
 	size_t   len;
@@ -390,10 +310,12 @@ SORD_API
 uint8_t*
 sord_write_string(SordModel*     model,
                   SerdEnv*       env,
+                  SerdSyntax     syntax,
                   const uint8_t* base_uri)
 {
 	struct SerdBuffer buf = { NULL, 0 };
-	SerdWriter* writer = make_writer(env, base_uri, string_sink, &buf);
+
+	SerdWriter* writer = make_writer(env, syntax, base_uri, string_sink, &buf);
 	sord_write_writer(model, writer, NULL);
 	serd_writer_free(writer);
 	string_sink("", 1, &buf);

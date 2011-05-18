@@ -265,10 +265,20 @@ bool
 sord_node_equals(const SordNode* a,
                  const SordNode* b);
 
+/**
+   Return a SordNode as a SerdNode.
+
+   The returned node is shared and must not be freed or modified.
+*/
 SORD_API
 const SerdNode*
 sord_node_to_serd_node(const SordNode* node);
 
+/**
+   Create a new SordNode from a SerdNode.
+
+   The returned node must be freed using sord_node_free.
+*/
 SORD_API
 SordNode*
 sord_node_from_serd_node(SordWorld*      world,
@@ -426,41 +436,14 @@ sord_quad_match(const SordQuad x, const SordQuad y);
 */
 
 /**
-   Read a file into a model.
-
-   The @c base_uri may be NULL, in which case @c uri will be used.
+   Return a reader that will read into @c model.
 */
 SORD_API
-bool
-sord_read_file(SordModel*     model,
-               SerdEnv*       env,
-               const uint8_t* uri,
-               const uint8_t* base_uri,
-               SordNode*      graph,
-               const uint8_t* blank_prefix);
-
-/**
-   Read a file handle into a model.
-*/
-SORD_API
-bool
-sord_read_file_handle(SordModel*     model,
-                      SerdEnv*       env,
-                      FILE*          fd,
-                      const uint8_t* name,
-                      const uint8_t* base_uri,
-                      SordNode*      graph,
-                      const uint8_t* blank_prefix);
-
-/**
-   Read a string into a model.
-*/
-SORD_API
-bool
-sord_read_string(SordModel*     model,
-                 SerdEnv*       env,
-                 const uint8_t* str,
-                 const uint8_t* base_uri);
+SerdReader*
+sord_new_reader(SordModel* model,
+                SerdEnv*   env,
+                SerdSyntax syntax,
+                SordNode*  graph);
 
 /**
    Write a model to a file.
@@ -469,22 +452,14 @@ SORD_API
 bool
 sord_write_file(SordModel*     model,
                 SerdEnv*       env,
+                SerdSyntax     syntax,
                 const uint8_t* uri,
                 SordNode*      graph,
                 const uint8_t* blank_prefix);
 
 /**
-   Write a model to a file handle.
+   Write a model to a writer.
 */
-SORD_API
-bool
-sord_write_file_handle(SordModel*     model,
-                       SerdEnv*       env,
-                       FILE*          fd,
-                       const uint8_t* base_uri,
-                       SordNode*      graph,
-                       const uint8_t* blank_prefix);
-
 SORD_API
 bool
 sord_write_writer(SordModel*  model,
@@ -500,6 +475,7 @@ SORD_API
 uint8_t*
 sord_write_string(SordModel*     model,
                   SerdEnv*       env,
+                  SerdSyntax     syntax,
                   const uint8_t* base_uri);
 
 /**

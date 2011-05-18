@@ -6,7 +6,7 @@ from waflib.extras import autowaf as autowaf
 import waflib.Logs as Logs, waflib.Options as Options
 
 # Version of this package (even if built as a child)
-SORD_VERSION       = '0.2.0'
+SORD_VERSION       = '0.3.0'
 SORD_MAJOR_VERSION = '0'
 
 # Library version (UNIX style major, minor, micro)
@@ -43,7 +43,7 @@ def configure(conf):
                       atleast_version='2.0.0', mandatory=True)
 
     autowaf.check_pkg(conf, 'serd-0', uselib_store='SERD',
-                      atleast_version='0.2.0', mandatory=True)
+                      atleast_version='0.3.0', mandatory=True)
 
     conf.env['BUILD_TESTS'] = Options.options.build_tests
     conf.env['BUILD_UTILS'] = True

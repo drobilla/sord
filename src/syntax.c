@@ -62,13 +62,14 @@ event_prefix(void*           handle,
 }
 
 static SerdStatus
-event_statement(void*           handle,
-                const SerdNode* graph,
-                const SerdNode* subject,
-                const SerdNode* predicate,
-                const SerdNode* object,
-                const SerdNode* object_datatype,
-                const SerdNode* object_lang)
+event_statement(void*              handle,
+                SerdStatementFlags flags,
+                const SerdNode*    graph,
+                const SerdNode*    subject,
+                const SerdNode*    predicate,
+                const SerdNode*    object,
+                const SerdNode*    object_datatype,
+                const SerdNode*    object_lang)
 {
 	ReadState* const state = (ReadState*)handle;
 
@@ -247,31 +248,38 @@ write_statement(SordModel* sord, SerdWriter* writer, SordQuad tup,
 		language.buf     = (const uint8_t*)lang_str;
 	};
 
+	SerdStatementFlags flags = 0;
+
 	SerdNode subject = *ss;
 	if (anon_subject) {
 		assert(s == anon_subject);
-		subject.type = SERD_ANON;
+		// TODO: Need context to abbreviate correctly
+		//flags |= SERD_ANON_S_BEGIN;
 	} else if (sord_node_is_inline_object(s)) {
 		return;
 	}
 
 	if (sord_node_is_inline_object(o)) {
 		SerdNode anon = *so;
-		anon.type = SERD_ANON_BEGIN;
-		serd_writer_write_statement(
-			writer, NULL, &subject, sp, &anon, sd, &language);
 		SordQuad  sub_pat  = { o, 0, 0, 0 };
 		SordIter* sub_iter = sord_find(sord, sub_pat);
-		for (; !sord_iter_end(sub_iter); sord_iter_next(sub_iter)) {
-			SordQuad sub_tup;
-			sord_iter_get(sub_iter, sub_tup);
-			write_statement(sord, writer, sub_tup, o);
+		flags |= (sub_iter) ? SERD_ANON_O_BEGIN : SERD_EMPTY_O;
+
+		serd_writer_write_statement(
+			writer, flags, NULL, &subject, sp, &anon, sd, &language);
+
+		if (sub_iter) {
+			for (; !sord_iter_end(sub_iter); sord_iter_next(sub_iter)) {
+				SordQuad sub_tup;
+				sord_iter_get(sub_iter, sub_tup);
+				write_statement(sord, writer, sub_tup, o);
+			}
+			sord_iter_free(sub_iter);
+			serd_writer_end_anon(writer, so);
 		}
-		sord_iter_free(sub_iter);
-		serd_writer_end_anon(writer, so);
 	} else if (!sord_node_is_inline_object(s) || s == anon_subject) {
 		serd_writer_write_statement(
-			writer, NULL, &subject, sp, so, sd, &language);
+			writer, flags, NULL, &subject, sp, so, sd, &language);
 	}
 }
 

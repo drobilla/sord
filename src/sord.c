@@ -190,7 +190,7 @@ sord_node_compare(const SordNode* a, const SordNode* b)
 	int cmp;
 	switch (a->node.type) {
 	case SERD_URI:
-	case SERD_BLANK_ID:
+	case SERD_BLANK:
 		return strcmp((const char*)a->node.buf, (const char*)b->node.buf);
 	case SERD_LITERAL:
 		cmp = strcmp((const char*)sord_node_get_string(a),
@@ -847,7 +847,7 @@ SordNodeType
 sord_node_get_type(const SordNode* node)
 {
 	switch (node->node.type) {
-	case SERD_BLANK_ID:
+	case SERD_BLANK:
 		return SORD_BLANK;
 	case SERD_LITERAL:
 		return SORD_LITERAL;
@@ -893,7 +893,7 @@ sord_node_get_flags(const SordNode* node)
 bool
 sord_node_is_inline_object(const SordNode* node)
 {
-	return (node->node.type == SERD_BLANK_ID) && (node->refs_as_obj == 1);
+	return (node->node.type == SERD_BLANK) && (node->refs_as_obj == 1);
 }
 
 static void
@@ -936,7 +936,7 @@ sord_new_blank_counted(SordWorld* world, const uint8_t* str,
 		return node;
 	}
 
-	node = sord_new_node(SERD_BLANK_ID, str, n_bytes, n_chars, 0, 0, 0);
+	node = sord_new_node(SERD_BLANK, str, n_bytes, n_chars, 0, 0, 0);
 	g_hash_table_insert(world->names, (char*)node->node.buf, node);
 	sord_add_node(world, node);
 	return node;
@@ -1041,9 +1041,7 @@ sord_node_from_serd_node(SordWorld*      world,
 			uri_prefix.len + uri_suffix.len); // FIXME: UTF-8
 		return ret;
 	}
-	case SERD_BLANK_ID:
-	case SERD_ANON_BEGIN:
-	case SERD_ANON:
+	case SERD_BLANK:
 		return sord_new_blank_counted(world, sn->buf, sn->n_bytes, sn->n_chars);
 	}
 	return NULL;

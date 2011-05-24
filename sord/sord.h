@@ -87,7 +87,7 @@ typedef struct SordIterImpl SordIter;
 typedef struct SordNodeImpl SordNode;
 
 /**
-   Quad of nodes (i.e. a statement), or a quad pattern.
+   Quad of nodes (a statement), or a quad pattern.
 
    Nodes are ordered (S P O G).  The ID of the default graph is 0.
 */
@@ -155,8 +155,8 @@ sord_world_free(SordWorld* world);
 /**
    Get a URI node from a string.
 
-   Note this function measures @a str, which is a common bottleneck.
-   Use sord_node_from_serd_node instead if @a str is already measured.
+   Note this function measures @c str, which is a common bottleneck.
+   Use sord_node_from_serd_node instead if @c str is already measured.
 */
 SORD_API
 SordNode*
@@ -165,8 +165,8 @@ sord_new_uri(SordWorld* world, const uint8_t* str);
 /**
    Get a blank node from a string.
 
-   Note this function measures @a str, which is a common bottleneck.
-   Use sord_node_from_serd_node instead if @a str is already measured.
+   Note this function measures @c str, which is a common bottleneck.
+   Use sord_node_from_serd_node instead if @c str is already measured.
 */
 SORD_API
 SordNode*
@@ -175,8 +175,8 @@ sord_new_blank(SordWorld* world, const uint8_t* str);
 /**
    Get a literal node from a string.
 
-   Note this function measures @a str, which is a common bottleneck.
-   Use sord_node_from_serd_node instead if @a str is already measured.
+   Note this function measures @c str, which is a common bottleneck.
+   Use sord_node_from_serd_node instead if @c str is already measured.
 */
 SORD_API
 SordNode*
@@ -186,7 +186,7 @@ sord_new_literal(SordWorld*     world,
                  const char*    lang);
 
 /**
-   Copy a node (i.e. obtain a reference).
+   Copy a node (obtain a reference).
 
    Node that since nodes are interned and reference counted, this does not
    actually create a deep copy of @c node.
@@ -196,7 +196,7 @@ SordNode*
 sord_node_copy(const SordNode* node);
 
 /**
-   Free a node (i.e. drop a reference).
+   Free a node (drop a reference).
 */
 SORD_API
 void

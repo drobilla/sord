@@ -125,6 +125,11 @@ main(int argc, char** argv)
 		}
 	}
 
+	if (a == argc) {
+		fprintf(stderr, "Missing input\n");
+		return 1;
+	}
+
 	const uint8_t* input = (const uint8_t*)argv[a++];
 	if (from_file) {
 		in_name = in_name ? in_name : input;

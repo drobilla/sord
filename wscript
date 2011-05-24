@@ -209,6 +209,26 @@ def test(ctx):
 
     autowaf.pre_test(ctx, APPNAME)
 
+    autowaf.run_tests(ctx, APPNAME, [
+            './sordi_static file:%s/tests/manifest.ttl > /dev/null' % srcdir,
+            './sordi_static file://%s/tests/manifest.ttl > /dev/null' % srcdir,
+            './sordi_static %s/tests/UTF-8.ttl > /dev/null' % srcdir,
+            './sordi_static -v > /dev/null',
+            './sordi_static -s "<foo> a <#Thingie> ." > /dev/null',
+            './sordi_static /dev/null > /dev/null'],
+                      0, name='sordi-cmd-good')
+
+    autowaf.run_tests(ctx, APPNAME, [
+            './sordi_static > /dev/null',
+            './sordi_static ftp://example.org/unsupported.ttl > /dev/null',
+            './sordi_static -i > /dev/null',
+            './sordi_static -o > /dev/null',
+            './sordi_static -z > /dev/null',
+            './sordi_static -i illegal > /dev/null',
+            './sordi_static -o illegal > /dev/null',
+            './sordi_static /no/such/file > /dev/null'],
+                      1, name='sordi-cmd-bad')
+
     autowaf.run_tests(ctx, APPNAME, ['./sord_test'])
 
     commands = []

@@ -169,9 +169,22 @@ sord_world_new(void)
 	return world;
 }
 
+static void
+free_hash_entry(void* key, void* value, void* user_data)
+{
+	SordNode* node = (SordNode*)value;
+	if (node->node.type == SERD_LITERAL) {
+		sord_node_free((SordWorld*)user_data, node->datatype);
+	}
+	g_free((uint8_t*)node->node.buf);
+	free(node);
+}
+
 void
 sord_world_free(SordWorld* world)
 {
+	g_hash_table_foreach(world->literals, free_hash_entry, world);
+	g_hash_table_foreach(world->names, free_hash_entry, world);
 	g_hash_table_unref(world->names);
 	g_hash_table_unref(world->langs);
 	g_hash_table_unref(world->literals);

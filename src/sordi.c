@@ -212,7 +212,7 @@ main(int argc, char** argv)
 	                 writer);
 
 	// Write statements
-	sord_write_writer(sord, writer, NULL);
+	sord_write(sord, writer, NULL);
 
 	serd_writer_finish(writer);
 	serd_writer_free(writer);

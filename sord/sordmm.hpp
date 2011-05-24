@@ -390,6 +390,8 @@ public:
 
 	inline const Node& base_uri() const { return _base; }
 
+	size_t num_quads() const { return sord_num_quads(_c_obj); }
+
 	inline void load_file(SerdEnv*           env,
 	                      SerdSyntax         syntax,
 	                      const std::string& uri,
@@ -401,9 +403,17 @@ public:
 	                        size_t             len,
 	                        const std::string& base_uri);
 
-	inline void  write_to_file(const std::string& uri, SerdSyntax syntax);
+	inline SerdStatus write_to_file(
+		const std::string& uri,
+		SerdSyntax         syntax=SERD_TURTLE,
+		SerdStyle          style=(SerdStyle)(SERD_STYLE_ABBREVIATED
+		                                     |SERD_STYLE_CURIED));
 
-	inline std::string write_to_string(SerdSyntax syntax);
+	inline std::string write_to_string(
+		const std::string& base_uri,
+		SerdSyntax         syntax=SERD_TURTLE,
+		SerdStyle          style=(SerdStyle)(SERD_STYLE_ABBREVIATED
+		                                     |SERD_STYLE_CURIED));
 
 	inline void add_statement(const Node& subject,
 	                          const Node& predicate,
@@ -461,32 +471,94 @@ Model::load_file(SerdEnv*           env,
 		return;
 	}
 
+	const uint8_t* path = (const uint8_t*)(data_uri.c_str() + 5);
+
 	// FIXME: blank prefix parameter?
 	SerdReader* reader = sord_new_reader(_c_obj, env, syntax, NULL);
-	serd_reader_read_file(reader, (const uint8_t*)(data_uri.c_str() + 5));
+	serd_reader_read_file(reader, path);
 	serd_reader_free(reader);
 }
 
-inline void
-Model::write_to_file(const std::string& uri, SerdSyntax syntax)
+static size_t
+file_sink(const void* buf, size_t len, void* stream)
 {
-	sord_write_file(_c_obj,
-	                _world.prefixes().c_obj(),
-	                syntax,
-	                (const uint8_t*)uri.c_str(),
-	                NULL,
-	                NULL);
+	FILE* file = (FILE*)stream;
+	return fwrite(buf, 1, len, file);
+}
+
+inline SerdStatus
+Model::write_to_file(const std::string& uri, SerdSyntax syntax, SerdStyle style)
+{
+	if (uri.substr(0, 5) != "file:") {
+		return SERD_ERR_BAD_ARG;
+	}
+
+	const uint8_t* path = (const uint8_t*)(uri.c_str() + 5);
+
+	FILE* const fd = fopen((const char*)path, "w");
+	if (!fd) {
+		fprintf(stderr, "Failed to open file %s\n", path);
+		return SERD_ERR_UNKNOWN;
+	}
+
+	SerdURI base_uri = SERD_URI_NULL;
+	if (serd_uri_parse((const uint8_t*)uri.c_str(), &base_uri)) {
+		fprintf(stderr, "Invalid base URI <%s>\n", uri.c_str());
+		return SERD_ERR_BAD_ARG;
+	}
+
+	SerdWriter* writer = serd_writer_new(syntax,
+	                                     style,
+	                                     _world.prefixes().c_obj(),
+	                                     &base_uri,
+	                                     file_sink,
+	                                     fd);
+
+	serd_env_foreach(_world.prefixes().c_obj(),
+	                 (SerdPrefixSink)serd_writer_set_prefix,
+	                 writer);
+
+	sord_write(_c_obj, writer, 0);
+	serd_writer_free(writer);
+
+	return SERD_SUCCESS;
+}
+
+static size_t
+string_sink(const void* buf, size_t len, void* stream)
+{
+	std::string* str = (std::string*)stream;
+	str->append((const char*)buf, len);
+	return len;
 }
 
 inline std::string
-Model::write_to_string(SerdSyntax syntax)
+Model::write_to_string(const std::string& base_uri_str,
+                       SerdSyntax         syntax,
+                       SerdStyle          style)
 {
-	uint8_t* const c_str = sord_write_string(_c_obj,
-	                                         _world.prefixes().c_obj(),
-	                                         syntax,
-	                                         base_uri().to_u_string());
-	std::string ret((const char*)c_str);
-	free(c_str);
+	SerdURI base_uri = SERD_URI_NULL;
+	if (serd_uri_parse((const uint8_t*)base_uri_str.c_str(), &base_uri)) {
+		fprintf(stderr, "Invalid base URI <%s>\n", base_uri_str.c_str());
+		return "";
+	}
+
+	std::string ret;
+
+	SerdWriter* writer = serd_writer_new(syntax,
+	                                     style,
+	                                     _world.prefixes().c_obj(),
+	                                     &base_uri,
+	                                     string_sink,
+	                                     &ret);
+
+	serd_env_foreach(_world.prefixes().c_obj(),
+	                 (SerdPrefixSink)serd_writer_set_prefix,
+	                 writer);
+
+	sord_write(_c_obj, writer, 0);
+
+	serd_writer_free(writer);
 	return ret;
 }
 

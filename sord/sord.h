@@ -446,37 +446,13 @@ sord_new_reader(SordModel* model,
                 SordNode*  graph);
 
 /**
-   Write a model to a file.
-*/
-SORD_API
-bool
-sord_write_file(SordModel*     model,
-                SerdEnv*       env,
-                SerdSyntax     syntax,
-                const uint8_t* uri,
-                SordNode*      graph,
-                const uint8_t* blank_prefix);
-
-/**
    Write a model to a writer.
 */
 SORD_API
 bool
-sord_write_writer(SordModel*  model,
-                  SerdWriter* writer,
-                  SordNode*   graph);
-
-/**
-   Write a model to a string.
-
-   Returned string is newly allocated and must be freed with free().
-*/
-SORD_API
-uint8_t*
-sord_write_string(SordModel*     model,
-                  SerdEnv*       env,
-                  SerdSyntax     syntax,
-                  const uint8_t* base_uri);
+sord_write(SordModel*  model,
+           SerdWriter* writer,
+           SordNode*   graph);
 
 /**
    @}

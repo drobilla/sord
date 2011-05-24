@@ -166,15 +166,21 @@ def build(bld):
     autowaf.build_dox(bld, 'SORD', SORD_VERSION, top, out)
 
     bld.add_post_fun(autowaf.run_ldconfig)
+    if bld.env['DOCS']:
+        bld.add_post_fun(fix_docs)
 
 def fix_docs(ctx):
     try:
+        top = os.getcwd()
         os.chdir('build/doc/html')
         os.system("sed -i 's/SORD_API //' group__sord.html")
         os.system("sed -i 's/SORD_DEPRECATED //' group__sord.html")
         os.remove('index.html')
         os.symlink('group__sord.html',
                    'index.html')
+        os.chdir(top)
+        os.chdir('build/doc/man/man3')
+        os.system("sed -i 's/SORD_API //' sord.3")
     except Exception, e:
         Logs.error("Failed to fix up Doxygen documentation (%s)\n" % e)
 

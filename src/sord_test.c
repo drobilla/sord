@@ -334,6 +334,26 @@ main(int argc, char** argv)
 		sord_free(sord);
 	}
 
+	// Test removing
+	sord = sord_new(world, SORD_SPO, false);
+	SordQuad tup = { 0, 0, 0, 0};
+	tup[0] = uri(world, 1);
+	tup[1] = uri(world, 2);
+	tup[2] = sord_new_literal(world, 0, USTR("hello"), NULL);
+	tup[3] = 0;
+	sord_add(sord, tup);
+	sord_node_free(world, (SordNode*)tup[2]);
+	tup[2] = sord_new_literal(world, 0, USTR("hi"), NULL);
+	sord_add(sord, tup);
+	sord_remove(sord, tup);
+	if (sord_num_quads(sord) != 1) {
+		fprintf(stderr, "Removed failed (%zu quads, expected 1)\n",
+		        sord_num_quads(sord));
+		goto fail;
+	}
+
+	sord_free(sord);
+
 	sord_world_free(world);
 
 	return EXIT_SUCCESS;

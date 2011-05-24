@@ -1131,7 +1131,8 @@ sord_remove(SordModel* sord, const SordQuad tup)
 	for (unsigned i = 0; i < NUM_ORDERS; ++i) {
 		if (sord->indices[i]) {
 			const int* const     ordering = orderings[i];
-			GSequenceIter* const cur      = index_search(sord->indices[i], tup, ordering);
+			GSequenceIter* const cur      = index_lower_bound(
+				sord->indices[i], tup, ordering);
 			if (!g_sequence_iter_is_end(cur)) {
 				if (!quad) {
 					quad = g_sequence_get(cur);

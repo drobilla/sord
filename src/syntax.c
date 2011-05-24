@@ -32,16 +32,6 @@ typedef struct {
 	SordModel* sord;
 } ReadState;
 
-static uint8_t*
-copy_string(const uint8_t* str, size_t* n_bytes)
-{
-	const size_t   len = strlen((const char*)str);
-	uint8_t* const ret = malloc(len + 1);
-	memcpy(ret, str, len + 1);
-	*n_bytes = len + 1;
-	return ret;
-}
-
 static SerdStatus
 event_base(void*           handle,
            const SerdNode* uri_node)
@@ -102,31 +92,6 @@ event_statement(void*              handle,
 	return SERD_SUCCESS;
 }
 
-static const uint8_t*
-sord_file_uri_to_path(const uint8_t* uri)
-{
-	const uint8_t* filename = NULL;
-	if (serd_uri_string_has_scheme(uri)) {
-		// Absolute URI, ensure it a file and chop scheme
-		if (strncmp((const char*)uri, "file:", 5)) {
-			fprintf(stderr, "Unsupported URI scheme `%s'\n", uri);
-			return NULL;
-#ifdef __WIN32__
-		} else if (!strncmp((const char*)uri, "file:///", 8)) {
-			filename = uri + 8;
-#else
-		} else if (!strncmp((const char*)uri, "file://", 7)) {
-			filename = uri + 7;
-#endif
-		} else {
-			filename = uri + 5;
-		}
-	} else {
-		filename = uri;
-	}
-	return filename;
-}
-
 SORD_API
 SerdReader*
 sord_new_reader(SordModel* model,
@@ -147,87 +112,9 @@ sord_new_reader(SordModel* model,
 	return reader;
 }
 
-static SerdWriter*
-make_writer(SerdEnv*       env,
-            SerdSyntax     syntax,
-            const uint8_t* base_uri_str_in,
-            SerdSink       sink,
-            void*          stream)
-{
-	size_t   base_uri_n_bytes = 0;
-	uint8_t* base_uri_str     = copy_string(base_uri_str_in, &base_uri_n_bytes);
-	SerdURI  base_uri;
-	if (serd_uri_parse(base_uri_str, &base_uri)) {
-		fprintf(stderr, "Invalid base URI <%s>\n", base_uri_str);
-	}
-
-	SerdWriter* writer = serd_writer_new(
-		syntax,
-		SERD_STYLE_ABBREVIATED|SERD_STYLE_CURIED,
-		env,
-		&base_uri,
-		sink,
-		stream);
-
-	serd_env_foreach(env,
-	                 (SerdPrefixSink)serd_writer_set_prefix,
-	                 writer);
-
-	return writer;
-}
-
-static size_t
-file_sink(const void* buf, size_t len, void* stream)
-{
-	FILE* file = (FILE*)stream;
-	return fwrite(buf, 1, len, file);
-}
-
-static bool
-sord_write_file_handle(SordModel*     model,
-                       SerdEnv*       env,
-                       SerdSyntax     syntax,
-                       FILE*          fd,
-                       const uint8_t* base_uri_str_in,
-                       SordNode*      graph,
-                       const uint8_t* blank_prefix)
-{
-	SerdWriter* writer = make_writer(env, syntax, base_uri_str_in,
-	                                 file_sink, fd);
-	sord_write_writer(model, writer, graph);
-	serd_writer_free(writer);
-	return true;
-}
-
-SORD_API
-bool
-sord_write_file(SordModel*     model,
-                SerdEnv*       env,
-                SerdSyntax     syntax,
-                const uint8_t* uri,
-                SordNode*      graph,
-                const uint8_t* blank_prefix)
-{
-	const uint8_t* const path = sord_file_uri_to_path(uri);
-	if (!path) {
-		return false;
-	}
-
-	FILE* const fd = fopen((const char*)path, "w");
-	if (!fd) {
-		fprintf(stderr, "Failed to open file %s\n", path);
-		return false;
-	}
-
-	const bool ret = sord_write_file_handle(model, env, syntax, fd,
-	                                        uri, graph, blank_prefix);
-	fclose(fd);
-	return ret;
-}
-
 static void
 write_statement(SordModel* sord, SerdWriter* writer, SordQuad tup,
-                const SordNode* anon_subject)
+                SerdStatementFlags flags)
 {
 	const SordNode* s  = tup[SORD_SUBJECT];
 	const SordNode* p  = tup[SORD_PREDICATE];
@@ -248,84 +135,50 @@ write_statement(SordModel* sord, SerdWriter* writer, SordQuad tup,
 		language.buf     = (const uint8_t*)lang_str;
 	};
 
-	SerdStatementFlags flags = 0;
+	// TODO: Subject abbreviation
 
-	SerdNode subject = *ss;
-	if (anon_subject) {
-		assert(s == anon_subject);
-		// TODO: Need context to abbreviate correctly
-		//flags |= SERD_ANON_S_BEGIN;
-	} else if (sord_node_is_inline_object(s)) {
+	if (sord_node_is_inline_object(s) && !(flags & SERD_ANON_CONT)) {
 		return;
 	}
 
-	if (sord_node_is_inline_object(o)) {
-		SerdNode anon = *so;
+ 	if (sord_node_is_inline_object(o)) {
 		SordQuad  sub_pat  = { o, 0, 0, 0 };
 		SordIter* sub_iter = sord_find(sord, sub_pat);
-		flags |= (sub_iter) ? SERD_ANON_O_BEGIN : SERD_EMPTY_O;
+
+		SerdStatementFlags start_flags = flags
+			| ((sub_iter) ? SERD_ANON_O_BEGIN : SERD_EMPTY_O);
 
 		serd_writer_write_statement(
-			writer, flags, NULL, &subject, sp, &anon, sd, &language);
+			writer, start_flags, NULL, ss, sp, so, sd, &language);
 
 		if (sub_iter) {
+			flags |= SERD_ANON_CONT;
 			for (; !sord_iter_end(sub_iter); sord_iter_next(sub_iter)) {
 				SordQuad sub_tup;
 				sord_iter_get(sub_iter, sub_tup);
-				write_statement(sord, writer, sub_tup, o);
+				write_statement(sord, writer, sub_tup, flags);
 			}
 			sord_iter_free(sub_iter);
 			serd_writer_end_anon(writer, so);
 		}
-	} else if (!sord_node_is_inline_object(s) || s == anon_subject) {
+	} else {
 		serd_writer_write_statement(
-			writer, flags, NULL, &subject, sp, so, sd, &language);
+			writer, flags, NULL, ss, sp, so, sd, &language);
 	}
 }
 
 bool
-sord_write_writer(SordModel*  model,
-                  SerdWriter* writer,
-                  SordNode*   graph)
+sord_write(SordModel*  model,
+           SerdWriter* writer,
+           SordNode*   graph)
 {
 	SordQuad  pat  = { 0, 0, 0, graph };
 	SordIter* iter = sord_find(model, pat);
 	for (; !sord_iter_end(iter); sord_iter_next(iter)) {
 		SordQuad tup;
 		sord_iter_get(iter, tup);
-		write_statement(model, writer, tup, NULL);
+		write_statement(model, writer, tup, 0);
 	}
 	sord_iter_free(iter);
 	return true;
-}
-
-struct SerdBuffer {
-	uint8_t* buf;
-	size_t   len;
-};
-
-static size_t
-string_sink(const void* buf, size_t len, void* stream)
-{
-	struct SerdBuffer* out = (struct SerdBuffer*)stream;
-	out->buf = realloc(out->buf, out->len + len);
-	memcpy(out->buf + out->len, buf, len);
-	out->len += len;
-	return len;
-}
-
-SORD_API
-uint8_t*
-sord_write_string(SordModel*     model,
-                  SerdEnv*       env,
-                  SerdSyntax     syntax,
-                  const uint8_t* base_uri)
-{
-	struct SerdBuffer buf = { NULL, 0 };
-
-	SerdWriter* writer = make_writer(env, syntax, base_uri, string_sink, &buf);
-	sord_write_writer(model, writer, NULL);
-	serd_writer_free(writer);
-	string_sink("", 1, &buf);
-	return buf.buf;
 }

@@ -165,6 +165,9 @@ def build(bld):
     # Documentation
     autowaf.build_dox(bld, 'SORD', SORD_VERSION, top, out)
 
+    # Man page
+    bld.install_files('${MANDIR}/man1', 'doc/sordi.1')
+
     bld.add_post_fun(autowaf.run_ldconfig)
     if bld.env['DOCS']:
         bld.add_post_fun(fix_docs)

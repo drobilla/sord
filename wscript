@@ -6,7 +6,7 @@ from waflib.extras import autowaf as autowaf
 import waflib.Logs as Logs, waflib.Options as Options
 
 # Version of this package (even if built as a child)
-SORD_VERSION       = '0.4.0'
+SORD_VERSION       = '0.4.1'
 SORD_MAJOR_VERSION = '0'
 
 # Library version (UNIX style major, minor, micro)
@@ -43,7 +43,7 @@ def configure(conf):
                       atleast_version='2.0.0', mandatory=True)
 
     autowaf.check_pkg(conf, 'serd-0', uselib_store='SERD',
-                      atleast_version='0.3.0', mandatory=True)
+                      atleast_version='0.4.0', mandatory=True)
 
     conf.env['BUILD_TESTS'] = Options.options.build_tests
     conf.env['BUILD_UTILS'] = True
@@ -62,6 +62,11 @@ def configure(conf):
 
     conf.env['INCLUDES_SORD'] = ['%s/sord-%s' % (
         conf.env['INCLUDEDIR'], SORD_MAJOR_VERSION)]
+
+    if not conf.env['INCLUDES_SERD']:
+        # Not sure why/how this happens, but assume serd is in the same prefix
+        Logs.warn("Warning: INCLUDES_SERD not found in environment, odd...\n")
+        conf.env['INCLUDES_SORD'] = ['%s/serd-0' % conf.env['INCLUDEDIR']]
     conf.env['LIBPATH_SORD'] = [conf.env['LIBDIR']]
     conf.env['LIB_SORD'] = ['sord-%s' % SORD_MAJOR_VERSION];
 
@@ -172,38 +177,39 @@ def build(bld):
     if bld.env['DOCS']:
         bld.add_post_fun(fix_docs)
 
+def build_dir(ctx, subdir):
+    if autowaf.is_child():
+        return os.path.join('build', APPNAME, subdir)
+    else:
+        return os.path.join('build', subdir)
+    
 def fix_docs(ctx):
     try:
         top = os.getcwd()
-        os.chdir('build/doc/html')
+        os.chdir(build_dir(ctx, 'doc/html'))
         os.system("sed -i 's/SORD_API //' group__sord.html")
         os.system("sed -i 's/SORD_DEPRECATED //' group__sord.html")
         os.remove('index.html')
         os.symlink('group__sord.html',
                    'index.html')
         os.chdir(top)
-        os.chdir('build/doc/man/man3')
+        os.chdir(build_dir(ctx, 'doc/man/man3'))
         os.system("sed -i 's/SORD_API //' sord.3")
-    except:
-        Logs.error("Failed to fix up documentation\n")
+        os.chdir(top)
+    except Exception:
+        Logs.error("Failed to fix up %s documentation" % APPNAME)
 
 def upload_docs(ctx):
     os.system("rsync -ravz --delete -e ssh build/doc/html/ drobilla@drobilla.net:~/drobilla.net/docs/sord/")
 
 def test(ctx):
-    blddir = ""
-    top_level = (len(ctx.stack_path) > 1)
-    if top_level:
-        blddir = 'build/sord/tests'
-    else:
-        blddir = 'build/tests'
-
+    blddir = build_dir(ctx, 'tests')
     try:
         os.makedirs(blddir)
     except:
         pass
 
-    for i in glob.glob('build/tests/*.*'):
+    for i in glob.glob(blddir + '/*.*'):
         os.remove(i)
 
     srcdir   = ctx.path.abspath()

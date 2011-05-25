@@ -1,3 +1,11 @@
+sord (UNRELEASED) unstable; urgency=low
+
+  * Fix compilation issues
+  * Fix building documentation with Python 3
+  * Bump Serd dependency to 0.4.0
+
+ -- David Robillard <d@drobilla.net>  (UNRELEASED)
+
 sord (0.4.0) unstable; urgency=low
 
   * Initial release

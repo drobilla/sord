@@ -6,7 +6,7 @@ from waflib.extras import autowaf as autowaf
 import waflib.Logs as Logs, waflib.Options as Options
 
 # Version of this package (even if built as a child)
-SORD_VERSION       = '0.3.0'
+SORD_VERSION       = '0.4.0'
 SORD_MAJOR_VERSION = '0'
 
 # Library version (UNIX style major, minor, micro)
@@ -188,7 +188,7 @@ def fix_docs(ctx):
         Logs.error("Failed to fix up Doxygen documentation (%s)\n" % e)
 
 def upload_docs(ctx):
-    os.system("rsync -avz --delete -e ssh build/doc/html/* drobilla@drobilla.net:~/drobilla.net/docs/sord")
+    os.system("rsync -ravz --delete -e ssh build/doc/html/ drobilla@drobilla.net:~/drobilla.net/docs/sord/")
 
 def test(ctx):
     blddir = ""

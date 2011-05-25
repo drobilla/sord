@@ -196,7 +196,7 @@ def fix_docs(ctx):
         os.chdir(build_dir(ctx, 'doc/man/man3'))
         os.system("sed -i 's/SORD_API //' sord.3")
         os.chdir(top)
-    except Exception:
+    except:
         Logs.error("Failed to fix up %s documentation" % APPNAME)
 
 def upload_docs(ctx):

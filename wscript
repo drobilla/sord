@@ -6,7 +6,7 @@ from waflib.extras import autowaf as autowaf
 import waflib.Logs as Logs, waflib.Options as Options
 
 # Version of this package (even if built as a child)
-SORD_VERSION       = '0.4.1'
+SORD_VERSION       = '0.4.2'
 SORD_MAJOR_VERSION = '0'
 
 # Library version (UNIX style major, minor, micro)
@@ -60,15 +60,21 @@ def configure(conf):
     autowaf.define(conf, 'SORD_VERSION', SORD_VERSION)
     conf.write_config_header('sord-config.h', remove=False)
 
-    conf.env['INCLUDES_SORD'] = ['%s/sord-%s' % (
-        conf.env['INCLUDEDIR'], SORD_MAJOR_VERSION)]
-
+    def fallback(var, val):
+        conf.env[var] = val
+        Logs.warn("Warning: %s unset, using %s\n" % (var, val))
+        
+    conf.env['INCLUDES_SORD'] = ['${includedir}/sord-%s' % SORD_MAJOR_VERSION]
     if not conf.env['INCLUDES_SERD']:
-        # Not sure why/how this happens, but assume serd is in the same prefix
-        Logs.warn("Warning: INCLUDES_SERD not found in environment, odd...\n")
-        conf.env['INCLUDES_SORD'] = ['%s/serd-0' % conf.env['INCLUDEDIR']]
+        fallback('INCLUDES_SERD', ['${includedir}/serd-0'])
+
     conf.env['LIBPATH_SORD'] = [conf.env['LIBDIR']]
+    if not conf.env['LIBPATH_SERD']:
+        fallback('LIBPATH_SERD', conf.env['LIBPATH_SORD'])
+
     conf.env['LIB_SORD'] = ['sord-%s' % SORD_MAJOR_VERSION];
+    if not conf.env['LIB_SERD']:
+        fallback('LIB_SERD', 'serd-0')
 
     autowaf.display_msg(conf, "Utilities", bool(conf.env['BUILD_UTILS']))
     autowaf.display_msg(conf, "Unit tests", bool(conf.env['BUILD_TESTS']))

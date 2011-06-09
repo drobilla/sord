@@ -165,6 +165,20 @@ test_read(SordWorld* world, SordModel* sord,
 		{ { uri(world, 1), uri(world, 0), uri(world, 4) }, 1 },
 		{ { uri(world, 0), uri(world, 2), uri(world, 0) }, 2 } };
 
+	SordQuad match = { uri(world, 1), uri(world, 2), uri(world, 4) };
+	if (!sord_contains(sord, match)) {
+		fprintf(stderr, "Fail: No match for " TUP_FMT "\n",
+		        TUP_FMT_ARGS(match));
+		return test_fail();
+	}
+
+	SordQuad nomatch = { uri(world, 1), uri(world, 2), uri(world, 9) };
+	if (sord_contains(sord, nomatch)) {
+		fprintf(stderr, "Fail: False match for " TUP_FMT "\n",
+		        TUP_FMT_ARGS(nomatch));
+		return test_fail();
+	}
+
 	for (unsigned i = 0; i < NUM_PATTERNS; ++i) {
 		QueryTest test = patterns[i];
 		SordQuad  pat = { test.query[0], test.query[1], test.query[2], 0 };

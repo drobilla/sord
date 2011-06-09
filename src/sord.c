@@ -793,6 +793,15 @@ sord_find(SordModel* sord, const SordQuad pat)
 	return sord_iter_new(sord, cur, pat, index_order, mode, prefix_len);
 }
 
+bool
+sord_contains(SordModel* sord, const SordQuad pat)
+{
+	SordIter* iter = sord_find(sord, pat);
+	bool      ret  = (iter != NULL);
+	sord_iter_free(iter);
+	return ret;
+}
+
 static SordNode*
 sord_lookup_name(SordWorld* world, const uint8_t* str)
 {

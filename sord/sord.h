@@ -356,6 +356,13 @@ SordIter*
 sord_find(SordModel* model, const SordQuad pat);
 
 /**
+   Check if @a model contains a triple pattern.
+*/
+SORD_API
+bool
+sord_contains(SordModel* model, const SordQuad pat);
+
+/**
    Add a quad to a model.
 */
 SORD_API

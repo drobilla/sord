@@ -514,7 +514,7 @@ sord_best_index(SordModel* sord, const SordQuad pat, SearchMode* mode, int* n_pr
 		+ (pat[1] ? 1 : 0) * 0x010
 		+ (pat[2] ? 1 : 0) * 0x001;
 
-	SordOrder good[2];
+	SordOrder good[2] = { (SordOrder)-1, (SordOrder)-1 };
 
 	// Good orderings that don't require filtering
 	*mode     = RANGE;
@@ -530,10 +530,12 @@ sord_best_index(SordModel* sord, const SordQuad pat, SearchMode* mode, int* n_pr
 	case 0x111: *mode = SINGLE; return graph_search ? DEFAULT_GRAPH_ORDER : DEFAULT_ORDER;
 	}
 
-	if (sord_has_index(sord, &good[0], n_prefix, graph_search)) {
-		return good[0];
-	} else if (sord_has_index(sord, &good[1], n_prefix, graph_search)) {
-		return good[1];
+	if (*mode == RANGE) {
+		if (sord_has_index(sord, &good[0], n_prefix, graph_search)) {
+			return good[0];
+		} else if (sord_has_index(sord, &good[1], n_prefix, graph_search)) {
+			return good[1];
+		}
 	}
 
 	// Not so good orderings that require filtering, but can

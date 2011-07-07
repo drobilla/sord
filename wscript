@@ -26,6 +26,7 @@ out = 'build'
 
 def options(opt):
     autowaf.set_options(opt)
+    opt.load('compiler_c')
     opt.add_option('--test', action='store_true', default=False, dest='build_tests',
                    help="Build unit tests")
     opt.add_option('--dump', type='string', default='', dest='dump',
@@ -36,7 +37,7 @@ def configure(conf):
     conf.line_just = 32
     autowaf.display_header('Sord configuration')
 
-    conf.load('compiler_cc')
+    conf.load('compiler_c')
     conf.env.append_value('CFLAGS', '-std=c99')
 
     autowaf.check_pkg(conf, 'glib-2.0', uselib_store='GLIB',

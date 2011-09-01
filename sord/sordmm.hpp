@@ -504,6 +504,7 @@ Model::write_to_file(const std::string& uri, SerdSyntax syntax, SerdStyle style)
 	SerdURI base_uri = SERD_URI_NULL;
 	if (serd_uri_parse((const uint8_t*)uri.c_str(), &base_uri)) {
 		fprintf(stderr, "Invalid base URI <%s>\n", uri.c_str());
+		fclose(fd);
 		return SERD_ERR_BAD_ARG;
 	}
 
@@ -520,6 +521,7 @@ Model::write_to_file(const std::string& uri, SerdSyntax syntax, SerdStyle style)
 
 	sord_write(_c_obj, writer, 0);
 	serd_writer_free(writer);
+	fclose(fd);
 
 	return SERD_SUCCESS;
 }

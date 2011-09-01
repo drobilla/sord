@@ -141,6 +141,7 @@ write_statement(SordModel* sord, SerdWriter* writer, SordQuad tup,
 		return;
 	}
 
+	SerdStatus st = SERD_SUCCESS;
  	if (sord_node_is_inline_object(o)) {
 		SordQuad  sub_pat  = { o, 0, 0, 0 };
 		SordIter* sub_iter = sord_find(sord, sub_pat);
@@ -148,10 +149,10 @@ write_statement(SordModel* sord, SerdWriter* writer, SordQuad tup,
 		SerdStatementFlags start_flags = flags
 			| ((sub_iter) ? SERD_ANON_O_BEGIN : SERD_EMPTY_O);
 
-		serd_writer_write_statement(
+		st = serd_writer_write_statement(
 			writer, start_flags, NULL, ss, sp, so, sd, &language);
 
-		if (sub_iter) {
+		if (!st && sub_iter) {
 			flags |= SERD_ANON_CONT;
 			for (; !sord_iter_end(sub_iter); sord_iter_next(sub_iter)) {
 				SordQuad sub_tup;
@@ -162,8 +163,14 @@ write_statement(SordModel* sord, SerdWriter* writer, SordQuad tup,
 			serd_writer_end_anon(writer, so);
 		}
 	} else {
-		serd_writer_write_statement(
+		st = serd_writer_write_statement(
 			writer, flags, NULL, ss, sp, so, sd, &language);
+	}
+
+	if (st) {
+		fprintf(stderr, "Failed to write statement (%s)\n",
+		        serd_strerror(st));
+		return;
 	}
 }
 

@@ -32,6 +32,8 @@ def options(opt):
                    help="Build unit tests")
     opt.add_option('--dump', type='string', default='', dest='dump',
                    help="Dump debugging output (iter, search, write, all)")
+    opt.add_option('--static', action='store_true', default=False, dest='static',
+                   help="Build static library")
 
 def configure(conf):
     autowaf.configure(conf)
@@ -50,6 +52,7 @@ def configure(conf):
 
     conf.env['BUILD_TESTS'] = Options.options.build_tests
     conf.env['BUILD_UTILS'] = True
+    conf.env['BUILD_STATIC'] = Options.options.static
 
     dump = Options.options.dump.split(',')
     all = 'all' in dump
@@ -94,7 +97,7 @@ def build(bld):
     autowaf.build_pc(bld, 'SORD', SORD_VERSION, SORD_MAJOR_VERSION, 'SERD',
                      {'SORD_MAJOR_VERSION' : SORD_MAJOR_VERSION})
 
-    # Library
+    # Shared Library
     obj = bld(features        = 'c cshlib',
               source          = 'src/sord.c src/syntax.c',
               includes        = ['.', './src'],
@@ -108,6 +111,20 @@ def build(bld):
                                   '-DSORD_SHARED',
                                   '-DSORD_INTERNAL' ])
     autowaf.use_lib(bld, obj, 'GLIB SERD')
+
+    # Static Library
+    if bld.env['BUILD_STATIC']:
+        obj = bld(features        = 'c cstlib',
+                  source          = 'src/sord.c src/syntax.c',
+                  includes        = ['.', './src'],
+                  export_includes = ['.'],
+                  name            = 'libsord_static',
+                  target          = 'sord-%s' % SORD_MAJOR_VERSION,
+                  vnum            = SORD_LIB_VERSION,
+                  install_path    = '${LIBDIR}',
+                  libs            = [ 'm' ],
+                  cflags          = [ '-DSORD_INTERNAL' ])
+        autowaf.use_lib(bld, obj, 'GLIB SERD')
 
     if bld.env['BUILD_TESTS']:
         test_cflags = [ '-fprofile-arcs',  '-ftest-coverage' ]

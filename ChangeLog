@@ -2,6 +2,7 @@ sord (UNRELEASED) unstable; urgency=low
 
   * Add function sord_contains for checking for a triple pattern
   * Fix Sord::Namespaces::qualify to no longer chop prefixes
+  * Add ability to build static library
 
   -- David Robillard <d@drobilla.net>  (UNRELEASED)
 

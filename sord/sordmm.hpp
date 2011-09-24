@@ -64,6 +64,7 @@ protected:
 class Namespaces : public Wrapper<SerdEnv*> {
 public:
 	Namespaces() : Wrapper<SerdEnv*>(serd_env_new(NULL)) {}
+	~Namespaces() { serd_env_free(_c_obj); }
 
 	static inline SerdNode string_to_node(SerdType type, const std::string& s) {
 		SerdNode ret = {

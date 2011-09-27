@@ -181,6 +181,18 @@ sord_write(SordModel*  model,
 {
 	SordQuad  pat  = { 0, 0, 0, graph };
 	SordIter* iter = sord_find(model, pat);
+	return sord_write_iter(iter, writer);
+}
+
+bool
+sord_write_iter(SordIter*   iter,
+                SerdWriter* writer)
+{
+	if (!iter) {
+		return false;
+	}
+
+	SordModel* model = (SordModel*)sord_iter_get_model(iter);
 	for (; !sord_iter_end(iter); sord_iter_next(iter)) {
 		SordQuad tup;
 		sord_iter_get(iter, tup);

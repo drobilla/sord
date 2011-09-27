@@ -1,6 +1,7 @@
 sord (UNRELEASED) unstable; urgency=low
 
   * Add function sord_contains for checking for a triple pattern
+  * Add function sord_write_iter for writing a queried range
   * Fix Sord::Namespaces::qualify to no longer chop prefixes
   * Add ability to build static library
 

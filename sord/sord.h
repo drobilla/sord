@@ -462,6 +462,16 @@ sord_write(SordModel*  model,
            SordNode*   graph);
 
 /**
+   Write a range to a writer.
+
+   This increments @c iter to its end, then frees it.
+*/
+SORD_API
+bool
+sord_write_iter(SordIter*   iter,
+                SerdWriter* writer);
+
+/**
    @}
    @}
 */

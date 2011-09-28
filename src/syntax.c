@@ -18,8 +18,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <glib.h>
-
 #include "serd/serd.h"
 
 #include "sord-config.h"

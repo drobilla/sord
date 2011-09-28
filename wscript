@@ -44,9 +44,6 @@ def configure(conf):
     conf.load('compiler_cxx')
     conf.env.append_value('CFLAGS', '-std=c99')
 
-    autowaf.check_pkg(conf, 'glib-2.0', uselib_store='GLIB',
-                      atleast_version='2.0.0', mandatory=True)
-
     autowaf.check_pkg(conf, 'serd-0', uselib_store='SERD',
                       atleast_version='0.4.0', mandatory=True)
 
@@ -97,9 +94,12 @@ def build(bld):
     autowaf.build_pc(bld, 'SORD', SORD_VERSION, SORD_MAJOR_VERSION, 'SERD',
                      {'SORD_MAJOR_VERSION' : SORD_MAJOR_VERSION})
 
+
+    source = 'src/sord.c src/syntax.c src/zix/hash.c src/zix/tree.c'
+
     # Shared Library
     obj = bld(features        = 'c cshlib',
-              source          = 'src/sord.c src/syntax.c',
+              source          = source,
               includes        = ['.', './src'],
               export_includes = ['.'],
               name            = 'libsord',
@@ -110,12 +110,12 @@ def build(bld):
               cflags          = [ '-fvisibility=hidden',
                                   '-DSORD_SHARED',
                                   '-DSORD_INTERNAL' ])
-    autowaf.use_lib(bld, obj, 'GLIB SERD')
+    autowaf.use_lib(bld, obj, 'SERD')
 
     # Static Library
     if bld.env['BUILD_STATIC']:
         obj = bld(features        = 'c cstlib',
-                  source          = 'src/sord.c src/syntax.c',
+                  source          = source,
                   includes        = ['.', './src'],
                   export_includes = ['.'],
                   name            = 'libsord_static',
@@ -124,21 +124,21 @@ def build(bld):
                   install_path    = '${LIBDIR}',
                   libs            = [ 'm' ],
                   cflags          = [ '-DSORD_INTERNAL' ])
-        autowaf.use_lib(bld, obj, 'GLIB SERD')
+        autowaf.use_lib(bld, obj, 'SERD')
 
     if bld.env['BUILD_TESTS']:
         test_cflags = [ '-fprofile-arcs',  '-ftest-coverage' ]
 
         # Static library (for unit test code coverage)
         obj = bld(features     = 'c cstlib',
-                  source       = 'src/sord.c src/syntax.c',
+                  source       = source,
                   includes     = ['.', './src'],
                   name         = 'libsord_static',
                   target       = 'sord_static',
                   install_path = '',
                   cflags       = test_cflags,
                   libs         = [ 'm' ])
-        autowaf.use_lib(bld, obj, 'GLIB SERD')
+        autowaf.use_lib(bld, obj, 'SERD')
 
         # Unit test program
         obj = bld(features     = 'c cprogram',
@@ -149,7 +149,7 @@ def build(bld):
                   target       = 'sord_test',
                   install_path = '',
                   cflags       = test_cflags)
-        autowaf.use_lib(bld, obj, 'GLIB SERD')
+        autowaf.use_lib(bld, obj, 'SERD')
 
         # Static sordi build
         obj = bld(features = 'c cprogram')
@@ -170,7 +170,7 @@ def build(bld):
                   target       = 'sordmm_test',
                   install_path = '',
                   cflags       = test_cflags)
-        autowaf.use_lib(bld, obj, 'GLIB SERD')
+        autowaf.use_lib(bld, obj, 'SERD')
 
     # Static command line utility (for testing)
         if bld.env['BUILD_UTILS']:

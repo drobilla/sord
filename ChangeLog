@@ -1,5 +1,6 @@
 sord (UNRELEASED) unstable; urgency=low
 
+  * Remove glib dependency
   * Add function sord_contains for checking for a triple pattern
   * Add function sord_write_iter for writing a queried range
   * Fix Sord::Namespaces::qualify to no longer chop prefixes

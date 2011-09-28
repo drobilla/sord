@@ -724,9 +724,6 @@ index_search(ZixTree* db, const SordQuad search_key)
 {
 	ZixTreeIter* iter = NULL;
 	zix_tree_find(db, (void*)search_key, &iter);
-	if (!iter) {
-		fprintf(stderr, "SEARCH FAILED\n");
-	}
 	return iter;
 }
 
@@ -861,12 +858,7 @@ sord_lookup_literal(SordWorld* world, SordNode* type,
 	key.node.flags   = 0;
 	key.node.type    = SERD_LITERAL;
 
-	SordNode* id = zix_hash_find(world->literals, &key);
-	if (id) {
-		return id;
-	} else {
-		return 0;
-	}
+	return zix_hash_find(world->literals, &key);
 }
 
 SordNodeType

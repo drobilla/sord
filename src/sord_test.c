@@ -14,11 +14,11 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#define _XOPEN_SOURCE 500
-
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include "sord/sord.h"
 
 static const int DIGITS  = 3;
@@ -40,18 +40,22 @@ uri(SordWorld* world, int num)
 	return sord_new_uri(world, (const uint8_t*)uri);
 }
 
-/** Trivial function to return EXIT_FAILURE (useful as a breakpoint) */
 int
-test_fail()
+test_fail(const char* fmt, ...)
 {
-	return EXIT_FAILURE;
+	va_list args;
+	va_start(args, fmt);
+	fprintf(stderr, "error: ");
+	vfprintf(stderr, fmt, args);
+	va_end(args);
+	return 1;
 }
 
 int
 generate(SordWorld* world, SordModel* sord, size_t n_quads, size_t n_objects_per)
 {
 	fprintf(stderr, "Generating %zu (S P *) quads with %zu objects each\n",
-			n_quads, n_objects_per);
+	        n_quads, n_objects_per);
 
 	for (size_t i = 0; i < n_quads; ++i) {
 		int num = (i * n_objects_per) + 1;
@@ -64,8 +68,7 @@ generate(SordWorld* world, SordModel* sord, size_t n_quads, size_t n_objects_per
 		for (size_t j = 0; j < n_objects_per; ++j) {
 			SordQuad tup = { ids[0], ids[1], ids[2 + j] };
 			if (!sord_add(sord, tup)) {
-				fprintf(stderr, "Fail: Failed to add quad\n");
-				return test_fail();
+				return test_fail("Fail: Failed to add quad\n");
 			}
 		}
 
@@ -96,12 +99,10 @@ generate(SordWorld* world, SordModel* sord, size_t n_quads, size_t n_objects_per
 
 	// Attempt to add some duplicates
 	if (sord_add(sord, tup)) {
-		fprintf(stderr, "Fail: Successfully added duplicate quad\n");
-		return test_fail();
+		return test_fail("Fail: Successfully added duplicate quad\n");
 	}
 	if (sord_add(sord, tup)) {
-		fprintf(stderr, "Fail: Successfully added duplicate quad\n");
-		return test_fail();
+		return test_fail("Fail: Successfully added duplicate quad\n");
 	}
 
 	// Add a blank node subject
@@ -122,10 +123,10 @@ generate(SordWorld* world, SordModel* sord, size_t n_quads, size_t n_objects_per
 }
 
 #define TUP_FMT "(%6s %6s %6s)"
-#define TUP_FMT_ARGS(t) \
+#define TUP_FMT_ARGS(t)                                                 \
 	((t)[0] ? sord_node_get_string((t)[0]) : USTR("*")), \
-	((t)[1] ? sord_node_get_string((t)[1]) : USTR("*")), \
-	((t)[2] ? sord_node_get_string((t)[2]) : USTR("*"))
+		((t)[1] ? sord_node_get_string((t)[1]) : USTR("*")), \
+		((t)[2] ? sord_node_get_string((t)[2]) : USTR("*"))
 
 int
 test_read(SordWorld* world, SordModel* sord,
@@ -137,8 +138,7 @@ test_read(SordWorld* world, SordModel* sord,
 
 	SordIter* iter = sord_begin(sord);
 	if (sord_iter_get_model(iter) != sord) {
-		fprintf(stderr, "Fail: Iterator has incorrect sord pointer\n");
-		return test_fail();
+		return test_fail("Fail: Iterator has incorrect sord pointer\n");
 	}
 
 	for (; !sord_iter_end(iter); sord_iter_next(iter))
@@ -146,8 +146,7 @@ test_read(SordWorld* world, SordModel* sord,
 
 	// Attempt to increment past end
 	if (!sord_iter_next(iter)) {
-		fprintf(stderr, "Fail: Successfully incremented past end\n");
-		return test_fail();
+		return test_fail("Fail: Successfully incremented past end\n");
 	}
 
 	sord_iter_free(iter);
@@ -167,16 +166,14 @@ test_read(SordWorld* world, SordModel* sord,
 
 	SordQuad match = { uri(world, 1), uri(world, 2), uri(world, 4) };
 	if (!sord_contains(sord, match)) {
-		fprintf(stderr, "Fail: No match for " TUP_FMT "\n",
-		        TUP_FMT_ARGS(match));
-		return test_fail();
+		return test_fail("Fail: No match for " TUP_FMT "\n",
+		                 TUP_FMT_ARGS(match));
 	}
 
 	SordQuad nomatch = { uri(world, 1), uri(world, 2), uri(world, 9) };
 	if (sord_contains(sord, nomatch)) {
-		fprintf(stderr, "Fail: False match for " TUP_FMT "\n",
-		        TUP_FMT_ARGS(nomatch));
-		return test_fail();
+		return test_fail("Fail: False match for " TUP_FMT "\n",
+		                 TUP_FMT_ARGS(nomatch));
 	}
 
 	for (unsigned i = 0; i < NUM_PATTERNS; ++i) {
@@ -191,16 +188,14 @@ test_read(SordWorld* world, SordModel* sord,
 			++num_results;
 			if (!sord_quad_match(pat, id)) {
 				sord_iter_free(iter);
-				fprintf(stderr, "Fail: Query result " TUP_FMT " does not match pattern\n",
-				        TUP_FMT_ARGS(id));
-				return test_fail();
+				return test_fail("Fail: Query result " TUP_FMT " does not match pattern\n",
+				                 TUP_FMT_ARGS(id));
 			}
 		}
 		sord_iter_free(iter);
 		if (num_results != test.expected_num_results) {
-			fprintf(stderr, "Fail: Expected %d results, got %d\n",
-					test.expected_num_results, num_results);
-			return test_fail();
+			return test_fail("Fail: Expected %d results, got %d\n",
+			                 test.expected_num_results, num_results);
 		}
 		fprintf(stderr, "OK (%u matches)\n", test.expected_num_results);
 	}
@@ -208,8 +203,7 @@ test_read(SordWorld* world, SordModel* sord,
 	// Query blank node subject
 	SordQuad pat = { sord_new_blank(world, USTR("ablank")), 0, 0 };
 	if (!pat[0]) {
-		fprintf(stderr, "Blank node subject lost\n");
-		return test_fail();
+		return test_fail("Blank node subject lost\n");
 	}
 	fprintf(stderr, "Query " TUP_FMT "... ", TUP_FMT_ARGS(pat));
 	iter = sord_find(sord, pat);
@@ -219,17 +213,15 @@ test_read(SordWorld* world, SordModel* sord,
 		++num_results;
 		if (!sord_quad_match(pat, id)) {
 			sord_iter_free(iter);
-			fprintf(stderr, "Fail: Query result " TUP_FMT " does not match pattern\n",
-			        TUP_FMT_ARGS(id));
-			return test_fail();
+			return test_fail("Fail: Query result " TUP_FMT " does not match pattern\n",
+			                 TUP_FMT_ARGS(id));
 		}
 	}
 	fprintf(stderr, "OK\n");
 	sord_node_free(world, (SordNode*)pat[0]);
 	sord_iter_free(iter);
 	if (num_results != 2) {
-		fprintf(stderr, "Blank node subject query failed\n");
-		return test_fail();
+		return test_fail("Blank node subject query failed\n");
 	}
 
 	// Test nested queries
@@ -251,16 +243,14 @@ test_read(SordWorld* world, SordModel* sord,
 			if (!sord_quad_match(subpat, subid)) {
 				sord_iter_free(iter);
 				sord_iter_free(subiter);
-				fprintf(stderr, "Fail: Nested query result does not match pattern\n");
-				return test_fail();
+				return test_fail("Fail: Nested query result does not match pattern\n");
 			}
 			++num_sub_results;
 		}
 		sord_iter_free(subiter);
 		if (num_sub_results != n_objects_per) {
-			fprintf(stderr, "Fail: Nested query failed (got %d results, expected %d)\n",
-					num_sub_results, n_objects_per);
-			return test_fail();
+			return test_fail("Fail: Nested query failed (got %d results, expected %d)\n",
+			                 num_sub_results, n_objects_per);
 		}
 		last_subject = id[0];
 	}

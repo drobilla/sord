@@ -2,6 +2,7 @@
 import glob
 import os
 import subprocess
+import sys
 
 from waflib.extras import autowaf as autowaf
 import waflib.Logs as Logs, waflib.Options as Options
@@ -26,9 +27,9 @@ top = '.'
 out = 'build'
 
 def options(opt):
-    autowaf.set_options(opt)
     opt.load('compiler_c')
     opt.load('compiler_cxx')
+    autowaf.set_options(opt)
     opt.add_option('--test', action='store_true', default=False, dest='build_tests',
                    help="Build unit tests")
     opt.add_option('--dump', type='string', default='', dest='dump',
@@ -37,13 +38,12 @@ def options(opt):
                    help="Build static library")
 
 def configure(conf):
-    autowaf.configure(conf)
-    conf.line_just = 32
-    autowaf.display_header('Sord configuration')
-
     conf.load('compiler_c')
     conf.load('compiler_cxx')
-    conf.env.append_value('CFLAGS', '-std=c99')
+    autowaf.configure(conf)
+    autowaf.display_header('Sord configuration')
+
+    conf.env.append_unique('CFLAGS', '-std=c99')
 
     autowaf.check_pkg(conf, 'serd-0', uselib_store='SERD',
                       atleast_version='0.5.0', mandatory=True)
@@ -95,8 +95,11 @@ def build(bld):
     autowaf.build_pc(bld, 'SORD', SORD_VERSION, SORD_MAJOR_VERSION, 'SERD',
                      {'SORD_MAJOR_VERSION' : SORD_MAJOR_VERSION})
 
-
     source = 'src/sord.c src/syntax.c src/zix/hash.c src/zix/tree.c'
+
+    libflags = [ '-fvisibility=hidden' ]
+    if sys.platform == 'win32':
+        libflags = []
 
     # Shared Library
     obj = bld(features        = 'c cshlib',
@@ -108,9 +111,8 @@ def build(bld):
               vnum            = SORD_LIB_VERSION,
               install_path    = '${LIBDIR}',
               libs            = [ 'm' ],
-              cflags          = [ '-fvisibility=hidden',
-                                  '-DSORD_SHARED',
-                                  '-DSORD_INTERNAL' ])
+              cflags          = libflags + [ '-DSORD_SHARED',
+                                             '-DSORD_INTERNAL' ])
     autowaf.use_lib(bld, obj, 'SERD')
 
     # Static Library

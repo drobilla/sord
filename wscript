@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import glob
 import os
+import subprocess
 
 from waflib.extras import autowaf as autowaf
 import waflib.Logs as Logs, waflib.Options as Options
@@ -202,6 +203,9 @@ def build(bld):
     bld.add_post_fun(autowaf.run_ldconfig)
     if bld.env['DOCS']:
         bld.add_post_fun(fix_docs)
+
+def lint(ctx):
+    subprocess.call('cpplint.py --filter=+whitespace/comments,-whitespace/tab,-whitespace/braces,-whitespace/labels,-build/header_guard,-readability/casting,-readability/todo,-build/include src/* serd/*', shell=True)
 
 def build_dir(ctx, subdir):
     if autowaf.is_child():

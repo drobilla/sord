@@ -24,7 +24,10 @@
 static const int DIGITS  = 3;
 static const int MAX_NUM = 999;
 
-typedef struct { SordQuad query; int expected_num_results; } QueryTest;
+typedef struct {
+	SordQuad query;
+	int      expected_num_results;
+} QueryTest;
 
 #define USTR(s) ((const uint8_t*)(s))
 
@@ -35,7 +38,7 @@ uri(SordWorld* world, int num)
 		return 0;
 
 	char  uri[]   = "eg:000";
-	char* uri_num = uri + 3; // First `0'
+	char* uri_num = uri + 3;  // First `0'
 	snprintf(uri_num, DIGITS + 1, "%0*d", DIGITS, num);
 	return sord_new_uri(world, (const uint8_t*)uri);
 }
@@ -266,7 +269,7 @@ main(int argc, char** argv)
 	static const size_t n_quads       = 300;
 	static const int    n_objects_per = 2;
 
-	sord_free(NULL); // Shouldn't crash
+	sord_free(NULL);  // Shouldn't crash
 
 	SordWorld* world = sord_world_new();
 

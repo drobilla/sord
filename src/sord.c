@@ -68,18 +68,18 @@
 
 /** Triple ordering */
 typedef enum {
-	SPO, ///<         Subject,   Predicate, Object
-	SOP, ///<         Subject,   Object,    Predicate
-	OPS, ///<         Object,    Predicate, Subject
-	OSP, ///<         Object,    Subject,   Predicate
-	PSO, ///<         Predicate, Subject,   Object
-	POS, ///<         Predicate, Object,    Subject
-	GSPO, ///< Graph,  Subject,   Predicate, Object
-	GSOP, ///< Graph,  Subject,   Object,    Predicate
-	GOPS, ///< Graph,  Object,    Predicate, Subject
-	GOSP, ///< Graph,  Object,    Subject,   Predicate
-	GPSO, ///< Graph,  Predicate, Subject,   Object
-	GPOS, ///< Graph,  Predicate, Object,    Subject
+	SPO,   ///<         Subject,   Predicate, Object
+	SOP,   ///<         Subject,   Object,    Predicate
+	OPS,   ///<         Object,    Predicate, Subject
+	OSP,   ///<         Object,    Subject,   Predicate
+	PSO,   ///<         Predicate, Subject,   Object
+	POS,   ///<         Predicate, Object,    Subject
+	GSPO,  ///< Graph,  Subject,   Predicate, Object
+	GSOP,  ///< Graph,  Subject,   Object,    Predicate
+	GOPS,  ///< Graph,  Object,    Predicate, Subject
+	GOSP,  ///< Graph,  Object,    Subject,   Predicate
+	GPSO,  ///< Graph,  Predicate, Subject,   Object
+	GPOS,  ///< Graph,  Predicate, Object,    Subject
 } SordOrder;
 
 /** String name of each ordering (array indexed by SordOrder) */
@@ -99,10 +99,10 @@ static const int orderings[NUM_ORDERS][TUP_LEN] = {
 
 /** World */
 struct SordWorldImpl {
-	ZixHash* names;    ///< URI or blank node identifier string => ID
-	ZixHash* langs;    ///< Language tag => Interned language tag
-	ZixHash* literals; ///< Literal => ID
-	size_t   n_nodes;  ///< Number of nodes
+	ZixHash* names;     ///< URI or blank node identifier string => ID
+	ZixHash* langs;     ///< Language tag => Interned language tag
+	ZixHash* literals;  ///< Literal => ID
+	size_t   n_nodes;   ///< Number of nodes
 };
 
 /** Store */
@@ -120,23 +120,23 @@ struct SordModelImpl {
 
 /** Mode for searching or iteration */
 typedef enum {
-	ALL,          ///< Iterate to end of store, returning all results, no filtering
-	SINGLE,       ///< Iteration over a single element (exact search)
-	RANGE,        ///< Iterate over range with equal prefix
-	FILTER_RANGE, ///< Iterate over range with equal prefix, filtering
-	FILTER_ALL    ///< Iterate to end of store, filtering
+	ALL,           ///< Iterate to end of store, returning all results, no filtering
+	SINGLE,        ///< Iteration over a single element (exact search)
+	RANGE,         ///< Iterate over range with equal prefix
+	FILTER_RANGE,  ///< Iterate over range with equal prefix, filtering
+	FILTER_ALL     ///< Iterate to end of store, filtering
 } SearchMode;
 
 /** Iterator over some range of a store */
 struct SordIterImpl {
-	const SordModel* sord;              ///< Store this is an iterator for
-	ZixTreeIter*     cur;               ///< Current DB cursor
-	SordQuad         pat;               ///< Iteration pattern (in ordering order)
-	int              ordering[TUP_LEN]; ///< Store ordering
-	SearchMode       mode;              ///< Iteration mode
-	int              n_prefix;          ///< Length of range prefix (RANGE, FILTER_RANGE)
-	bool             end;               ///< True iff reached end
-	bool             skip_graphs;       ///< True iff iteration should ignore graphs
+	const SordModel* sord;               ///< Store this is an iterator for
+	ZixTreeIter*     cur;                ///< Current DB cursor
+	SordQuad         pat;                ///< Iteration pattern (in ordering order)
+	int              ordering[TUP_LEN];  ///< Store ordering
+	SearchMode       mode;               ///< Iteration mode
+	int              n_prefix;           ///< Length of range prefix (RANGE, FILTER_RANGE)
+	bool             end;                ///< True iff reached end
+	bool             skip_graphs;        ///< True iff iteration should ignore graphs
 };
 
 static unsigned
@@ -228,7 +228,7 @@ sord_node_compare(const SordNode* a, const SordNode* b)
 		}
 		return cmp;
 	default:
-		break; // never reached
+		break;  // never reached
 	}
 	assert(false);
 	return 0;
@@ -345,18 +345,18 @@ sord_iter_seek_match_range(SordIter* iter)
 		const SordNode** key = (const SordNode**)zix_tree_get(iter->cur);
 
 		if (sord_quad_match_inline(key, iter->pat))
-			return false; // Found match
+			return false;  // Found match
 
 		for (int i = 0; i < iter->n_prefix; ++i) {
 			const int idx = iter->ordering[i];
 			if (!sord_id_match(key[idx], iter->pat[idx])) {
-				iter->end = true; // Reached end of valid range
+				iter->end = true;  // Reached end of valid range
 				return true;
 			}
 		}
 	} while (!sord_iter_forward(iter));
 
-	return (iter->end = true); // Reached end
+	return (iter->end = true);  // Reached end
 }
 
 static SordIter*
@@ -396,7 +396,7 @@ sord_iter_new(const SordModel* sord, ZixTreeIter* cur, const SordQuad pat,
 #ifdef SORD_DEBUG_ITER
 	SordQuad value;
 	sord_iter_get(iter, value);
-	SORD_ITER_LOG("New %p pat=" TUP_FMT " cur=" TUP_FMT " end=%d skipgraphs=%d\n",
+	SORD_ITER_LOG("New %p pat=" TUP_FMT " cur=" TUP_FMT " end=%d skip=%d\n",
 	              (void*)iter, TUP_FMT_ARGS(pat), TUP_FMT_ARGS(value),
 	              iter->end, iter->skip_graphs);
 #endif
@@ -469,7 +469,8 @@ sord_iter_next(SordIter* iter)
 #ifdef SORD_DEBUG_ITER
 		SordQuad tup;
 		sord_iter_get(iter, tup);
-		SORD_ITER_LOG("%p Increment to " TUP_FMT "\n", (void*)iter, TUP_FMT_ARGS(tup));
+		SORD_ITER_LOG("%p Increment to " TUP_FMT "\n",
+		              (void*)iter, TUP_FMT_ARGS(tup));
 #endif
 		return false;
 	}
@@ -768,7 +769,7 @@ sord_find(SordModel* sord, const SordQuad pat)
 	              ordering[0], ordering[1], ordering[2], ordering[3]);
 
 	if (pat[0] && pat[1] && pat[2] && pat[3])
-		mode = SINGLE; // No duplicate quads (Sord is a set)
+		mode = SINGLE;  // No duplicate quads (Sord is a set)
 
 	ZixTree* const     db  = sord->indices[index_order];
 	ZixTreeIter* const cur = index_lower_bound(db, pat);
@@ -1056,7 +1057,7 @@ sord_node_from_serd_node(SordWorld*      world,
 		buf[uri_len] = '\0';
 		SordNode* ret = sord_new_uri_counted(
 			world, buf, uri_prefix.len + uri_suffix.len,
-			uri_prefix.len + uri_suffix.len); // FIXME: UTF-8
+			uri_prefix.len + uri_suffix.len);  // FIXME: UTF-8
 		return ret;
 	}
 	case SERD_BLANK:
@@ -1115,9 +1116,9 @@ sord_add(SordModel* sord, const SordQuad tup)
 	for (unsigned i = 0; i < NUM_ORDERS; ++i) {
 		if (sord->indices[i]) {
 			if (!sord_add_to_index(sord, quad, i)) {
-				assert(i == 0); // Assuming index coherency
+				assert(i == 0);  // Assuming index coherency
 				free(quad);
-				return false; // Quad already stored, do nothing
+				return false;  // Quad already stored, do nothing
 			}
 		}
 	}
@@ -1145,8 +1146,8 @@ sord_remove(SordModel* sord, const SordQuad tup)
 				}
 				zix_tree_remove(sord->indices[i], cur);
 			} else {
-				assert(i == 0); // Assuming index coherency
-				return; // Quad not found, do nothing
+				assert(i == 0);  // Assuming index coherency
+				return;  // Quad not found, do nothing
 			}
 		}
 	}

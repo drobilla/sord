@@ -171,7 +171,7 @@ main(int argc, char** argv)
 	SerdURI  base_uri = SERD_URI_NULL;
 	SerdNode base_uri_node = serd_node_new_uri_from_string(
 		base_uri_str, &base_uri, &base_uri);
-	
+
 	if (!base_uri_node.buf) {
 		fprintf(stderr, "Invalid base URI <%s>\n", base_uri_str);
 		return 1;

@@ -140,7 +140,7 @@ write_statement(SordModel* sord, SerdWriter* writer, SordQuad tup,
 	}
 
 	SerdStatus st = SERD_SUCCESS;
- 	if (sord_node_is_inline_object(o)) {
+	if (sord_node_is_inline_object(o)) {
 		SordQuad  sub_pat  = { o, 0, 0, 0 };
 		SordIter* sub_iter = sord_find(sord, sub_pat);
 

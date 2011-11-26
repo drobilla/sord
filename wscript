@@ -148,7 +148,7 @@ def build(bld):
                   source       = 'src/sord_test.c',
                   includes     = ['.', './src'],
                   use          = 'libsord_profiled',
-                  linkflags    = '-lgcov',
+                  lib          = ['gcov'],
                   target       = 'sord_test',
                   install_path = '',
                   cflags       = test_cflags)
@@ -159,7 +159,7 @@ def build(bld):
                   source       = 'src/sordi.c',
                   includes     = ['.', './src'],
                   use          = 'libsord_profiled',
-                  linkflags    = '-lgcov',
+                  lib          = ['gcov'],
                   target       = 'sordi_static',
                   install_path = '',
                   cflags       = [ '-fprofile-arcs',  '-ftest-coverage' ])
@@ -170,7 +170,7 @@ def build(bld):
                   source       = 'src/sordmm_test.cpp',
                   includes     = ['.', './src'],
                   use          = 'libsord_profiled',
-                  linkflags    = '-lgcov',
+                  lib          = ['gcov'],
                   target       = 'sordmm_test',
                   install_path = '',
                   cflags       = test_cflags)

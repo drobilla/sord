@@ -494,7 +494,12 @@ Model::write_to_file(const std::string& uri, SerdSyntax syntax, SerdStyle style)
 		return SERD_ERR_BAD_ARG;
 	}
 
-	const uint8_t* path = (const uint8_t*)(uri.c_str() + 5);
+	const uint8_t* path;
+	if (uri.substr(0, 7) == "file://") {
+		path = (const uint8_t*)uri.c_str() + 7;
+	} else {
+		path = (const uint8_t*)uri.c_str() + 5;
+	}
 
 	FILE* const fd = fopen((const char*)path, "w");
 	if (!fd) {

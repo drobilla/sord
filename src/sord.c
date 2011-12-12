@@ -1009,6 +1009,10 @@ sord_node_from_serd_node(SordWorld*      world,
                          const SerdNode* datatype,
                          const SerdNode* lang)
 {
+	if (!sn) {
+		return NULL;
+	}
+
 	SordNode* datatype_node = NULL;
 	SordNode* ret           = NULL;
 	switch (sn->type) {
@@ -1023,7 +1027,7 @@ sord_node_from_serd_node(SordWorld*      world,
 			sn->n_bytes,
 			sn->n_chars,
 			sn->flags,
-			(const char*)lang->buf);
+			lang ? (const char*)lang->buf : NULL);
 		sord_node_free(world, datatype_node);
 		return ret;
 	case SERD_URI:

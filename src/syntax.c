@@ -70,7 +70,6 @@ event_statement(void*              handle,
 
 	SordNode* g = NULL;
 	if (state->graph_uri_node) {
-		assert(graph->type == SERD_NOTHING);
 		g = sord_node_copy(state->graph_uri_node);
 	} else {
 		g = (graph && graph->buf)

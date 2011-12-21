@@ -330,24 +330,16 @@ inline int
 Node::to_int() const
 {
 	assert(is_int());
-	std::locale c_locale("C");
-	std::stringstream ss((const char*)sord_node_get_string(_c_obj));
-	ss.imbue(c_locale);
-	int i = 0;
-	ss >> i;
-	return i;
+	char* endptr;
+	return strtol((const char*)sord_node_get_string(_c_obj), &endptr, 10);
 }
 
 inline float
 Node::to_float() const
 {
 	assert(is_float());
-	std::locale c_locale("C");
-	std::stringstream ss((const char*)sord_node_get_string(_c_obj));
-	ss.imbue(c_locale);
-	float f = 0.0f;
-	ss >> f;
-	return f;
+	char* endptr;
+	return serd_strtod((const char*)sord_node_get_string(_c_obj), &endptr);
 }
 
 inline bool

@@ -472,13 +472,6 @@ Model::load_file(SerdEnv*           env,
 	serd_reader_free(reader);
 }
 
-static size_t
-file_sink(const void* buf, size_t len, void* stream)
-{
-	FILE* file = (FILE*)stream;
-	return fwrite(buf, 1, len, file);
-}
-
 inline SerdStatus
 Model::write_to_file(const std::string& uri, SerdSyntax syntax, SerdStyle style)
 {
@@ -510,7 +503,7 @@ Model::write_to_file(const std::string& uri, SerdSyntax syntax, SerdStyle style)
 	                                     style,
 	                                     _world.prefixes().c_obj(),
 	                                     &base_uri,
-	                                     file_sink,
+	                                     serd_file_sink,
 	                                     fd);
 
 	serd_env_foreach(_world.prefixes().c_obj(),

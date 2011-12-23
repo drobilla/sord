@@ -56,13 +56,6 @@ print_usage(const char* name, bool error)
 	return error ? 1 : 0;
 }
 
-static size_t
-file_sink(const void* buf, size_t len, void* stream)
-{
-	FILE* file = (FILE*)stream;
-	return fwrite(buf, 1, len, file);
-}
-
 bool
 set_syntax(SerdSyntax* syntax, const char* name)
 {
@@ -205,7 +198,7 @@ main(int argc, char** argv)
 	SerdWriter* writer = serd_writer_new(
 		output_syntax,
 		output_style,
-		write_env, &base_uri, file_sink, stdout);
+		write_env, &base_uri, serd_file_sink, stdout);
 
 	// Write @prefix directives
 	serd_env_foreach(env,

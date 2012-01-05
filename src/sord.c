@@ -199,16 +199,17 @@ sord_world_free(SordWorld* world)
 	free(world);
 }
 
+/** Compare nodes, considering NULL a wildcard match. */
 static inline int
 sord_node_compare(const SordNode* a, const SordNode* b)
 {
 	if (a == b || !a || !b) {
-		return 0;
+		return 0;  // Exact or wildcard match
 	} else if (a->node.type != b->node.type) {
 		return a->node.type - b->node.type;
 	}
 
-	int cmp;
+	int cmp = 0;
 	switch (a->node.type) {
 	case SERD_URI:
 	case SERD_BLANK:
@@ -217,7 +218,13 @@ sord_node_compare(const SordNode* a, const SordNode* b)
 		cmp = strcmp((const char*)sord_node_get_string(a),
 		             (const char*)sord_node_get_string(b));
 		if (cmp == 0) {
-			cmp = sord_node_compare(a->datatype, b->datatype);
+			// Note: Can't use sord_node_compare here since it does wildcards
+			if (!a->datatype || !b->datatype) {
+				cmp = a->datatype - b->datatype;
+			} else {
+				cmp = strcmp((const char*)a->datatype->node.buf,
+				             (const char*)b->datatype->node.buf);
+			}
 		}
 		if (cmp == 0) {
 			if (!a->lang || !b->lang) {
@@ -226,23 +233,16 @@ sord_node_compare(const SordNode* a, const SordNode* b)
 				cmp = strcmp(a->lang, b->lang);
 			}
 		}
-		return cmp;
 	default:
-		break;  // never reached
+		break;
 	}
-	assert(false);
-	return 0;
+	return cmp;
 }
 
 bool
 sord_node_equals(const SordNode* a, const SordNode* b)
 {
-	if (!a || !b) {
-		return (a == b);
-	} else {
-		// FIXME: nodes are interned, this can be much faster
-		return (a == b) || (sord_node_compare(a, b) == 0);
-	}
+	return a == b;  // Nodes are interned
 }
 
 /** Return true iff IDs are equivalent, or one is a wildcard */
@@ -604,6 +604,10 @@ sord_new(SordWorld* world, unsigned indices, bool graphs)
 	if (!sord->indices[DEFAULT_ORDER]) {
 		sord->indices[DEFAULT_ORDER] = zix_tree_new(
 			false, sord_quad_compare, (void*)orderings[DEFAULT_ORDER]);
+	}
+	if (graphs && !sord->indices[DEFAULT_GRAPH_ORDER]) {
+		sord->indices[DEFAULT_GRAPH_ORDER] = zix_tree_new(
+			false, sord_quad_compare, (void*)orderings[DEFAULT_GRAPH_ORDER]);
 	}
 
 	return sord;

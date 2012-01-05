@@ -55,7 +55,7 @@ test_fail(const char* fmt, ...)
 }
 
 int
-generate(SordWorld* world, SordModel* sord, size_t n_quads, size_t n_objects_per)
+generate(SordWorld* world, SordModel* sord, size_t n_quads, size_t n_objects_per, SordNode* graph)
 {
 	fprintf(stderr, "Generating %zu (S P *) quads with %zu objects each\n",
 	        n_quads, n_objects_per);
@@ -81,6 +81,8 @@ generate(SordWorld* world, SordModel* sord, size_t n_quads, size_t n_objects_per
 	}
 
 	// Add some literals
+
+	// (98 4 "hello") and (98 4 "hello"^^<5>)
 	SordQuad tup = { 0, 0, 0, 0};
 	tup[0] = uri(world, 98);
 	tup[1] = uri(world, 4);
@@ -88,8 +90,46 @@ generate(SordWorld* world, SordModel* sord, size_t n_quads, size_t n_objects_per
 	tup[3] = 0;
 	sord_add(sord, tup);
 	sord_node_free(world, (SordNode*)tup[2]);
-	tup[2] = sord_new_literal(world, 0, USTR("hi"), NULL);
+	tup[2] = sord_new_literal(world, uri(world, 5), USTR("hello"), NULL);
+	if (!sord_add(sord, tup)) {
+		return test_fail("Failed to add typed literal\n");
+	}
+
+	// (96 4 "hello"^^<4>) and (96 4 "hello"^^<5>)
+	tup[0] = uri(world, 96);
+	tup[1] = uri(world, 4);
+	tup[2] = sord_new_literal(world, uri(world, 4), USTR("hello"), NULL);
+	tup[3] = 0;
 	sord_add(sord, tup);
+	sord_node_free(world, (SordNode*)tup[2]);
+	tup[2] = sord_new_literal(world, uri(world, 5), USTR("hello"), NULL);
+	if (!sord_add(sord, tup)) {
+		return test_fail("Failed to add typed literal\n");
+	}
+
+	// (94 5 "hello") and (94 5 "hello"@en-gb)
+	tup[0] = uri(world, 94);
+	tup[1] = uri(world, 5);
+	tup[2] = sord_new_literal(world, 0, USTR("hello"), NULL);
+	tup[3] = 0;
+	sord_add(sord, tup);
+	sord_node_free(world, (SordNode*)tup[2]);
+	tup[2] = sord_new_literal(world, NULL, USTR("hello"), "en-gb");
+	if (!sord_add(sord, tup)) {
+		return test_fail("Failed to add literal with language\n");
+	}
+
+	// (92 6 "hello"@en-us) and (92 5 "hello"@en-gb)
+	tup[0] = uri(world, 92);
+	tup[1] = uri(world, 6);
+	tup[2] = sord_new_literal(world, 0, USTR("hello"), "en-us");
+	tup[3] = 0;
+	sord_add(sord, tup);
+	sord_node_free(world, (SordNode*)tup[2]);
+	tup[2] = sord_new_literal(world, NULL, USTR("hello"), "en-gb");
+	if (!sord_add(sord, tup)) {
+		return test_fail("Failed to add literal with language\n");
+	}
 
 	sord_node_free(world, (SordNode*)tup[0]);
 	sord_node_free(world, (SordNode*)tup[2]);
@@ -126,13 +166,13 @@ generate(SordWorld* world, SordModel* sord, size_t n_quads, size_t n_objects_per
 }
 
 #define TUP_FMT "(%6s %6s %6s)"
-#define TUP_FMT_ARGS(t)                                                 \
+#define TUP_FMT_ARGS(t) \
 	((t)[0] ? sord_node_get_string((t)[0]) : USTR("*")), \
 		((t)[1] ? sord_node_get_string((t)[1]) : USTR("*")), \
 		((t)[2] ? sord_node_get_string((t)[2]) : USTR("*"))
 
 int
-test_read(SordWorld* world, SordModel* sord,
+test_read(SordWorld* world, SordModel* sord, SordNode* g,
           const size_t n_quads, const int n_objects_per)
 {
 	int ret = EXIT_SUCCESS;
@@ -154,10 +194,16 @@ test_read(SordWorld* world, SordModel* sord,
 
 	sord_iter_free(iter);
 
-#define NUM_PATTERNS 9
+	SordNode* plain_hello = sord_new_literal(world, 0, USTR("hello"), NULL);
+	SordNode* type4_hello = sord_new_literal(world, uri(world, 4), USTR("hello"), NULL);
+	SordNode* type5_hello = sord_new_literal(world, uri(world, 5), USTR("hello"), NULL);
+	SordNode* gb_hello    = sord_new_literal(world, NULL, USTR("hello"), "en-gb");
+	SordNode* us_hello    = sord_new_literal(world, NULL, USTR("hello"), "en-us");
+
+#define NUM_PATTERNS 17
 
 	QueryTest patterns[NUM_PATTERNS] = {
-		{ { 0, 0, 0 }, (n_quads * n_objects_per) + 6 },
+		{ { 0, 0, 0 }, (n_quads * n_objects_per) + 12 },
 		{ { uri(world, 9), uri(world, 9), uri(world, 9) }, 0 },
 		{ { uri(world, 1), uri(world, 2), uri(world, 4) }, 1 },
 		{ { uri(world, 3), uri(world, 4), uri(world, 0) }, 2 },
@@ -165,15 +211,23 @@ test_read(SordWorld* world, SordModel* sord,
 		{ { uri(world, 0), uri(world, 0), uri(world, 4) }, 1 },
 		{ { uri(world, 1), uri(world, 0), uri(world, 0) }, 2 },
 		{ { uri(world, 1), uri(world, 0), uri(world, 4) }, 1 },
-		{ { uri(world, 0), uri(world, 2), uri(world, 0) }, 2 } };
+		{ { uri(world, 0), uri(world, 2), uri(world, 0) }, 2 },
+		{ { uri(world, 98), uri(world, 4), plain_hello  }, 1 },
+		{ { uri(world, 98), uri(world, 4), type5_hello  }, 1 },
+		{ { uri(world, 96), uri(world, 4), type4_hello  }, 1 },
+		{ { uri(world, 96), uri(world, 4), type5_hello  }, 1 },
+		{ { uri(world, 94), uri(world, 5), plain_hello  }, 1 },
+		{ { uri(world, 94), uri(world, 5), gb_hello     }, 1 },
+		{ { uri(world, 92), uri(world, 6), gb_hello     }, 1 },
+		{ { uri(world, 92), uri(world, 6), us_hello     }, 1 } };
 
-	SordQuad match = { uri(world, 1), uri(world, 2), uri(world, 4) };
+	SordQuad match = { uri(world, 1), uri(world, 2), uri(world, 4), g };
 	if (!sord_contains(sord, match)) {
 		return test_fail("Fail: No match for " TUP_FMT "\n",
 		                 TUP_FMT_ARGS(match));
 	}
 
-	SordQuad nomatch = { uri(world, 1), uri(world, 2), uri(world, 9) };
+	SordQuad nomatch = { uri(world, 1), uri(world, 2), uri(world, 9), g };
 	if (sord_contains(sord, nomatch)) {
 		return test_fail("Fail: False match for " TUP_FMT "\n",
 		                 TUP_FMT_ARGS(nomatch));
@@ -181,7 +235,7 @@ test_read(SordWorld* world, SordModel* sord,
 
 	for (unsigned i = 0; i < NUM_PATTERNS; ++i) {
 		QueryTest test = patterns[i];
-		SordQuad  pat = { test.query[0], test.query[1], test.query[2], 0 };
+		SordQuad  pat = { test.query[0], test.query[1], test.query[2], g };
 		fprintf(stderr, "Query " TUP_FMT "... ", TUP_FMT_ARGS(pat));
 
 		iter = sord_find(sord, pat);
@@ -252,8 +306,9 @@ test_read(SordWorld* world, SordModel* sord,
 		}
 		sord_iter_free(subiter);
 		if (num_sub_results != n_objects_per) {
-			return test_fail("Fail: Nested query failed (got %d results, expected %d)\n",
-			                 num_sub_results, n_objects_per);
+			return test_fail("Fail: Nested query " TUP_FMT " failed"
+			                 "(got %d results, expected %d)\n",
+			                 TUP_FMT_ARGS(subpat), num_sub_results, n_objects_per);
 		}
 		last_subject = id[0];
 	}
@@ -275,48 +330,102 @@ main(int argc, char** argv)
 
 	// Create with minimal indexing
 	SordModel* sord = sord_new(world, SORD_SPO, false);
-	generate(world, sord, n_quads, n_objects_per);
+	generate(world, sord, n_quads, n_objects_per, NULL);
 
-	if (test_read(world, sord, n_quads, n_objects_per)) {
+	if (test_read(world, sord, NULL, n_quads, n_objects_per)) {
 		sord_free(sord);
 		sord_world_free(world);
 		return EXIT_FAILURE;
 	}
 
+	// Check adding tuples with NULL fields fails
+	const size_t initial_num_quads = sord_num_quads(sord);
+	SordQuad tup = { 0, 0, 0, 0};
+	if (sord_add(sord, tup)) {
+		return test_fail("Added NULL tuple\n");
+	}
+	tup[0] = uri(world, 1);
+	if (sord_add(sord, tup)) {
+		return test_fail("Added tuple with NULL P and O\n");
+	}
+	tup[1] = uri(world, 2);
+	if (sord_add(sord, tup)) {
+		return test_fail("Added tuple with NULL O\n");
+	}
+
+	if (sord_num_quads(sord) != initial_num_quads) {
+		return test_fail("Num quads %zu != %zu\n",
+		                 sord_num_quads(sord), initial_num_quads);
+	}
+
 	// Check interning merges equivalent values
 	SordNode* uri_id   = sord_new_uri(world, USTR("http://example.org"));
-	SordNode* blank_id = sord_new_uri(world, USTR("testblank"));
+	SordNode* blank_id = sord_new_blank(world, USTR("testblank"));
 	SordNode* lit_id   = sord_new_literal(world, uri_id, USTR("hello"), NULL);
-	//sord_clear_cache(write);
+	if (sord_node_get_type(uri_id) != SORD_URI) {
+		return test_fail("URI node has incorrect type\n");
+	} else if (sord_node_get_type(blank_id) != SORD_BLANK) {
+		return test_fail("Blank node has incorrect type\n");
+	} else if (sord_node_get_type(lit_id) != SORD_LITERAL) {
+		return test_fail("Literal node has incorrect type\n");
+	}
+
+	const size_t initial_num_nodes = sord_num_nodes(world);
+
 	SordNode* uri_id2   = sord_new_uri(world, USTR("http://example.org"));
-	SordNode* blank_id2 = sord_new_uri(world, USTR("testblank"));
+	SordNode* blank_id2 = sord_new_blank(world, USTR("testblank"));
 	SordNode* lit_id2   = sord_new_literal(world, uri_id, USTR("hello"), NULL);
-	if (uri_id2 != uri_id) {
+	if (uri_id2 != uri_id || !sord_node_equals(uri_id2, uri_id)) {
 		fprintf(stderr, "Fail: URI interning failed (duplicates)\n");
 		goto fail;
-	} else if (blank_id2 != blank_id) {
+	} else if (blank_id2 != blank_id || !sord_node_equals(blank_id2, blank_id)) {
 		fprintf(stderr, "Fail: Blank node interning failed (duplicates)\n");
 		goto fail;
-	} else if (lit_id2 != lit_id) {
+	} else if (lit_id2 != lit_id || !sord_node_equals(lit_id2, lit_id)) {
 		fprintf(stderr, "Fail: Literal interning failed (duplicates)\n");
 		goto fail;
+	}
+
+	size_t len;
+	const uint8_t* str = sord_node_get_string_counted(lit_id2, &len);
+	if (strcmp((const char*)str, "hello")) {
+		return test_fail("Literal node corrupt\n");
+	} else if (len != strlen("hello")) {
+		return test_fail("Literal length incorrect\n");
+	}
+
+	if (sord_num_nodes(world) != initial_num_nodes) {
+		return test_fail("Num nodes %zu != %zu\n",
+		                 sord_num_nodes(world), initial_num_nodes);
 	}
 
 	// Check interning doesn't clash non-equivalent values
 	SordNode* uri_id3   = sord_new_uri(world, USTR("http://example.orgX"));
 	SordNode* blank_id3 = sord_new_uri(world, USTR("testblankX"));
 	SordNode* lit_id3   = sord_new_literal(world, uri_id, USTR("helloX"), NULL);
-	if (uri_id3 == uri_id) {
+	if (uri_id3 == uri_id || sord_node_equals(uri_id3, uri_id)) {
 		fprintf(stderr, "Fail: URI interning failed (clash)\n");
 		goto fail;
-	} else if (blank_id3 == blank_id) {
+	} else if (blank_id3 == blank_id || sord_node_equals(blank_id3, blank_id)) {
 		fprintf(stderr, "Fail: Blank node interning failed (clash)\n");
 		goto fail;
-	} else if (lit_id3 == lit_id) {
+	} else if (lit_id3 == lit_id || sord_node_equals(lit_id3, lit_id)) {
 		fprintf(stderr, "Fail: Literal interning failed (clash)\n");
 		goto fail;
 	}
 
+	// Check literal interning
+	SordNode* lit4 = sord_new_literal(world, NULL, USTR("hello"), NULL);
+	SordNode* lit5 = sord_new_literal(world, uri_id2, USTR("hello"), NULL);
+	SordNode* lit6 = sord_new_literal(world, NULL, USTR("hello"), "en-ca");
+	if (lit4 == lit5 || sord_node_equals(lit4, lit5)
+	    || lit4 == lit6 || sord_node_equals(lit4, lit6)
+	    || lit5 == lit6 || sord_node_equals(lit5, lit6)) {
+		fprintf(stderr, "Fail: Literal interning failed (type/lang clash)\n");
+		goto fail;
+	}
+
+	// Check comparison with NULL
 	sord_node_free(world, uri_id);
 	sord_node_free(world, blank_id);
 	sord_node_free(world, lit_id);
@@ -335,15 +444,28 @@ main(int argc, char** argv)
 	for (int i = 0; i < 6; ++i) {
 		sord = sord_new(world, (1 << i), false);
 		printf("Testing Index `%s'\n", index_names[i]);
-		generate(world, sord, n_quads, n_objects_per);
-		if (test_read(world, sord, n_quads, n_objects_per))
+		generate(world, sord, n_quads, n_objects_per, 0);
+		if (test_read(world, sord, 0, n_quads, n_objects_per))
+			goto fail;
+		sord_free(sord);
+	}
+
+	static const char* const graph_index_names[6] = {
+		"gspo", "gsop", "gops", "gosp", "gpso", "gpos"
+	};
+
+	for (int i = 0; i < 6; ++i) {
+		sord = sord_new(world, (1 << i), true);
+		printf("Testing Index `%s'\n", graph_index_names[i]);
+		SordNode* graph = uri(world, 42);
+		generate(world, sord, n_quads, n_objects_per, graph);
+		if (test_read(world, sord, graph, n_quads, n_objects_per))
 			goto fail;
 		sord_free(sord);
 	}
 
 	// Test removing
 	sord = sord_new(world, SORD_SPO, false);
-	SordQuad tup = { 0, 0, 0, 0};
 	tup[0] = uri(world, 1);
 	tup[1] = uri(world, 2);
 	tup[2] = sord_new_literal(world, 0, USTR("hello"), NULL);

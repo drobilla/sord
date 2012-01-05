@@ -3,6 +3,8 @@ sord (UNRELEASED) unstable; urgency=low
   * Use path variables in pkgconfig files
   * Install man page to DATADIR (e.g. PREFIX/share/man, not PREFIX/man)
   * Tolerate serd passing NULL nodes to reader callback (serd 0.6.0)
+  * Fix comparison of typed literals
+  * Take advantage of interning in sord_node_equals()
 
  -- David Robillard <d@drobilla.net>  (UNRELEASED)
 

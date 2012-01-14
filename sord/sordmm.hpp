@@ -219,7 +219,8 @@ operator<<(std::ostream& os, const Node& node)
 
 class URI : public Node {
 public:
-	inline URI(World& world, const std::string& s) : Node(world, Node::URI, s) {}
+	inline URI(World& world, const std::string& s)
+		: Node(world, Node::URI, s) {}
 };
 
 class Curie : public Node {
@@ -230,7 +231,8 @@ public:
 
 class Literal : public Node {
 public:
-	inline Literal(World& world, const std::string& s) : Node(world, Node::LITERAL, s) {}
+	inline Literal(World& world, const std::string& s)
+		: Node(world, Node::LITERAL, s) {}
 };
 
 inline
@@ -355,7 +357,11 @@ struct Iter : public Wrapper<SordIter*> {
 	inline ~Iter() { sord_iter_free(_c_obj); }
 	inline bool end()  const { return sord_iter_end(_c_obj); }
 	inline bool next() const { return sord_iter_next(_c_obj); }
-	inline Iter& operator++() { assert(!end()); next(); return *this; }
+	inline Iter& operator++() {
+		assert(!end());
+		next();
+		return *this;
+	}
 	inline const Node get_subject() const {
 		SordQuad quad;
 		sord_iter_get(_c_obj, quad);
@@ -398,15 +404,15 @@ public:
 
 	inline SerdStatus write_to_file(
 		const std::string& uri,
-		SerdSyntax         syntax=SERD_TURTLE,
-		SerdStyle          style=(SerdStyle)(SERD_STYLE_ABBREVIATED
-		                                     |SERD_STYLE_CURIED));
+		SerdSyntax         syntax = SERD_TURTLE,
+		SerdStyle          style  = (SerdStyle)(SERD_STYLE_ABBREVIATED
+		                                        |SERD_STYLE_CURIED));
 
 	inline std::string write_to_string(
 		const std::string& base_uri,
-		SerdSyntax         syntax=SERD_TURTLE,
-		SerdStyle          style=(SerdStyle)(SERD_STYLE_ABBREVIATED
-		                                     |SERD_STYLE_CURIED));
+		SerdSyntax         syntax = SERD_TURTLE,
+		SerdStyle          style  = (SerdStyle)(SERD_STYLE_ABBREVIATED
+		                                        |SERD_STYLE_CURIED));
 
 	inline void add_statement(const Node& subject,
 	                          const Node& predicate,
@@ -581,7 +587,7 @@ Model::find(const Node& subject,
 	return Iter(_world, sord_find(_c_obj, quad));
 }
 
-} // namespace Sord
+}  // namespace Sord
 
-#endif // SORD_SORDMM_HPP
+#endif  // SORD_SORDMM_HPP
 

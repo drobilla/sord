@@ -93,8 +93,12 @@ static const char* const order_names[NUM_ORDERS] = {
    (array indexed by SordOrder)
 */
 static const int orderings[NUM_ORDERS][TUP_LEN] = {
-	{  0,1,2,3}, {  0,2,1,3}, {  2,1,0,3}, {  2,0,1,3}, {  1,0,2,3}, {  1,2,0,3},
-	{3,0,1,2  }, {3,0,2,1  }, {3,2,1,0  }, {3,2,0,1  }, {3,1,0,2  }, {3,1,2,0  }
+	{ 0, 1, 2, 3 }, { 0, 2, 1, 3 },  // SPO, SOP
+	{ 2, 1, 0, 3 }, { 2, 0, 1, 3 },  // OPS, OSP
+	{ 1, 0, 2, 3 }, { 1, 2, 0, 3 },  // PSO, POS
+	{ 3, 0, 1, 2 }, { 3, 0, 2, 1 },  // GSPO, GSOP
+	{ 3, 2, 1, 0 }, { 3, 2, 0, 1 },  // GOPS, GOSP
+	{ 3, 1, 0, 2 }, { 3, 1, 2, 0 }   // GPSO, GPOS
 };
 
 /** World */
@@ -120,7 +124,7 @@ struct SordModelImpl {
 
 /** Mode for searching or iteration */
 typedef enum {
-	ALL,           ///< Iterate to end of store, returning all results, no filtering
+	ALL,           ///< Iterate over entire store
 	SINGLE,        ///< Iteration over a single element (exact search)
 	RANGE,         ///< Iterate over range with equal prefix
 	FILTER_RANGE,  ///< Iterate over range with equal prefix, filtering
@@ -129,14 +133,14 @@ typedef enum {
 
 /** Iterator over some range of a store */
 struct SordIterImpl {
-	const SordModel* sord;               ///< Store this is an iterator for
+	const SordModel* sord;               ///< Model being iterated over
 	ZixTreeIter*     cur;                ///< Current DB cursor
-	SordQuad         pat;                ///< Iteration pattern (in ordering order)
+	SordQuad         pat;                ///< Pattern (in ordering order)
 	int              ordering[TUP_LEN];  ///< Store ordering
 	SearchMode       mode;               ///< Iteration mode
-	int              n_prefix;           ///< Length of range prefix (RANGE, FILTER_RANGE)
+	int              n_prefix;           ///< Prefix for RANGE and FILTER_RANGE
 	bool             end;                ///< True iff reached end
-	bool             skip_graphs;        ///< True iff iteration should ignore graphs
+	bool             skip_graphs;        ///< Iteration should ignore graphs
 };
 
 static unsigned
@@ -493,13 +497,13 @@ sord_iter_free(SordIter* iter)
 
 /**
    Return true iff @a sord has an index for @a order.
-   If @a graph_search is true, @a order will be modified to be the
+   If @a graphs is true, @a order will be modified to be the
    corresponding order with a G prepended (so G will be the MSN).
 */
 static inline bool
-sord_has_index(SordModel* sord, SordOrder* order, int* n_prefix, bool graph_search)
+sord_has_index(SordModel* sord, SordOrder* order, int* n_prefix, bool graphs)
 {
-	if (graph_search) {
+	if (graphs) {
 		*order    += GSPO;
 		*n_prefix += 1;
 	}
@@ -515,7 +519,10 @@ sord_has_index(SordModel* sord, SordOrder* order, int* n_prefix, bool graph_sear
    (for @a mode == RANGE and @a mode == FILTER_RANGE)
 */
 static inline SordOrder
-sord_best_index(SordModel* sord, const SordQuad pat, SearchMode* mode, int* n_prefix)
+sord_best_index(SordModel*     sord,
+                const SordQuad pat,
+                SearchMode*    mode,
+                int*           n_prefix)
 {
 	const bool graph_search = (pat[TUP_G] != 0);
 
@@ -526,18 +533,31 @@ sord_best_index(SordModel* sord, const SordQuad pat, SearchMode* mode, int* n_pr
 
 	SordOrder good[2] = { (SordOrder)-1, (SordOrder)-1 };
 
+#define PAT_CASE(sig, m, g0, g1, np) \
+	case sig: \
+		*mode     = m; \
+		good[0]   = g0; \
+		good[1]   = g1; \
+		*n_prefix = np; \
+		break
+
 	// Good orderings that don't require filtering
 	*mode     = RANGE;
 	*n_prefix = 0;
 	switch (sig) {
-	case 0x000: *mode = ALL; return graph_search ? DEFAULT_GRAPH_ORDER : DEFAULT_ORDER;
-	case 0x001: *mode = RANGE; good[0] = OPS; good[1] = OSP; *n_prefix = 1; break;
-	case 0x010: *mode = RANGE; good[0] = POS; good[1] = PSO; *n_prefix = 1; break;
-	case 0x011: *mode = RANGE; good[0] = OPS; good[1] = POS; *n_prefix = 2; break;
-	case 0x100: *mode = RANGE; good[0] = SPO; good[1] = SOP; *n_prefix = 1; break;
-	case 0x101: *mode = RANGE; good[0] = SOP; good[1] = OSP; *n_prefix = 2; break;
-	case 0x110: *mode = RANGE; good[0] = SPO; good[1] = PSO; *n_prefix = 2; break;
-	case 0x111: *mode = SINGLE; return graph_search ? DEFAULT_GRAPH_ORDER : DEFAULT_ORDER;
+	case 0x000:
+		*mode = ALL;
+		return graph_search ? DEFAULT_GRAPH_ORDER : DEFAULT_ORDER;
+	case 0x111:
+		*mode = SINGLE;
+		return graph_search ? DEFAULT_GRAPH_ORDER : DEFAULT_ORDER;
+
+		PAT_CASE(0x001, RANGE, OPS, OSP, 1);
+		PAT_CASE(0x010, RANGE, POS, PSO, 1);
+		PAT_CASE(0x011, RANGE, OPS, POS, 2);
+		PAT_CASE(0x100, RANGE, SPO, SOP, 1);
+		PAT_CASE(0x101, RANGE, SOP, OSP, 2);
+		PAT_CASE(0x110, RANGE, SPO, PSO, 2);
 	}
 
 	if (*mode == RANGE) {
@@ -551,9 +571,9 @@ sord_best_index(SordModel* sord, const SordQuad pat, SearchMode* mode, int* n_pr
 	// Not so good orderings that require filtering, but can
 	// still be constrained to a range
 	switch (sig) {
-	case 0x011: *mode = FILTER_RANGE; good[0] = OSP; good[1] = PSO; *n_prefix = 1; break;
-	case 0x101: *mode = FILTER_RANGE; good[0] = SPO; good[1] = OPS; *n_prefix = 1; break;
-	case 0x110: *mode = FILTER_RANGE; good[0] = SOP; good[1] = POS; *n_prefix = 1; break;
+		PAT_CASE(0x011, FILTER_RANGE, OSP, PSO, 1);
+		PAT_CASE(0x101, FILTER_RANGE, SPO, OPS, 1);
+		PAT_CASE(0x110, FILTER_RANGE, SOP, POS, 1);
 	default: break;
 	}
 
@@ -765,11 +785,12 @@ sord_find(SordModel* sord, const SordQuad pat)
 		return sord_begin(sord);
 
 	SearchMode      mode;
-	int             prefix_len;
-	const SordOrder index_order = sord_best_index(sord, pat, &mode, &prefix_len);
+	int             n_prefix;
+	const SordOrder index_order = sord_best_index(sord, pat, &mode, &n_prefix);
 
-	SORD_FIND_LOG("Find " TUP_FMT "  index=%s  mode=%d  prefix_len=%d ordering=%d%d%d%d\n",
-	              TUP_FMT_ARGS(pat), order_names[index_order], mode, prefix_len,
+	SORD_FIND_LOG("Find " TUP_FMT "  index=%s  mode=%d"
+	              "  n_prefix=%d ordering=%d%d%d%d\n",
+	              TUP_FMT_ARGS(pat), order_names[index_order], mode, n_prefix,
 	              ordering[0], ordering[1], ordering[2], ordering[3]);
 
 	if (pat[0] && pat[1] && pat[2] && pat[3])
@@ -788,7 +809,7 @@ sord_find(SordModel* sord, const SordQuad pat)
 		return NULL;
 	}
 
-	return sord_iter_new(sord, cur, pat, index_order, mode, prefix_len);
+	return sord_iter_new(sord, cur, pat, index_order, mode, n_prefix);
 }
 
 bool
@@ -973,13 +994,17 @@ sord_new_blank(SordWorld* world, const uint8_t* str)
 }
 
 static SordNode*
-sord_new_literal_counted(SordWorld* world, SordNode* datatype,
-                         const uint8_t* str, size_t n_bytes, size_t n_chars,
-                         SerdNodeFlags flags,
-                         const char* lang)
+sord_new_literal_counted(SordWorld*     world,
+                         SordNode*      datatype,
+                         const uint8_t* str,
+                         size_t         n_bytes,
+                         size_t         n_chars,
+                         SerdNodeFlags  flags,
+                         const char*    lang)
 {
 	lang = sord_intern_lang(world, lang);
-	SordNode* node = sord_lookup_literal(world, datatype, str, n_bytes, n_chars, lang);
+	SordNode* node = sord_lookup_literal(
+		world, datatype, str, n_bytes, n_chars, lang);
 	if (node) {
 		++node->refs;
 		return node;
@@ -1023,7 +1048,8 @@ sord_node_from_serd_node(SordWorld*      world,
 	case SERD_NOTHING:
 		return NULL;
 	case SERD_LITERAL:
-		datatype_node = sord_node_from_serd_node(world, env, datatype, NULL, NULL),
+		datatype_node = sord_node_from_serd_node(
+			world, env, datatype, NULL, NULL),
 		ret = sord_new_literal_counted(
 			world,
 			datatype_node,
@@ -1135,7 +1161,6 @@ sord_add(SordModel* sord, const SordQuad tup)
 		sord_add_quad_ref(sord, tup[i], i);
 
 	++sord->n_quads;
-	//assert(sord->n_quads == (size_t)zix_tree_get_length(sord->indices[SPO]));
 	return true;
 }
 

@@ -197,7 +197,7 @@ def build(bld):
         bld.add_post_fun(fix_docs)
 
 def lint(ctx):
-    subprocess.call('cpplint.py --filter=+whitespace/comments,-whitespace/tab,-whitespace/braces,-whitespace/labels,-build/header_guard,-readability/casting,-readability/todo,-build/include src/* serd/*', shell=True)
+    subprocess.call('cpplint.py --filter=+whitespace/comments,-whitespace/tab,-whitespace/braces,-whitespace/labels,-build/header_guard,-readability/casting,-readability/todo,-build/include src/*.* sord/* src/zix/*.*', shell=True)
 
 def build_dir(ctx, subdir):
     if autowaf.is_child():

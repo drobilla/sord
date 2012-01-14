@@ -55,7 +55,11 @@ test_fail(const char* fmt, ...)
 }
 
 int
-generate(SordWorld* world, SordModel* sord, size_t n_quads, size_t n_objects_per, SordNode* graph)
+generate(SordWorld* world,
+         SordModel* sord,
+         size_t     n_quads,
+         size_t     n_objects_per,
+         SordNode*  graph)
 {
 	fprintf(stderr, "Generating %zu (S P *) quads with %zu objects each\n",
 	        n_quads, n_objects_per);
@@ -194,11 +198,12 @@ test_read(SordWorld* world, SordModel* sord, SordNode* g,
 
 	sord_iter_free(iter);
 
-	SordNode* plain_hello = sord_new_literal(world, 0, USTR("hello"), NULL);
-	SordNode* type4_hello = sord_new_literal(world, uri(world, 4), USTR("hello"), NULL);
-	SordNode* type5_hello = sord_new_literal(world, uri(world, 5), USTR("hello"), NULL);
-	SordNode* gb_hello    = sord_new_literal(world, NULL, USTR("hello"), "en-gb");
-	SordNode* us_hello    = sord_new_literal(world, NULL, USTR("hello"), "en-us");
+	const uint8_t* s = USTR("hello");
+	SordNode* plain_hello = sord_new_literal(world, 0, s, NULL);
+	SordNode* type4_hello = sord_new_literal(world, uri(world, 4), s, NULL);
+	SordNode* type5_hello = sord_new_literal(world, uri(world, 5), s, NULL);
+	SordNode* gb_hello    = sord_new_literal(world, NULL, s, "en-gb");
+	SordNode* us_hello    = sord_new_literal(world, NULL, s, "en-us");
 
 #define NUM_PATTERNS 17
 
@@ -245,8 +250,9 @@ test_read(SordWorld* world, SordModel* sord, SordNode* g,
 			++num_results;
 			if (!sord_quad_match(pat, id)) {
 				sord_iter_free(iter);
-				return test_fail("Fail: Query result " TUP_FMT " does not match pattern\n",
-				                 TUP_FMT_ARGS(id));
+				return test_fail(
+					"Fail: Query result " TUP_FMT " does not match pattern\n",
+					TUP_FMT_ARGS(id));
 			}
 		}
 		sord_iter_free(iter);
@@ -270,8 +276,9 @@ test_read(SordWorld* world, SordModel* sord, SordNode* g,
 		++num_results;
 		if (!sord_quad_match(pat, id)) {
 			sord_iter_free(iter);
-			return test_fail("Fail: Query result " TUP_FMT " does not match pattern\n",
-			                 TUP_FMT_ARGS(id));
+			return test_fail(
+				"Fail: Query result " TUP_FMT " does not match pattern\n",
+				TUP_FMT_ARGS(id));
 		}
 	}
 	fprintf(stderr, "OK\n");
@@ -300,15 +307,17 @@ test_read(SordWorld* world, SordModel* sord, SordNode* g,
 			if (!sord_quad_match(subpat, subid)) {
 				sord_iter_free(iter);
 				sord_iter_free(subiter);
-				return test_fail("Fail: Nested query result does not match pattern\n");
+				return test_fail(
+					"Fail: Nested query result does not match pattern\n");
 			}
 			++num_sub_results;
 		}
 		sord_iter_free(subiter);
 		if (num_sub_results != n_objects_per) {
-			return test_fail("Fail: Nested query " TUP_FMT " failed"
-			                 "(got %d results, expected %d)\n",
-			                 TUP_FMT_ARGS(subpat), num_sub_results, n_objects_per);
+			return test_fail(
+				"Fail: Nested query " TUP_FMT " failed"
+				" (%d results, expected %d)\n",
+				TUP_FMT_ARGS(subpat), num_sub_results, n_objects_per);
 		}
 		last_subject = id[0];
 	}
@@ -378,7 +387,8 @@ main(int argc, char** argv)
 	if (uri_id2 != uri_id || !sord_node_equals(uri_id2, uri_id)) {
 		fprintf(stderr, "Fail: URI interning failed (duplicates)\n");
 		goto fail;
-	} else if (blank_id2 != blank_id || !sord_node_equals(blank_id2, blank_id)) {
+	} else if (blank_id2 != blank_id
+	           || !sord_node_equals(blank_id2, blank_id)) {
 		fprintf(stderr, "Fail: Blank node interning failed (duplicates)\n");
 		goto fail;
 	} else if (lit_id2 != lit_id || !sord_node_equals(lit_id2, lit_id)) {

@@ -1,5 +1,5 @@
 /*
-  Copyright 2011 David Robillard <http://drobilla.net>
+  Copyright 2011-2012 David Robillard <http://drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -34,8 +34,8 @@ int
 print_version()
 {
 	printf("sordi " SORD_VERSION " <http://drobilla.net/software/sord>\n");
-	printf("Copyright 2011 David Robillard <http://drobilla.net>.\n"
-	       "License: <http://www.opensource.org/licenses/isc-license>\n"
+	printf("Copyright 2011-2012 David Robillard <http://drobilla.net>.\n"
+	       "License: <http://www.opensource.org/licenses/isc>\n"
 	       "This is free software; you are free to change and redistribute it."
 	       "\nThere is NO WARRANTY, to the extent permitted by law.\n");
 	return 0;
@@ -128,25 +128,8 @@ main(int argc, char** argv)
 	if (from_file) {
 		in_name = in_name ? in_name : input;
 		if (!in_fd) {
-			if (serd_uri_string_has_scheme(input)) {
-				// INPUT is an absolute URI, ensure it a file and chop scheme
-				if (strncmp((const char*)input, "file:", 5)) {
-					fprintf(stderr, "Unsupported URI scheme `%s'\n", input);
-					return 1;
-#ifdef _WIN32
-				} else if (!strncmp((const char*)input, "file:///", 8)) {
-					input += 8;
-#else
-				} else if (!strncmp((const char*)input, "file://", 7)) {
-					input += 7;
-#endif
-				} else {
-					input += 5;
-				}
-			}
-			in_fd = fopen((const char*)input, "r");
-			if (!in_fd) {
-				fprintf(stderr, "Failed to open file %s\n", input);
+			input = serd_uri_to_path(in_name);
+			if (!input || !(in_fd = fopen((const char*)input, "rb"))) {
 				return 1;
 			}
 		}
@@ -188,7 +171,7 @@ main(int argc, char** argv)
 
 	SerdEnv* write_env = serd_env_new(&base_uri_node);
 
-	SerdStyle output_style = SERD_STYLE_RESOLVED;
+	int output_style = SERD_STYLE_RESOLVED;
 	if (output_syntax == SERD_NTRIPLES) {
 		output_style |= SERD_STYLE_ASCII;
 	} else {
@@ -197,7 +180,7 @@ main(int argc, char** argv)
 
 	SerdWriter* writer = serd_writer_new(
 		output_syntax,
-		output_style,
+		(SerdStyle)output_style,
 		write_env, &base_uri, serd_file_sink, stdout);
 
 	// Write @prefix directives

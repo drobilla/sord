@@ -47,7 +47,7 @@ ZIX_API
 ZixTree*
 zix_tree_new(bool allow_duplicates, ZixComparator cmp, void* cmp_data)
 {
-	ZixTree* t = malloc(sizeof(ZixTree));
+	ZixTree* t = (ZixTree*)malloc(sizeof(ZixTree));
 	t->root             = NULL;
 	t->cmp              = cmp;
 	t->cmp_data         = cmp_data;
@@ -287,7 +287,7 @@ zix_tree_insert(ZixTree* t, void* e, ZixTreeIter** ti)
 	}
 
 	// Allocate a new node n
-	if (!(n = malloc(sizeof(ZixTreeNode)))) {
+	if (!(n = (ZixTreeNode*)malloc(sizeof(ZixTreeNode)))) {
 		return ZIX_STATUS_NO_MEM;
 	}
 	memset(n, '\0', sizeof(ZixTreeNode));

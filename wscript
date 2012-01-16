@@ -43,7 +43,11 @@ def configure(conf):
     autowaf.configure(conf)
     autowaf.display_header('Sord configuration')
 
-    conf.env.append_unique('CFLAGS', '-std=c99')
+    if conf.env['MSVC_COMPILER']:
+        conf.env.append_unique('CFLAGS',   ['-TP', '-MD'])
+        conf.env.append_unique('CXXFLAGS', ['-TP', '-MD'])
+    else:
+        conf.env.append_unique('CFLAGS', '-std=c99')
 
     autowaf.check_pkg(conf, 'serd-0', uselib_store='SERD',
                       atleast_version='0.8.0', mandatory=True)
@@ -104,8 +108,12 @@ def build(bld):
     source = 'src/sord.c src/syntax.c src/zix/hash.c src/zix/tree.c'
 
     libflags = [ '-fvisibility=hidden' ]
-    if sys.platform == 'win32':
+    libs     = [ 'm' ]
+    defines  = []
+    if bld.env['MSVC_COMPILER']:
         libflags = []
+        libs     = []
+        defines  = ['snprintf=_snprintf']
 
     # Shared Library
     obj = bld(features        = 'c cshlib',
@@ -116,7 +124,8 @@ def build(bld):
               target          = 'sord-%s' % SORD_MAJOR_VERSION,
               vnum            = SORD_LIB_VERSION,
               install_path    = '${LIBDIR}',
-              libs            = [ 'm' ],
+              libs            = libs,
+              defines         = defines,
               cflags          = libflags + [ '-DSORD_SHARED',
                                              '-DSORD_INTERNAL' ])
     autowaf.use_lib(bld, obj, 'SERD')
@@ -131,12 +140,12 @@ def build(bld):
                   target          = 'sord-%s' % SORD_MAJOR_VERSION,
                   vnum            = SORD_LIB_VERSION,
                   install_path    = '${LIBDIR}',
-                  libs            = [ 'm' ],
+                  libs            = libs,
                   cflags          = [ '-DSORD_INTERNAL' ])
         autowaf.use_lib(bld, obj, 'SERD')
 
     if bld.env['BUILD_TESTS']:
-        test_libs   = ['m']
+        test_libs   = libs
         test_cflags = ['']
         if bld.is_defined('HAVE_GCOV'):
             test_libs   += ['gcov']
@@ -149,6 +158,7 @@ def build(bld):
                   name         = 'libsord_profiled',
                   target       = 'sord_profiled',
                   install_path = '',
+                  defines      = defines,
                   cflags       = test_cflags,
                   lib          = test_libs)
         autowaf.use_lib(bld, obj, 'SERD')
@@ -161,6 +171,7 @@ def build(bld):
                   lib          = test_libs,
                   target       = 'sord_test',
                   install_path = '',
+                  defines      = defines,
                   cflags       = test_cflags)
         autowaf.use_lib(bld, obj, 'SERD')
 
@@ -172,6 +183,7 @@ def build(bld):
                   lib          = test_libs,
                   target       = 'sordi_static',
                   install_path = '',
+                  defines      = defines,
                   cflags       = test_cflags)
         autowaf.use_lib(bld, obj, 'SERD')
 
@@ -183,7 +195,7 @@ def build(bld):
                   lib          = test_libs,
                   target       = 'sordmm_test',
                   install_path = '',
-                  cflags       = test_cflags)
+                  defines      = defines)
         autowaf.use_lib(bld, obj, 'SERD')
 
     # Command line utility
@@ -193,7 +205,8 @@ def build(bld):
                   includes     = ['.', './src'],
                   use          = 'libsord',
                   target       = 'sordi',
-                  install_path = '${BINDIR}')
+                  install_path = '${BINDIR}',
+                  defines      = defines)
         autowaf.use_lib(bld, obj, 'SERD')
 
     # Documentation
@@ -256,36 +269,40 @@ def test(ctx):
 
     autowaf.pre_test(ctx, APPNAME)
 
+    os.environ['PATH'] = '.' + os.pathsep + os.getenv('PATH')
+
+    nul = os.devnull
+
     autowaf.run_tests(ctx, APPNAME, [
-            './sordi_static file:%s/tests/manifest.ttl > /dev/null' % srcdir,
-            './sordi_static file://%s/tests/manifest.ttl > /dev/null' % srcdir,
-            './sordi_static %s/tests/UTF-8.ttl > /dev/null' % srcdir,
-            './sordi_static -v > /dev/null',
-            './sordi_static -h > /dev/null',
-            './sordi_static -s "<foo> a <#Thingie> ." > /dev/null',
-            './sordi_static /dev/null > /dev/null'],
+            'sordi_static file://%s/tests/manifest.ttl > %s' % (srcdir, nul),
+            'sordi_static %s/tests/UTF-8.ttl > %s' % (srcdir, nul),
+            'sordi_static -v > %s' % nul,
+            'sordi_static -h > %s' % nul,
+            'sordi_static -s "<foo> a <#Thingie> ." > %s' % nul,
+            'sordi_static %s > %s' % (nul, nul)],
                       0, name='sordi-cmd-good')
 
     autowaf.run_tests(ctx, APPNAME, [
-            './sordi_static > /dev/null',
-            './sordi_static ftp://example.org/unsupported.ttl > /dev/null',
-            './sordi_static -i > /dev/null',
-            './sordi_static -o > /dev/null',
-            './sordi_static -z > /dev/null',
-            './sordi_static -p > /dev/null',
-            './sordi_static -c > /dev/null',
-            './sordi_static -i illegal > /dev/null',
-            './sordi_static -o illegal > /dev/null',
-            './sordi_static -i turtle > /dev/null',
-            './sordi_static /no/such/file > /dev/null'],
+            'sordi_static > %s' % nul,
+            'sordi_static ftp://example.org/unsupported.ttl > %s' % nul,
+            'sordi_static -i > %s' % nul,
+            'sordi_static -o > %s' % nul,
+            'sordi_static -z > %s' % nul,
+            'sordi_static -p > %s' % nul,
+            'sordi_static -c > %s' % nul,
+            'sordi_static -i illegal > %s' % nul,
+            'sordi_static -o illegal > %s' % nul,
+            'sordi_static -i turtle > %s' % nul,
+            'sordi_static /no/such/file > %s' % nul],
                       1, name='sordi-cmd-bad')
 
-    autowaf.run_tests(ctx, APPNAME, ['./sord_test'])
+    autowaf.run_tests(ctx, APPNAME, ['sord_test'])
 
     commands = []
     for test in good_tests:
-        base_uri = 'http://www.w3.org/2001/sw/DataAccess/df1/' + test
-        commands += [ './sordi_static %s/%s \'%s\' > %s.out' % (srcdir, test, base_uri, test) ]
+        base_uri = 'http://www.w3.org/2001/sw/DataAccess/df1/' + test.replace('\\', '/')
+        commands += [ 'sordi_static "%s" "%s" > %s.out' % (
+                os.path.join(srcdir, test), base_uri, test) ]
 
     autowaf.run_tests(ctx, APPNAME, commands, 0, name='good')
 

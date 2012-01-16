@@ -23,6 +23,8 @@
 
 static const int DIGITS  = 3;
 static const int MAX_NUM = 999;
+static const int n_objects_per = 2;
+
 
 typedef struct {
 	SordQuad query;
@@ -58,7 +60,6 @@ int
 generate(SordWorld* world,
          SordModel* sord,
          size_t     n_quads,
-         size_t     n_objects_per,
          SordNode*  graph)
 {
 	fprintf(stderr, "Generating %zu (S P *) quads with %zu objects each\n",
@@ -177,7 +178,7 @@ generate(SordWorld* world,
 
 int
 test_read(SordWorld* world, SordModel* sord, SordNode* g,
-          const size_t n_quads, const int n_objects_per)
+          const size_t n_quads)
 {
 	int ret = EXIT_SUCCESS;
 
@@ -330,8 +331,7 @@ test_read(SordWorld* world, SordModel* sord, SordNode* g,
 int
 main(int argc, char** argv)
 {
-	static const size_t n_quads       = 300;
-	static const int    n_objects_per = 2;
+	static const size_t n_quads = 300;
 
 	sord_free(NULL);  // Shouldn't crash
 
@@ -339,9 +339,9 @@ main(int argc, char** argv)
 
 	// Create with minimal indexing
 	SordModel* sord = sord_new(world, SORD_SPO, false);
-	generate(world, sord, n_quads, n_objects_per, NULL);
+	generate(world, sord, n_quads, NULL);
 
-	if (test_read(world, sord, NULL, n_quads, n_objects_per)) {
+	if (test_read(world, sord, NULL, n_quads)) {
 		sord_free(sord);
 		sord_world_free(world);
 		return EXIT_FAILURE;
@@ -454,8 +454,8 @@ main(int argc, char** argv)
 	for (int i = 0; i < 6; ++i) {
 		sord = sord_new(world, (1 << i), false);
 		printf("Testing Index `%s'\n", index_names[i]);
-		generate(world, sord, n_quads, n_objects_per, 0);
-		if (test_read(world, sord, 0, n_quads, n_objects_per))
+		generate(world, sord, n_quads, 0);
+		if (test_read(world, sord, 0, n_quads))
 			goto fail;
 		sord_free(sord);
 	}
@@ -468,8 +468,8 @@ main(int argc, char** argv)
 		sord = sord_new(world, (1 << i), true);
 		printf("Testing Index `%s'\n", graph_index_names[i]);
 		SordNode* graph = uri(world, 42);
-		generate(world, sord, n_quads, n_objects_per, graph);
-		if (test_read(world, sord, graph, n_quads, n_objects_per))
+		generate(world, sord, n_quads, graph);
+		if (test_read(world, sord, graph, n_quads))
 			goto fail;
 		sord_free(sord);
 	}

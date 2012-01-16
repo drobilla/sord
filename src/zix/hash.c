@@ -55,7 +55,7 @@ zix_hash_new(ZixHashFunc  hash_func,
 	hash->key_equal_func = key_equal_func;
 	hash->count          = 0;
 	hash->n_buckets      = &sizes[0];
-	hash->buckets        = malloc(*hash->n_buckets * sizeof(Entry*));
+	hash->buckets        = (Entry**)malloc(*hash->n_buckets * sizeof(Entry*));
 	memset(hash->buckets, 0, *hash->n_buckets * sizeof(Entry*));
 
 	return hash;

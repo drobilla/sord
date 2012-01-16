@@ -96,7 +96,7 @@ sord_new_reader(SordModel* model,
                 SerdSyntax syntax,
                 SordNode*  graph)
 {
-	ReadState* state = malloc(sizeof(ReadState));
+	ReadState* state = (ReadState*)malloc(sizeof(ReadState));
 	state->env            = env;
 	state->graph_uri_node = graph;
 	state->world          = sord_get_world(model);

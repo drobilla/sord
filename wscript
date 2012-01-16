@@ -52,6 +52,12 @@ def configure(conf):
     conf.env['BUILD_UTILS'] = True
     conf.env['BUILD_STATIC'] = Options.options.static
 
+    # Check for gcov library (for test coverage)
+    if conf.env['BUILD_TESTS']:
+        conf.check_cc(lib='gcov',
+                      define_name='HAVE_GCOV',
+                      mandatory=False)
+
     dump = Options.options.dump.split(',')
     all = 'all' in dump
     if all or 'iter' in dump:
@@ -130,7 +136,11 @@ def build(bld):
         autowaf.use_lib(bld, obj, 'SERD')
 
     if bld.env['BUILD_TESTS']:
-        test_cflags = [ '-fprofile-arcs',  '-ftest-coverage' ]
+        test_libs   = ['m']
+        test_cflags = ['']
+        if bld.is_defined('HAVE_GCOV'):
+            test_libs   += ['gcov']
+            test_cflags += ['-fprofile-arcs', '-ftest-coverage']
 
         # Static profiled library (for unit test code coverage)
         obj = bld(features     = 'c cstlib',
@@ -140,7 +150,7 @@ def build(bld):
                   target       = 'sord_profiled',
                   install_path = '',
                   cflags       = test_cflags,
-                  libs         = [ 'm' ])
+                  lib          = test_libs)
         autowaf.use_lib(bld, obj, 'SERD')
 
         # Unit test program
@@ -148,7 +158,7 @@ def build(bld):
                   source       = 'src/sord_test.c',
                   includes     = ['.', './src'],
                   use          = 'libsord_profiled',
-                  lib          = ['gcov'],
+                  lib          = test_libs,
                   target       = 'sord_test',
                   install_path = '',
                   cflags       = test_cflags)
@@ -159,7 +169,7 @@ def build(bld):
                   source       = 'src/sordi.c',
                   includes     = ['.', './src'],
                   use          = 'libsord_profiled',
-                  lib          = ['gcov'],
+                  lib          = test_libs,
                   target       = 'sordi_static',
                   install_path = '',
                   cflags       = [ '-fprofile-arcs',  '-ftest-coverage' ])
@@ -170,7 +180,7 @@ def build(bld):
                   source       = 'src/sordmm_test.cpp',
                   includes     = ['.', './src'],
                   use          = 'libsord_profiled',
-                  lib          = ['gcov'],
+                  lib          = test_libs,
                   target       = 'sordmm_test',
                   install_path = '',
                   cflags       = test_cflags)

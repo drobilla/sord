@@ -172,7 +172,7 @@ def build(bld):
                   lib          = test_libs,
                   target       = 'sordi_static',
                   install_path = '',
-                  cflags       = [ '-fprofile-arcs',  '-ftest-coverage' ])
+                  cflags       = test_cflags,
         autowaf.use_lib(bld, obj, 'SERD')
 
         # C++ build test

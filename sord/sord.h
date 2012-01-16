@@ -29,7 +29,7 @@
 #include "serd/serd.h"
 
 #ifdef SORD_SHARED
-#    ifdef __WIN32__
+#    ifdef _WIN32
 #        define SORD_LIB_IMPORT __declspec(dllimport)
 #        define SORD_LIB_EXPORT __declspec(dllexport)
 #    else

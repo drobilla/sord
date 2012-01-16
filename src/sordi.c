@@ -167,7 +167,8 @@ main(int argc, char** argv)
 
 	serd_reader_free(reader);
 
-	fprintf(stderr, "Loaded %zu statements\n", sord_num_quads(sord));
+	fprintf(stderr, "Loaded %lu statements\n",
+	        (unsigned long)sord_num_quads(sord));
 
 	SerdEnv* write_env = serd_env_new(&base_uri_node);
 

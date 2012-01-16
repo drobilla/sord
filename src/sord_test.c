@@ -62,25 +62,25 @@ generate(SordWorld* world,
          size_t     n_quads,
          SordNode*  graph)
 {
-	fprintf(stderr, "Generating %zu (S P *) quads with %zu objects each\n",
+	fprintf(stderr, "Generating %zu (S P *) quads with %u objects each\n",
 	        n_quads, n_objects_per);
 
 	for (size_t i = 0; i < n_quads; ++i) {
 		int num = (i * n_objects_per) + 1;
 
 		SordNode* ids[2 + n_objects_per];
-		for (size_t j = 0; j < 2 + n_objects_per; ++j) {
+		for (int j = 0; j < 2 + n_objects_per; ++j) {
 			ids[j] = uri(world, num++);
 		}
 
-		for (size_t j = 0; j < n_objects_per; ++j) {
+		for (int j = 0; j < n_objects_per; ++j) {
 			SordQuad tup = { ids[0], ids[1], ids[2 + j] };
 			if (!sord_add(sord, tup)) {
 				return test_fail("Fail: Failed to add quad\n");
 			}
 		}
 
-		for (size_t j = 0; j < 2 + n_objects_per; ++j) {
+		for (int j = 0; j < 2 + n_objects_per; ++j) {
 			sord_node_free(world, ids[j]);
 		}
 	}

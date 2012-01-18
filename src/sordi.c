@@ -20,7 +20,7 @@
 
 #include "serd/serd.h"
 #include "sord/sord.h"
-#include "sord-config.h"
+#include "sord_config.h"
 
 typedef struct {
 	SerdWriter* writer;

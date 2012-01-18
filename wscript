@@ -72,7 +72,7 @@ def configure(conf):
         autowaf.define(conf, 'SORD_DEBUG_WRITE', 1)
 
     autowaf.define(conf, 'SORD_VERSION', SORD_VERSION)
-    conf.write_config_header('sord-config.h', remove=False)
+    conf.write_config_header('sord_config.h', remove=False)
 
     def fallback(var, val):
         conf.env[var] = val

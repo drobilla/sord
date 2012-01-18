@@ -20,7 +20,7 @@
 
 #include "serd/serd.h"
 
-#include "sord-config.h"
+#include "sord_config.h"
 #include "sord_internal.h"
 
 typedef struct {

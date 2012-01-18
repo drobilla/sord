@@ -25,7 +25,7 @@
 #include "zix/hash.h"
 #include "zix/tree.h"
 
-#include "sord-config.h"
+#include "sord_config.h"
 #include "sord_internal.h"
 
 #define SORD_LOG(prefix, ...) fprintf(stderr, "[Sord::" prefix "] " __VA_ARGS__)

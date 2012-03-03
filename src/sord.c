@@ -421,6 +421,12 @@ sord_iter_get(const SordIter* iter, SordQuad id)
 	}
 }
 
+const SordNode*
+sord_iter_get_node(const SordIter* iter, SordQuadIndex index)
+{
+	return ((SordNode**)zix_tree_get(iter->cur))[index];
+}
+
 bool
 sord_iter_next(SordIter* iter)
 {

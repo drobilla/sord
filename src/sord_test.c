@@ -25,7 +25,6 @@ static const int DIGITS  = 3;
 static const int MAX_NUM = 999;
 static const int n_objects_per = 2;
 
-
 typedef struct {
 	SordQuad query;
 	int      expected_num_results;
@@ -299,9 +298,12 @@ test_read(SordWorld* world, SordModel* sord, SordNode* g,
 		if (id[0] == last_subject)
 			continue;
 
-		SordQuad subpat  = { id[0], 0, 0 };
-		SordIter* subiter = sord_find(sord, subpat);
-		int num_sub_results = 0;
+		SordQuad  subpat          = { id[0], 0, 0 };
+		SordIter* subiter         = sord_find(sord, subpat);
+		int       num_sub_results = 0;
+		if (sord_iter_get_node(subiter, SORD_SUBJECT) != id[0]) {
+			return test_fail("Fail: Incorrect initial submatch\n");
+		}
 		for (; !sord_iter_end(subiter); sord_iter_next(subiter)) {
 			SordQuad subid;
 			sord_iter_get(subiter, subid);

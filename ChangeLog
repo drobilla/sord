@@ -6,6 +6,7 @@ sord (UNRELEASED) unstable; urgency=low
   * Fix comparison of typed literals
   * Take advantage of interning in sord_node_equals()
   * Support compilation as C++ under MSVC++.
+  * Add sord_iter_get_node()
 
  -- David Robillard <d@drobilla.net>  (UNRELEASED)
 

@@ -393,6 +393,13 @@ void
 sord_iter_get(const SordIter* iter, SordQuad quad);
 
 /**
+   Return a field of the quad pointed to by @c iter.
+*/
+SORD_API
+const SordNode*
+sord_iter_get_node(const SordIter* iter, SordQuadIndex index);
+
+/**
    Return the store pointed to by @c iter.
 */
 SORD_API

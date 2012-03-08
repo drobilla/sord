@@ -158,12 +158,9 @@ main(int argc, char** argv)
 	SerdEnv*    env    = serd_env_new(&base_uri_node);
 	SerdReader* reader = sord_new_reader(sord, env, input_syntax, NULL);
 
-	bool success = false;
-	if (from_file) {
-		success = !serd_reader_read_file_handle(reader, in_fd, in_name);
-	} else {
-		success = !serd_reader_read_string(reader, input);
-	}
+	const SerdStatus status = (from_file)
+		? serd_reader_read_file_handle(reader, in_fd, in_name)
+		: serd_reader_read_string(reader, input);
 
 	serd_reader_free(reader);
 
@@ -202,5 +199,5 @@ main(int argc, char** argv)
 	sord_free(sord);
 	sord_world_free(world);
 
-	return success ? 0 : 1;
+	return (status > SERD_FAILURE) ? 1 : 0;
 }

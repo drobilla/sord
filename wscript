@@ -8,7 +8,7 @@ from waflib.extras import autowaf as autowaf
 import waflib.Logs as Logs, waflib.Options as Options
 
 # Version of this package (even if built as a child)
-SORD_VERSION       = '0.6.0'
+SORD_VERSION       = '0.6.1'
 SORD_MAJOR_VERSION = '0'
 
 # Library version (UNIX style major, minor, micro)

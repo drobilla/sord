@@ -424,7 +424,7 @@ sord_iter_get(const SordIter* iter, SordQuad id)
 const SordNode*
 sord_iter_get_node(const SordIter* iter, SordQuadIndex index)
 {
-	return ((SordNode**)zix_tree_get(iter->cur))[index];
+	return iter ? ((SordNode**)zix_tree_get(iter->cur))[index] : NULL;
 }
 
 bool
@@ -958,6 +958,10 @@ static SordNode*
 sord_new_uri_counted(SordWorld* world, const uint8_t* str,
                      size_t n_bytes, size_t n_chars, bool copy)
 {
+	if (!serd_uri_string_has_scheme(str)) {
+		return NULL;  // Can't intern relative URIs
+	}
+
 	SordNode* node = sord_lookup_name(world, str);
 	if (node) {
 		if (!copy) {

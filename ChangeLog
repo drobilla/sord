@@ -7,6 +7,7 @@ sord (UNRELEASED) unstable; urgency=low
   * Take advantage of interning in sord_node_equals()
   * Support compilation as C++ under MSVC++.
   * Add sord_iter_get_node()
+  * Refuse to intern relative URIs in sord_new_uri*()
 
  -- David Robillard <d@drobilla.net>  (UNRELEASED)
 

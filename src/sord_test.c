@@ -437,6 +437,24 @@ main(int argc, char** argv)
 		goto fail;
 	}
 
+	// Check relative URI construction
+	SordNode* reluri = sord_new_relative_uri(
+		world, USTR("a/b"), USTR("http://example.org/"));
+	if (strcmp((const char*)sord_node_get_string(reluri),
+	           "http://example.org/a/b")) {
+		fprintf(stderr, "Fail: Bad relative URI constructed: <%s>\n",
+		        sord_node_get_string(reluri));
+		goto fail;
+	}
+	SordNode* reluri2 = sord_new_relative_uri(
+		world, USTR("http://drobilla.net/"), USTR("http://example.org/"));
+	if (strcmp((const char*)sord_node_get_string(reluri2),
+	           "http://drobilla.net/")) {
+		fprintf(stderr, "Fail: Bad relative URI constructed: <%s>\n",
+		        sord_node_get_string(reluri));
+		goto fail;
+	}
+
 	// Check comparison with NULL
 	sord_node_free(world, uri_id);
 	sord_node_free(world, blank_id);

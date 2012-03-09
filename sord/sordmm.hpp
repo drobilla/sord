@@ -221,6 +221,11 @@ class URI : public Node {
 public:
 	inline URI(World& world, const std::string& s)
 		: Node(world, Node::URI, s) {}
+	inline URI(World& world, const std::string& s, const std::string& base)
+		: Node(world, sord_new_relative_uri(world.world(),
+		                                    (const uint8_t*)s.c_str(),
+		                                    (const uint8_t*)base.c_str()))
+	{}
 };
 
 class Curie : public Node {
@@ -406,13 +411,15 @@ public:
 		const std::string& uri,
 		SerdSyntax         syntax = SERD_TURTLE,
 		SerdStyle          style  = (SerdStyle)(SERD_STYLE_ABBREVIATED
-		                                        |SERD_STYLE_CURIED));
+		                                        |SERD_STYLE_CURIED
+		                                        |SERD_STYLE_RESOLVED));
 
 	inline std::string write_to_string(
 		const std::string& base_uri,
 		SerdSyntax         syntax = SERD_TURTLE,
 		SerdStyle          style  = (SerdStyle)(SERD_STYLE_ABBREVIATED
-		                                        |SERD_STYLE_CURIED));
+		                                        |SERD_STYLE_CURIED
+		                                        |SERD_STYLE_RESOLVED));
 
 	inline void add_statement(const Node& subject,
 	                          const Node& predicate,

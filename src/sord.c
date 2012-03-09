@@ -959,6 +959,7 @@ sord_new_uri_counted(SordWorld* world, const uint8_t* str,
                      size_t n_bytes, size_t n_chars, bool copy)
 {
 	if (!serd_uri_string_has_scheme(str)) {
+		fprintf(stderr, "Attempt to map invalid URI `%s'.\n", str);
 		return NULL;  // Can't intern relative URIs
 	}
 
@@ -983,6 +984,25 @@ sord_new_uri(SordWorld* world, const uint8_t* str)
 {
 	const SerdNode node = serd_node_from_string(SERD_URI, str);
 	return sord_new_uri_counted(world, str, node.n_bytes, node.n_chars, true);
+}
+
+SordNode*
+sord_new_relative_uri(SordWorld*     world,
+                      const uint8_t* str,
+                      const uint8_t* base_str)
+{
+	if (serd_uri_string_has_scheme(str)) {
+		return sord_new_uri(world, str);
+	}
+	SerdURI  buri = SERD_URI_NULL;
+	SerdNode base = serd_node_new_uri_from_string(base_str, NULL, &buri);
+	SerdNode node = serd_node_new_uri_from_string(str, &buri, NULL);
+
+	SordNode* ret = sord_new_uri_counted(
+		world, node.buf, node.n_bytes, node.n_chars, false);
+
+	serd_node_free(&base);
+	return ret;
 }
 
 static SordNode*

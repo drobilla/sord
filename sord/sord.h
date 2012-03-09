@@ -161,7 +161,16 @@ sord_world_free(SordWorld* world);
 */
 SORD_API
 SordNode*
-sord_new_uri(SordWorld* world, const uint8_t* str);
+sord_new_uri(SordWorld* world, const uint8_t* uri);
+
+/**
+   Get a URI node from a relative URI string.
+*/
+SORD_API
+SordNode*
+sord_new_relative_uri(SordWorld*     world,
+                      const uint8_t* str,
+                      const uint8_t* base_uri);
 
 /**
    Get a blank node from a string.

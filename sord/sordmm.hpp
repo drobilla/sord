@@ -473,37 +473,35 @@ Model::load_file(SerdEnv*           env,
                  const std::string& data_uri,
                  const std::string& base_uri)
 {
-	if (data_uri.substr(0, 5) != "file:") {
+	uint8_t* path = serd_file_uri_parse((const uint8_t*)data_uri.c_str(), NULL);
+	if (!path) {
+		fprintf(stderr, "Failed to parse file URI <%s>\n", data_uri.c_str());
 		return;
 	}
-
-	const uint8_t* path = (const uint8_t*)(data_uri.c_str() + 5);
 
 	// FIXME: blank prefix parameter?
 	SerdReader* reader = sord_new_reader(_c_obj, env, syntax, NULL);
 	serd_reader_read_file(reader, path);
 	serd_reader_free(reader);
+	free(path);
 }
 
 inline SerdStatus
 Model::write_to_file(const std::string& uri, SerdSyntax syntax, SerdStyle style)
 {
-	if (uri.substr(0, 5) != "file:") {
+	uint8_t* path = serd_file_uri_parse((const uint8_t*)uri.c_str(), NULL);
+	if (!path) {
+		fprintf(stderr, "Failed to parse file URI <%s>\n", uri.c_str());
 		return SERD_ERR_BAD_ARG;
-	}
-
-	const uint8_t* path;
-	if (uri.substr(0, 7) == "file://") {
-		path = (const uint8_t*)uri.c_str() + 7;
-	} else {
-		path = (const uint8_t*)uri.c_str() + 5;
 	}
 
 	FILE* const fd = fopen((const char*)path, "w");
 	if (!fd) {
 		fprintf(stderr, "Failed to open file %s\n", path);
+		free(path);
 		return SERD_ERR_UNKNOWN;
 	}
+	free(path);
 
 	SerdURI base_uri = SERD_URI_NULL;
 	if (serd_uri_parse((const uint8_t*)uri.c_str(), &base_uri)) {

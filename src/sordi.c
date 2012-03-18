@@ -14,9 +14,15 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+#define _BSD_SOURCE  // for realpath
+
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifdef _WIN32
+#    include <windows.h>
+#endif
 
 #include "serd/serd.h"
 #include "sord/sord.h"
@@ -68,6 +74,18 @@ set_syntax(SerdSyntax* syntax, const char* name)
 		return false;
 	}
 	return true;
+}
+
+uint8_t*
+absolute_path(const uint8_t* path)
+{
+#ifdef _WIN32
+	char* out = (char*)malloc(MAX_PATH);
+	GetFullPathName((const char*)path, MAX_PATH, out, NULL);
+	return (uint8_t*)out;
+#else
+	return (uint8_t*)realpath((const char*)path, NULL);
+#endif
 }
 
 int
@@ -124,32 +142,29 @@ main(int argc, char** argv)
 		return 1;
 	}
 
-	const uint8_t* input = (const uint8_t*)argv[a++];
+	const uint8_t* input   = (const uint8_t*)argv[a++];
+	uint8_t*       in_path = NULL; 
 	if (from_file) {
 		in_name = in_name ? in_name : input;
 		if (!in_fd) {
-			input = serd_uri_to_path(in_name);
-			if (!input || !(in_fd = fopen((const char*)input, "rb"))) {
+			in_path = absolute_path(serd_uri_to_path(in_name));
+			if (!in_path || !(in_fd = fopen((const char*)in_path, "rb"))) {
 				return 1;
 			}
 		}
 	}
 
-	const uint8_t* base_uri_str = NULL;
+	SerdURI        base_uri      = SERD_URI_NULL;
+	SerdNode       base_uri_node = SERD_NODE_NULL;
 	if (a < argc) {  // Base URI given on command line
-		base_uri_str = (const uint8_t*)argv[a];
+		base_uri_node = serd_node_new_uri_from_string(
+			(const uint8_t*)argv[a], NULL, &base_uri);
 	} else if (from_file) {  // Use input file URI
-		base_uri_str = input;
-	} else {
-		base_uri_str = (const uint8_t*)"";
+		base_uri_node = serd_node_new_file_uri(in_path, NULL, &base_uri, false);
 	}
 
-	SerdURI  base_uri = SERD_URI_NULL;
-	SerdNode base_uri_node = serd_node_new_uri_from_string(
-		base_uri_str, &base_uri, &base_uri);
-
 	if (!base_uri_node.buf) {
-		fprintf(stderr, "Invalid base URI <%s>\n", base_uri_str);
+		fprintf(stderr, "Missing base URI\n");
 		return 1;
 	}
 

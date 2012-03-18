@@ -75,6 +75,15 @@ typedef struct SordWorldImpl SordWorld;
 typedef struct SordModelImpl SordModel;
 
 /**
+   Model Inserter.
+
+   An inserter is used for writing statements to a model using the Serd sink
+   interface.  This makes it simple to write to a model directly using a
+   SerdReader, or any other code that writes statements to a SerdStatementSink.
+*/
+typedef struct SordInserterImpl SordInserter;
+
+/**
    Model Iterator.
 */
 typedef struct SordIterImpl SordIter;
@@ -387,6 +396,64 @@ sord_add(SordModel* model, const SordQuad quad);
 SORD_API
 void
 sord_remove(SordModel* model, const SordQuad quad);
+
+/**
+   @}
+   @name Inserter
+   @{
+*/
+
+/**
+   Create an inserter for writing statements to a model.
+*/
+SORD_API
+SordInserter*
+sord_inserter_new(SordModel* model,
+                  SerdEnv*   env);
+
+/**
+   Free an inserter.
+*/
+SORD_API
+void
+sord_inserter_free(SordInserter* inserter);
+
+/**
+   Set the current base URI for writing to the model.
+
+   Note this function can be safely casted to SerdBaseSink.
+*/
+SORD_API
+SerdStatus
+sord_inserter_set_base_uri(SordInserter*   inserter,
+                           const SerdNode* uri);
+
+/**
+   Set a namespace prefix for writing to the model.
+
+   Note this function can be safely casted to SerdPrefixSink.
+*/
+SORD_API
+SerdStatus
+sord_inserter_set_prefix(SordInserter*   inserter,
+                         const SerdNode* name,
+                         const SerdNode* uri);
+
+/**
+   Write a statement to the model.
+
+   Note this function can be safely casted to SerdStatementSink.
+*/
+SORD_API
+SerdStatus
+sord_inserter_write_statement(SordInserter*      inserter,
+                              SerdStatementFlags flags,
+                              const SerdNode*    graph,
+                              const SerdNode*    subject,
+                              const SerdNode*    predicate,
+                              const SerdNode*    object,
+                              const SerdNode*    object_datatype,
+                              const SerdNode*    object_lang);
 
 /**
    @}

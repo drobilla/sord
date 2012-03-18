@@ -8,7 +8,7 @@ from waflib.extras import autowaf as autowaf
 import waflib.Logs as Logs, waflib.Options as Options
 
 # Version of this package (even if built as a child)
-SORD_VERSION       = '0.6.1'
+SORD_VERSION       = '0.7.0'
 SORD_MAJOR_VERSION = '0'
 
 # Library version (UNIX style major, minor, micro)
@@ -50,7 +50,7 @@ def configure(conf):
         conf.env.append_unique('CFLAGS', '-std=c99')
 
     autowaf.check_pkg(conf, 'serd-0', uselib_store='SERD',
-                      atleast_version='0.8.0', mandatory=True)
+                      atleast_version='0.14.0', mandatory=True)
 
     conf.env['BUILD_TESTS'] = Options.options.build_tests
     conf.env['BUILD_UTILS'] = True
@@ -278,7 +278,7 @@ def test(ctx):
             'sordi_static %s/tests/UTF-8.ttl > %s' % (srcdir, nul),
             'sordi_static -v > %s' % nul,
             'sordi_static -h > %s' % nul,
-            'sordi_static -s "<foo> a <#Thingie> ." > %s' % nul,
+            'sordi_static -s "<foo> a <#Thingie> ." file:///test > %s' % nul,
             'sordi_static %s > %s' % (nul, nul)],
                       0, name='sordi-cmd-good')
 

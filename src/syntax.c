@@ -23,68 +23,68 @@
 #include "sord_config.h"
 #include "sord_internal.h"
 
-typedef struct {
+struct SordInserterImpl {
+	SordModel* model;
 	SerdEnv*   env;
-	SordNode*  graph_uri_node;
-	SordWorld* world;
-	SordModel* sord;
-} ReadState;
+};
 
-static SerdStatus
-event_base(void*           handle,
-           const SerdNode* uri_node)
+SordInserter*
+sord_inserter_new(SordModel* model,
+                  SerdEnv*   env)
 {
-	ReadState* const state = (ReadState*)handle;
-
-	return serd_env_set_base_uri(state->env, uri_node);
+	SordInserter* inserter = (SordInserter*)malloc(sizeof(SordInserter));
+	inserter->model = model;
+	inserter->env   = env;
+	return inserter;
 }
 
-static SerdStatus
-event_prefix(void*           handle,
-             const SerdNode* name,
-             const SerdNode* uri_node)
+void
+sord_inserter_free(SordInserter* inserter)
 {
-	ReadState* const state = (ReadState*)handle;
-
-	return serd_env_set_prefix(state->env, name, uri_node);
+	free(inserter);
 }
 
-static SerdStatus
-event_statement(void*              handle,
-                SerdStatementFlags flags,
-                const SerdNode*    graph,
-                const SerdNode*    subject,
-                const SerdNode*    predicate,
-                const SerdNode*    object,
-                const SerdNode*    object_datatype,
-                const SerdNode*    object_lang)
+SerdStatus
+sord_inserter_set_base_uri(SordInserter*   inserter,
+                           const SerdNode* uri_node)
 {
-	ReadState* const state = (ReadState*)handle;
+	return serd_env_set_base_uri(inserter->env, uri_node);
+}
 
-	SordNode* s = sord_node_from_serd_node(state->world, state->env,
-	                                       subject, NULL, NULL);
-	SordNode* p = sord_node_from_serd_node(state->world, state->env,
-	                                       predicate, NULL, NULL);
-	SordNode* o = sord_node_from_serd_node(
-		state->world, state->env, object, object_datatype, object_lang);
+SerdStatus
+sord_inserter_set_prefix(SordInserter*   inserter,
+                         const SerdNode* name,
+                         const SerdNode* uri_node)
+{
+	return serd_env_set_prefix(inserter->env, name, uri_node);
+}
 
-	SordNode* g = NULL;
-	if (state->graph_uri_node) {
-		g = sord_node_copy(state->graph_uri_node);
-	} else {
-		g = (graph && graph->buf)
-			? sord_node_from_serd_node(state->world, state->env,
-			                           graph, NULL, NULL)
-			: NULL;
-	}
+SerdStatus
+sord_inserter_write_statement(SordInserter*      inserter,
+                              SerdStatementFlags flags,
+                              const SerdNode*    graph,
+                              const SerdNode*    subject,
+                              const SerdNode*    predicate,
+                              const SerdNode*    object,
+                              const SerdNode*    object_datatype,
+                              const SerdNode*    object_lang)
+{
+	SordWorld* world = sord_get_world(inserter->model);
+	SerdEnv*   env   = inserter->env;
+
+	SordNode* g = sord_node_from_serd_node(world, env, graph, NULL, NULL);
+	SordNode* s = sord_node_from_serd_node(world, env, subject, NULL, NULL);
+	SordNode* p = sord_node_from_serd_node(world, env, predicate, NULL, NULL);
+	SordNode* o = sord_node_from_serd_node(world, env, object,
+	                                       object_datatype, object_lang);
 
 	const SordQuad tup = { s, p, o, g };
-	sord_add(state->sord, tup);
+	sord_add(inserter->model, tup);
 
-	sord_node_free(state->world, s);
-	sord_node_free(state->world, p);
-	sord_node_free(state->world, o);
-	sord_node_free(state->world, g);
+	sord_node_free(world, o);
+	sord_node_free(world, p);
+	sord_node_free(world, s);
+	sord_node_free(world, g);
 
 	return SERD_SUCCESS;
 }
@@ -96,21 +96,26 @@ sord_new_reader(SordModel* model,
                 SerdSyntax syntax,
                 SordNode*  graph)
 {
-	ReadState* state = (ReadState*)malloc(sizeof(ReadState));
-	state->env            = env;
-	state->graph_uri_node = graph;
-	state->world          = sord_get_world(model);
-	state->sord           = model;
-
+	SordInserter* inserter = sord_inserter_new(model, env);
+	
 	SerdReader* reader = serd_reader_new(
-		syntax, state, free,
-		event_base, event_prefix, event_statement, NULL);
+		syntax, inserter, (void (*)(void*))sord_inserter_free,
+		(SerdBaseSink)sord_inserter_set_base_uri,
+		(SerdPrefixSink)sord_inserter_set_prefix,
+		(SerdStatementSink)sord_inserter_write_statement,
+		NULL);
+
+	if (graph) {
+		serd_reader_set_default_graph(reader, sord_node_to_serd_node(graph));
+	}
 
 	return reader;
 }
 
 static void
-write_statement(SordModel* sord, SerdWriter* writer, SordQuad tup,
+write_statement(SordModel*         sord,
+                SerdWriter*        writer,
+                SordQuad           tup,
                 SerdStatementFlags flags)
 {
 	const SordNode* s  = tup[SORD_SUBJECT];

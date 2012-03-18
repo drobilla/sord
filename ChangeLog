@@ -9,6 +9,7 @@ sord (UNRELEASED) unstable; urgency=low
   * Add sord_iter_get_node()
   * Refuse to intern relative URIs in sord_new_uri*()
   * Add sord_new_relative_uri()
+  * Add SordInserter for writing to a model via Serd sink functions.
 
  -- David Robillard <d@drobilla.net>  (UNRELEASED)
 

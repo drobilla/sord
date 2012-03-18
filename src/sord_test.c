@@ -413,7 +413,7 @@ main(int argc, char** argv)
 
 	// Check interning doesn't clash non-equivalent values
 	SordNode* uri_id3   = sord_new_uri(world, USTR("http://example.orgX"));
-	SordNode* blank_id3 = sord_new_uri(world, USTR("testblankX"));
+	SordNode* blank_id3 = sord_new_blank(world, USTR("testblankX"));
 	SordNode* lit_id3   = sord_new_literal(world, uri_id, USTR("helloX"), NULL);
 	if (uri_id3 == uri_id || sord_node_equals(uri_id3, uri_id)) {
 		fprintf(stderr, "Fail: URI interning failed (clash)\n");

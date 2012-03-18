@@ -113,8 +113,7 @@ struct SordModelImpl {
 	SordWorld* world;
 
 	/** Index for each possible triple ordering (may or may not exist).
-	 * If an index for e.g. SPO exists, it is a dictionary with
-	 * (S P O) keys (as a SordTuplrID), and ignored values.
+	 * Each index is a tree of SordQuad with the appropriate ordering.
 	 */
 	ZixTree* indices[NUM_ORDERS];
 

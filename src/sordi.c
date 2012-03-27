@@ -143,7 +143,7 @@ main(int argc, char** argv)
 	}
 
 	const uint8_t* input   = (const uint8_t*)argv[a++];
-	uint8_t*       in_path = NULL; 
+	uint8_t*       in_path = NULL;
 	if (from_file) {
 		in_name = in_name ? in_name : input;
 		if (!in_fd) {

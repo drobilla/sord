@@ -367,12 +367,46 @@ SordIter*
 sord_begin(const SordModel* model);
 
 /**
-   Search for a triple pattern.
+   Search for statements by a quad pattern.
    @return an iterator to the first match, or NULL if no matches found.
 */
 SORD_API
 SordIter*
 sord_find(SordModel* model, const SordQuad pat);
+
+/**
+   Search for statements by nodes.
+   @return an iterator to the first match, or NULL if no matches found.
+*/
+SORD_API
+SordIter*
+sord_search(SordModel*      model,
+            const SordNode* s,
+            const SordNode* p,
+            const SordNode* o,
+            const SordNode* g);
+
+/**
+   Return true iff a statement exists.
+*/
+SORD_API
+bool
+sord_ask(SordModel*      model,
+         const SordNode* s,
+         const SordNode* p,
+         const SordNode* o,
+         const SordNode* g);
+
+/**
+   Return the number of matching statements.
+*/
+SORD_API
+uint64_t
+sord_count(SordModel*      model,
+           const SordNode* s,
+           const SordNode* p,
+           const SordNode* o,
+           const SordNode* g);
 
 /**
    Check if @a model contains a triple pattern.

@@ -154,8 +154,8 @@ main(int argc, char** argv)
 		}
 	}
 
-	SerdURI        base_uri      = SERD_URI_NULL;
-	SerdNode       base_uri_node = SERD_NODE_NULL;
+	SerdURI  base_uri      = SERD_URI_NULL;
+	SerdNode base_uri_node = SERD_NODE_NULL;
 	if (a < argc) {  // Base URI given on command line
 		base_uri_node = serd_node_new_uri_from_string(
 			(const uint8_t*)argv[a], NULL, &base_uri);

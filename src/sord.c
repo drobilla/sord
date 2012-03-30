@@ -816,6 +816,44 @@ sord_find(SordModel* sord, const SordQuad pat)
 	return sord_iter_new(sord, cur, pat, index_order, mode, n_prefix);
 }
 
+SordIter*
+sord_search(SordModel*      model,
+            const SordNode* s,
+            const SordNode* p,
+            const SordNode* o,
+            const SordNode* g)
+{
+	SordQuad pat = { s, p, o, g };
+	return sord_find(model, pat);
+}
+
+bool
+sord_ask(SordModel*      model,
+         const SordNode* s,
+         const SordNode* p,
+         const SordNode* o,
+         const SordNode* g)
+{
+	SordQuad pat = { s, p, o, g };
+	return sord_contains(model, pat);
+}
+
+uint64_t
+sord_count(SordModel*      model,
+           const SordNode* s,
+           const SordNode* p,
+           const SordNode* o,
+           const SordNode* g)
+{
+	SordIter* i = sord_search(model, s, p, o, g);
+	uint64_t  n = 0;
+	for (; !sord_iter_end(i); sord_iter_next(i)) {
+		++n;
+	}
+	sord_iter_free(i);
+	return n;
+}
+
 bool
 sord_contains(SordModel* sord, const SordQuad pat)
 {

@@ -51,6 +51,7 @@ def configure(conf):
 
     autowaf.check_pkg(conf, 'serd-0', uselib_store='SERD',
                       atleast_version='0.14.0', mandatory=True)
+    autowaf.check_pkg(conf, 'libpcre', uselib_store='PCRE', mandatory=False)
 
     conf.env['BUILD_TESTS'] = Options.options.build_tests
     conf.env['BUILD_UTILS'] = True
@@ -198,16 +199,17 @@ def build(bld):
                   defines      = defines)
         autowaf.use_lib(bld, obj, 'SERD')
 
-    # Command line utility
+    # Command line utilities
     if bld.env['BUILD_UTILS']:
-        obj = bld(features     = 'c cprogram',
-                  source       = 'src/sordi.c',
-                  includes     = ['.', './src'],
-                  use          = 'libsord',
-                  target       = 'sordi',
-                  install_path = '${BINDIR}',
-                  defines      = defines)
-        autowaf.use_lib(bld, obj, 'SERD')
+        for i in ['sordi', 'sord_validate']:
+            obj = bld(features     = 'c cprogram',
+                      source       = 'src/%s.c' % i,
+                      includes     = ['.', './src'],
+                      use          = 'libsord',
+                      target       = i,
+                      install_path = '${BINDIR}',
+                      defines      = defines)
+            autowaf.use_lib(bld, obj, 'SERD PCRE')
 
     # Documentation
     autowaf.build_dox(bld, 'SORD', SORD_VERSION, top, out)

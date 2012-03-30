@@ -10,6 +10,8 @@ sord (UNRELEASED) unstable; urgency=low
   * Refuse to intern relative URIs in sord_new_uri*()
   * Add sord_new_relative_uri()
   * Add SordInserter for writing to a model via Serd sink functions.
+  * Add convenient sord_search(), sord_ask(), and sord_count()
+  * Add sord_validate tool for validating data against RDF/OWL schemas
 
  -- David Robillard <d@drobilla.net>  (UNRELEASED)
 

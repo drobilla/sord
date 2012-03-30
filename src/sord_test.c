@@ -21,9 +21,9 @@
 
 #include "sord/sord.h"
 
-static const int DIGITS  = 3;
-static const int MAX_NUM = 999;
-static const int n_objects_per = 2;
+static const int      DIGITS        = 3;
+static const int      MAX_NUM       = 999;
+static const unsigned n_objects_per = 2;
 
 typedef struct {
 	SordQuad query;
@@ -68,18 +68,18 @@ generate(SordWorld* world,
 		int num = (i * n_objects_per) + 1;
 
 		SordNode* ids[2 + n_objects_per];
-		for (int j = 0; j < 2 + n_objects_per; ++j) {
+		for (unsigned j = 0; j < 2 + n_objects_per; ++j) {
 			ids[j] = uri(world, num++);
 		}
 
-		for (int j = 0; j < n_objects_per; ++j) {
+		for (unsigned j = 0; j < n_objects_per; ++j) {
 			SordQuad tup = { ids[0], ids[1], ids[2 + j] };
 			if (!sord_add(sord, tup)) {
 				return test_fail("Fail: Failed to add quad\n");
 			}
 		}
 
-		for (int j = 0; j < 2 + n_objects_per; ++j) {
+		for (unsigned j = 0; j < 2 + n_objects_per; ++j) {
 			sord_node_free(world, ids[j]);
 		}
 	}
@@ -290,9 +290,8 @@ test_read(SordWorld* world, SordModel* sord, SordNode* g,
 
 	// Test nested queries
 	fprintf(stderr, "Nested Queries... ");
-	pat[0] = pat[1] = pat[2] = 0;
 	const SordNode* last_subject = 0;
-	iter = sord_find(sord, pat);
+	iter = sord_search(sord, NULL, NULL, NULL, NULL);
 	for (; !sord_iter_end(iter); sord_iter_next(iter)) {
 		sord_iter_get(iter, id);
 		if (id[0] == last_subject)
@@ -300,7 +299,7 @@ test_read(SordWorld* world, SordModel* sord, SordNode* g,
 
 		SordQuad  subpat          = { id[0], 0, 0 };
 		SordIter* subiter         = sord_find(sord, subpat);
-		int       num_sub_results = 0;
+		uint64_t  num_sub_results = 0;
 		if (sord_iter_get_node(subiter, SORD_SUBJECT) != id[0]) {
 			return test_fail("Fail: Incorrect initial submatch\n");
 		}
@@ -322,6 +321,14 @@ test_read(SordWorld* world, SordModel* sord, SordNode* g,
 				" (%d results, expected %d)\n",
 				TUP_FMT_ARGS(subpat), num_sub_results, n_objects_per);
 		}
+
+		uint64_t count = sord_count(sord, id[0], 0, 0, 0);
+		if (count != num_sub_results) {
+			return test_fail("Fail: Query " TUP_FMT " sord_count() %d"
+			                 "does not match result count %d\n",
+			                 TUP_FMT_ARGS(subpat), count, num_sub_results);
+		}
+
 		last_subject = id[0];
 	}
 	fprintf(stderr, "OK\n\n");
@@ -501,6 +508,10 @@ main(int argc, char** argv)
 	tup[2] = sord_new_literal(world, 0, USTR("hello"), NULL);
 	tup[3] = 0;
 	sord_add(sord, tup);
+	if (!sord_ask(sord, tup[0], tup[1], tup[2], tup[3])) {
+		fprintf(stderr, "Failed to add tuple\n");
+		goto fail;
+	}
 	sord_node_free(world, (SordNode*)tup[2]);
 	tup[2] = sord_new_literal(world, 0, USTR("hi"), NULL);
 	sord_add(sord, tup);

@@ -117,20 +117,20 @@ error(const char* msg, const SordQuad quad)
 bool
 is_subclass_of(SordModel*      model,
                const URIs*     uris,
-               const SordNode* class,
+               const SordNode* klass,
                const SordNode* super)
 {
-	if (!class) {
+	if (!klass) {
 		return false;
-	} else if (sord_node_equals(class, super) ||
-	           sord_ask(model, class, uris->owl_equivalentClass, super, NULL)) {
+	} else if (sord_node_equals(klass, super) ||
+	           sord_ask(model, klass, uris->owl_equivalentClass, super, NULL)) {
 		return true;
 	}
 
-	SordIter* i = sord_search(model, class, uris->rdfs_subClassOf, NULL, NULL);
+	SordIter* i = sord_search(model, klass, uris->rdfs_subClassOf, NULL, NULL);
 	for (; !sord_iter_end(i); sord_iter_next(i)) {
 		const SordNode* o = sord_iter_get_node(i, SORD_OBJECT);
-		if (sord_node_equals(class, o)) {
+		if (sord_node_equals(klass, o)) {
 			continue;  // Class is explicitly subClassOf itself
 		}
 		if (is_subclass_of(model, uris, o, super)) {
@@ -272,30 +272,29 @@ main(int argc, char** argv)
 	}
 
 #define URI(prefix, suffix) \
-	.prefix##_##suffix = sord_new_uri(world, NS_##prefix #suffix)
+	uris.prefix##_##suffix = sord_new_uri(world, NS_##prefix #suffix)
 
-	URIs uris = {
-		URI(foaf, Document),
-		URI(owl, AnnotationProperty),
-		URI(owl, Class),
-		URI(owl, DatatypeProperty),
-		URI(owl, FunctionalProperty),
-		URI(owl, InverseFunctionalProperty),
-		URI(owl, ObjectProperty),
-		URI(owl, OntologyProperty),
-		URI(owl, Thing),
-		URI(owl, equivalentClass),
-		URI(rdf, Property),
-		URI(rdf, type),
-		URI(rdfs, Class),
-		URI(rdfs, Literal),
-		URI(rdfs, Resource),
-		URI(rdfs, domain),
-		URI(rdfs, range),
-		URI(rdfs, subClassOf),
-		URI(xsd, pattern),
-		URI(xsd, string)
-	};
+	URIs uris;
+	URI(foaf, Document);
+	URI(owl, AnnotationProperty);
+	URI(owl, Class);
+	URI(owl, DatatypeProperty);
+	URI(owl, FunctionalProperty);
+	URI(owl, InverseFunctionalProperty);
+	URI(owl, ObjectProperty);
+	URI(owl, OntologyProperty);
+	URI(owl, Thing);
+	URI(owl, equivalentClass);
+	URI(rdf, Property);
+	URI(rdf, type);
+	URI(rdfs, Class);
+	URI(rdfs, Literal);
+	URI(rdfs, Resource);
+	URI(rdfs, domain);
+	URI(rdfs, range);
+	URI(rdfs, subClassOf);
+	URI(xsd, pattern);
+	URI(xsd, string);
 
 #ifndef HAVE_PCRE
 	fprintf(stderr, "warning: Built without PCRE, datatypes not checked.\n");

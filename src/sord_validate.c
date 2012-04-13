@@ -63,7 +63,8 @@ typedef struct {
 	SordNode* xsd_string;
 } URIs;
 
-int n_errors = 0;
+int  n_errors        = 0;
+bool one_line_errors = false;
 
 int
 print_version()
@@ -81,12 +82,14 @@ int
 print_usage(const char* name, bool error)
 {
 	FILE* const os = error ? stderr : stdout;
-	fprintf(os, "Usage: %s INPUT...\n", name);
+	fprintf(os, "Usage: %s [OPTION]... INPUT...\n", name);
+	fprintf(os, "Validate RDF data\n\n");
+	fprintf(os, "  -l  Print errors on a single line.\n");
 	fprintf(os,
 	        "Validate RDF data.  This is a simple validator which checks\n"
-	        "that all used properties are actually defined.  It does not"
-	        "do any fancy file retrieval, the files passed on the command line"
-	        "are the only data that is read.  In other words, you must pass"
+	        "that all used properties are actually defined.  It does not do\n"
+	        "any fancy file retrieval, the files passed on the command line\n"
+	        "are the only data that is read.  In other words, you must pass\n"
 	        "the definition of all vocabularies used on the command line.\n");
 	return error ? 1 : 0;
 }
@@ -106,12 +109,13 @@ absolute_path(const uint8_t* path)
 void
 error(const char* msg, const SordQuad quad)
 {
+	const char* sep = one_line_errors ? "\t" : "\n       ";
 	++n_errors;
-	fprintf(stderr, "error: %s:\n       %s\n       %s\n       %s\n",
+	fprintf(stderr, "error: %s:%s%s%s%s%s%s\n",
 	        msg,
-	        (const char*)sord_node_get_string(quad[SORD_SUBJECT]),
-	        (const char*)sord_node_get_string(quad[SORD_PREDICATE]),
-	        (const char*)sord_node_get_string(quad[SORD_OBJECT]));
+	        sep, (const char*)sord_node_get_string(quad[SORD_SUBJECT]),
+	        sep, (const char*)sord_node_get_string(quad[SORD_PREDICATE]),
+	        sep, (const char*)sord_node_get_string(quad[SORD_OBJECT]));
 }
 
 bool
@@ -243,12 +247,22 @@ main(int argc, char** argv)
 		return print_usage(argv[0], true);
 	}
 
+	int a = 1;
+	for (; a < argc && argv[a][0] == '-'; ++a) {
+		if (argv[a][1] == 'l') {
+			one_line_errors = true;
+		} else {
+			fprintf(stderr, "%s: Unknown option `%s'\n", argv[0], argv[a]);
+			return print_usage(argv[0], true);
+		}
+	}
+
 	SordWorld*  world  = sord_world_new();
 	SordModel*  model  = sord_new(world, SORD_SPO|SORD_OPS, false);
 	SerdEnv*    env    = serd_env_new(&SERD_NODE_NULL);
 	SerdReader* reader = sord_new_reader(model, env, SERD_TURTLE, NULL);
 
-	for (int a = 1; a < argc; ++a) {
+	for (; a < argc; ++a) {
 		const uint8_t* input   = (const uint8_t*)argv[a];
 		uint8_t*       in_path = absolute_path(serd_uri_to_path(input));
 

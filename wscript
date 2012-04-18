@@ -236,9 +236,9 @@ def fix_docs(ctx):
         os.chdir(build_dir(ctx, 'doc/html'))
         os.system("sed -i 's/SORD_API //' group__sord.html")
         os.system("sed -i 's/SORD_DEPRECATED //' group__sord.html")
+        os.system("sed -i 's/href=\"doc\/style.css\"/href=\"style.css\"/' group__sord.html")
         os.remove('index.html')
-        os.symlink('group__sord.html',
-                   'index.html')
+        os.symlink('group__sord.html', 'index.html')
         os.chdir(top)
         os.chdir(build_dir(ctx, 'doc/man/man3'))
         os.system("sed -i 's/SORD_API //' sord.3")

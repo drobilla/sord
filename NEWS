@@ -1,3 +1,10 @@
+sord (9999) unstable;
+
+  * sordmm.hpp: Add indices and graphs parameters to Model constructor
+  * sordmm.hpp: Remove overzealous URI scheme assertion
+
+ -- David Robillard <d@drobilla.net>
+
 sord (0.8.0) stable;
 
   * Use path variables in pkgconfig files

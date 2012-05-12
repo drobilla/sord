@@ -246,10 +246,6 @@ Node::Node(World& world, Type type, const std::string& s)
 {
 	switch (type) {
 	case URI:
-		assert(s.find(":") == std::string::npos
-		       || s.substr(0, 5) == "http:"
-		       || s.substr(0, 5) == "file:"
-		       || s.substr(0, 4) == "urn:");
 		_c_obj = sord_new_uri(
 			world.world(), (const unsigned char*)s.c_str());
 		break;
@@ -389,7 +385,11 @@ struct Iter : public Wrapper<SordIter*> {
  */
 class Model : public Noncopyable, public Wrapper<SordModel*> {
 public:
-	inline Model(World& world, const std::string& base_uri=".");
+	inline Model(World&             world,
+	             const std::string& base_uri,
+	             unsigned           indices = (SORD_SPO | SORD_OPS),
+	             bool               graphs  = true);
+
 	inline ~Model();
 
 	inline const Node& base_uri() const { return _base; }
@@ -441,13 +441,15 @@ private:
 /** Create an empty in-memory RDF model.
  */
 inline
-Model::Model(World& world, const std::string& base_uri)
+Model::Model(World&             world,
+             const std::string& base_uri,
+             unsigned           indices,
+             bool               graphs)
 	: _world(world)
 	, _base(world, Node::URI, base_uri)
 	, _writer(NULL)
 {
-	// FIXME: parameters
-	_c_obj = sord_new(_world.world(), SORD_SPO|SORD_OPS, true);
+	_c_obj = sord_new(_world.world(), indices, graphs);
 }
 
 inline void

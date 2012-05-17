@@ -20,6 +20,6 @@ int
 main(int argc, char** argv)
 {
 	Sord::World world;
-	Sord::Model model(world);
+	Sord::Model model(world, "http://example.org/");
 	return 0;
 }

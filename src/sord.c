@@ -102,10 +102,12 @@ static const int orderings[NUM_ORDERS][TUP_LEN] = {
 
 /** World */
 struct SordWorldImpl {
-	ZixHash* names;     ///< URI or blank node identifier string => ID
-	ZixHash* langs;     ///< Language tag => Interned language tag
-	ZixHash* literals;  ///< Literal => ID
-	size_t   n_nodes;   ///< Number of nodes
+	ZixHash*      names;  ///< URI or blank node identifier string => ID
+	ZixHash*      langs;  ///< Language tag => Interned language tag
+	ZixHash*      literals;  ///< Literal => ID
+	size_t        n_nodes;  ///< Number of nodes
+	SerdErrorSink error_sink;
+	void*         error_handle;
 };
 
 /** Store */
@@ -161,6 +163,21 @@ sord_literal_equal(const void* a, const void* b)
 		    && (a_node->datatype == b_node->datatype));
 }
 
+static void
+error(SordWorld* world, SerdStatus st, const char* fmt, ...)
+{
+	va_list args;
+	va_start(args, fmt);
+	const SerdError e = { st, NULL, 0, 0, fmt, &args };
+	if (world->error_sink) {
+		world->error_sink(world->error_handle, &e);
+	} else {
+		fprintf(stderr, "error: %s:%u:%u: ", e.filename, e.line, e.col);
+		vfprintf(stderr, fmt, args);
+	}
+	va_end(args);
+}
+
 SordWorld*
 sord_world_new(void)
 {
@@ -199,6 +216,15 @@ sord_world_free(SordWorld* world)
 	zix_hash_free(world->langs);
 	zix_hash_free(world->literals);
 	free(world);
+}
+
+void
+sord_world_set_error_sink(SordWorld*    world,
+                          SerdErrorSink error_sink,
+                          void*         handle)
+{
+	world->error_sink   = error_sink;
+	world->error_handle = handle;
 }
 
 /** Compare nodes, considering NULL a wildcard match. */
@@ -643,13 +669,15 @@ sord_node_free_internal(SordWorld* world, SordNode* node)
 	assert(node->refs == 0);
 	if (node->node.type == SERD_LITERAL) {
 		if (zix_hash_remove(world->literals, node)) {
-			fprintf(stderr, "Failed to remove literal from hash.\n");
+			error(world, SERD_ERR_INTERNAL,
+			      "failed to remove literal from hash\n");
 			return;
 		}
 		sord_node_free(world, node->datatype);
 	} else {
 		if (zix_hash_remove(world->names, node->node.buf)) {
-			fprintf(stderr, "Failed to remove resource from hash.\n");
+			error(world, SERD_ERR_INTERNAL,
+			      "failed to remove resource from hash\n");
 			return;
 		}
 	}
@@ -943,7 +971,7 @@ sord_node_get_type(const SordNode* node)
 	case SERD_URI:
 		return SORD_URI;
 	default:
-		fprintf(stderr, "sord: error: Illegal node type.\n");
+		fprintf(stderr, "error: invalid node type\n");
 		return (SordNodeType)0;
 	}
 }
@@ -996,7 +1024,8 @@ sord_new_uri_counted(SordWorld* world, const uint8_t* str,
                      size_t n_bytes, size_t n_chars, bool copy)
 {
 	if (!serd_uri_string_has_scheme(str)) {
-		fprintf(stderr, "Attempt to map invalid URI `%s'.\n", str);
+		error(world, SERD_ERR_BAD_ARG,
+		      "attempt to map invalid URI `%s'\n", str);
 		return NULL;  // Can't intern relative URIs
 	}
 
@@ -1154,7 +1183,8 @@ sord_node_from_serd_node(SordWorld*      world,
 		SerdChunk uri_prefix;
 		SerdChunk uri_suffix;
 		if (serd_env_expand(env, sn, &uri_prefix, &uri_suffix)) {
-			fprintf(stderr, "Failed to expand qname `%s'\n", sn->buf);
+			error(world, SERD_ERR_BAD_CURIE,
+			      "failed to expand CURIE `%s'\n", sn->buf);
 			return NULL;
 		}
 		const size_t uri_len = uri_prefix.len + uri_suffix.len;
@@ -1213,7 +1243,8 @@ sord_add(SordModel* sord, const SordQuad tup)
 {
 	SORD_WRITE_LOG("Add " TUP_FMT "\n", TUP_FMT_ARGS(tup));
 	if (!tup[0] || !tup[1] || !tup[2]) {
-		fprintf(stderr, "Attempt to add quad with NULL field.\n");
+		error(sord->world, SERD_ERR_BAD_ARG,
+		      "attempt to add quad with NULL field\n");
 		return false;
 	}
 

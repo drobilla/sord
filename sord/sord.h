@@ -157,6 +157,18 @@ void
 sord_world_free(SordWorld* world);
 
 /**
+   Set a function to be called when errors occur.
+
+   The @p error_sink will be called with @p handle as its first argument.  If
+   no error function is set, errors are printed to stderr.
+*/
+SORD_API
+void
+sord_world_set_error_sink(SordWorld*    world,
+                          SerdErrorSink error_sink,
+                          void*         handle);
+
+/**
    @}
    @name Node
    @{

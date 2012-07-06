@@ -172,7 +172,7 @@ error(SordWorld* world, SerdStatus st, const char* fmt, ...)
 	if (world->error_sink) {
 		world->error_sink(world->error_handle, &e);
 	} else {
-		fprintf(stderr, "error: %s:%u:%u: ", e.filename, e.line, e.col);
+		fprintf(stderr, "error: ");
 		vfprintf(stderr, fmt, args);
 	}
 	va_end(args);

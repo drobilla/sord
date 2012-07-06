@@ -182,10 +182,12 @@ SordWorld*
 sord_world_new(void)
 {
 	SordWorld* world = (SordWorld*)malloc(sizeof(SordWorld));
-	world->names    = zix_hash_new(zix_string_hash, zix_string_equal);
-	world->langs    = zix_hash_new(zix_string_hash, zix_string_equal);
-	world->literals = zix_hash_new(sord_literal_hash, sord_literal_equal);
-	world->n_nodes  = 0;
+	world->names        = zix_hash_new(zix_string_hash, zix_string_equal);
+	world->langs        = zix_hash_new(zix_string_hash, zix_string_equal);
+	world->literals     = zix_hash_new(sord_literal_hash, sord_literal_equal);
+	world->n_nodes      = 0;
+	world->error_sink   = NULL;
+	world->error_handle = NULL;
 	return world;
 }
 

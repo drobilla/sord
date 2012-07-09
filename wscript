@@ -224,33 +224,15 @@ def build(bld):
 def lint(ctx):
     subprocess.call('cpplint.py --filter=+whitespace/comments,-whitespace/tab,-whitespace/braces,-whitespace/labels,-build/header_guard,-readability/casting,-readability/todo,-build/include src/*.* sord/* src/zix/*.*', shell=True)
 
-def build_dir(ctx, subdir):
-    if autowaf.is_child():
-        return os.path.join('build', APPNAME, subdir)
-    else:
-        return os.path.join('build', subdir)
-    
 def fix_docs(ctx):
-    try:
-        top = os.getcwd()
-        os.chdir(build_dir(ctx, 'doc/html'))
-        os.system("sed -i 's/SORD_API //' group__sord.html")
-        os.system("sed -i 's/SORD_DEPRECATED //' group__sord.html")
-        os.system("sed -i 's/href=\"doc\/style.css\"/href=\"style.css\"/' group__sord.html")
-        os.remove('index.html')
-        os.symlink('group__sord.html', 'index.html')
-        os.chdir(top)
-        os.chdir(build_dir(ctx, 'doc/man/man3'))
-        os.system("sed -i 's/SORD_API //' sord.3")
-        os.chdir(top)
-    except:
-        Logs.error("Failed to fix up %s documentation" % APPNAME)
+    if ctx.cmd == 'build':
+        autowaf.make_simple_dox(APPNAME)
 
 def upload_docs(ctx):
     os.system("rsync -ravz --delete -e ssh build/doc/html/ drobilla@drobilla.net:~/drobilla.net/docs/sord/")
 
 def test(ctx):
-    blddir = build_dir(ctx, 'tests')
+    blddir = autowaf.build_dir(APPNAME, 'tests')
     try:
         os.makedirs(blddir)
     except:

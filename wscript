@@ -125,9 +125,8 @@ def build(bld):
               vnum            = SORD_LIB_VERSION,
               install_path    = '${LIBDIR}',
               libs            = libs,
-              defines         = defines,
-              cflags          = libflags + [ '-DSORD_SHARED',
-                                             '-DSORD_INTERNAL' ])
+              defines         = defines + ['SORD_SHARED', 'SORD_INTERNAL'],
+              cflags          = libflags)
     autowaf.use_lib(bld, obj, 'SERD')
 
     # Static Library
@@ -141,7 +140,7 @@ def build(bld):
                   vnum            = SORD_LIB_VERSION,
                   install_path    = '${LIBDIR}',
                   libs            = libs,
-                  cflags          = [ '-DSORD_INTERNAL' ])
+                  defines         = ['SORD_INTERNAL'])
         autowaf.use_lib(bld, obj, 'SERD')
 
     if bld.env['BUILD_TESTS']:

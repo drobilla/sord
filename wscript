@@ -29,10 +29,16 @@ def options(opt):
     opt.load('compiler_c')
     opt.load('compiler_cxx')
     autowaf.set_options(opt)
+    opt.add_option('--no-utils', action='store_true', dest='no_utils',
+                   help="Do not build command line utilities")
     opt.add_option('--test', action='store_true', dest='build_tests',
                    help="Build unit tests")
     opt.add_option('--static', action='store_true', dest='static',
                    help="Build static library")
+    opt.add_option('--no-shared', action='store_true', dest='no_shared',
+                   help="Do not build shared library")
+    opt.add_option('--static-progs', action='store_true', dest='static_progs',
+                   help="Build programs as static binaries")
     opt.add_option('--dump', type='string', default='', dest='dump',
                    help="Dump debugging output (iter, search, write, all)")
 
@@ -53,8 +59,11 @@ def configure(conf):
     autowaf.check_pkg(conf, 'libpcre', uselib_store='PCRE', mandatory=False)
 
     conf.env.BUILD_TESTS  = Options.options.build_tests
-    conf.env.BUILD_UTILS  = True
-    conf.env.BUILD_STATIC = Options.options.static
+    conf.env.BUILD_UTILS  = not Options.options.no_utils
+    conf.env.BUILD_SHARED = not Options.options.no_shared
+    conf.env.STATIC_PROGS = Options.options.static_progs
+    conf.env.BUILD_STATIC = (Options.options.static or
+                             Options.options.static_progs)
 
     # Check for gcov library (for test coverage)
     if conf.env.BUILD_TESTS:
@@ -116,19 +125,20 @@ def build(bld):
         defines  = ['snprintf=_snprintf']
 
     # Shared Library
-    obj = bld(features        = 'c cshlib',
-              source          = source,
-              includes        = ['.', './src'],
-              export_includes = ['.'],
-              name            = 'libsord',
-              target          = 'sord-%s' % SORD_MAJOR_VERSION,
-              vnum            = SORD_LIB_VERSION,
-              install_path    = '${LIBDIR}',
-              libs            = libs,
-              defines         = defines + ['SORD_SHARED', 'SORD_INTERNAL'],
-              cflags          = libflags)
-    autowaf.use_lib(bld, obj, 'SERD')
-
+    if bld.env.BUILD_SHARED:
+        obj = bld(features        = 'c cshlib',
+                  source          = source,
+                  includes        = ['.', './src'],
+                  export_includes = ['.'],
+                  name            = 'libsord',
+                  target          = 'sord-%s' % SORD_MAJOR_VERSION,
+                  vnum            = SORD_LIB_VERSION,
+                  install_path    = '${LIBDIR}',
+                  libs            = libs,
+                  defines         = defines + ['SORD_SHARED', 'SORD_INTERNAL'],
+                  cflags          = libflags)
+        autowaf.use_lib(bld, obj, 'SERD')
+    
     # Static Library
     if bld.env.BUILD_STATIC:
         obj = bld(features        = 'c cstlib',
@@ -150,7 +160,7 @@ def build(bld):
             test_libs   += ['gcov']
             test_cflags += ['-fprofile-arcs', '-ftest-coverage']
 
-        # Static profiled library (for unit test code coverage)
+        # Profiled static library for test coverage
         obj = bld(features     = 'c cstlib',
                   source       = source,
                   includes     = ['.', './src'],
@@ -174,7 +184,7 @@ def build(bld):
                   cflags       = test_cflags)
         autowaf.use_lib(bld, obj, 'SERD')
 
-        # Static profiled sordi build
+        # Static profiled sordi for tests
         obj = bld(features     = 'c cprogram',
                   source       = 'src/sordi.c',
                   includes     = ['.', './src'],
@@ -197,16 +207,22 @@ def build(bld):
                   defines      = defines)
         autowaf.use_lib(bld, obj, 'SERD')
 
-    # Command line utilities
+    # Utilities
     if bld.env.BUILD_UTILS:
         for i in ['sordi', 'sord_validate']:
             obj = bld(features     = 'c cprogram',
                       source       = 'src/%s.c' % i,
                       includes     = ['.', './src'],
                       use          = 'libsord',
+                      lib          = libs, 
                       target       = i,
                       install_path = '${BINDIR}',
                       defines      = defines)
+            if not bld.env.BUILD_SHARED or bld.env.STATIC_PROGS:
+                obj.use = 'libsord_static'
+            if bld.env.STATIC_PROGS:
+                obj.env.SHLIB_MARKER = obj.env.STLIB_MARKER
+                obj.linkflags        = ['-static']
             autowaf.use_lib(bld, obj, 'SERD PCRE')
 
     # Documentation

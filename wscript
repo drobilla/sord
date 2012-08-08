@@ -29,12 +29,12 @@ def options(opt):
     opt.load('compiler_c')
     opt.load('compiler_cxx')
     autowaf.set_options(opt)
-    opt.add_option('--test', action='store_true', default=False, dest='build_tests',
+    opt.add_option('--test', action='store_true', dest='build_tests',
                    help="Build unit tests")
+    opt.add_option('--static', action='store_true', dest='static',
+                   help="Build static library")
     opt.add_option('--dump', type='string', default='', dest='dump',
                    help="Dump debugging output (iter, search, write, all)")
-    opt.add_option('--static', action='store_true', default=False, dest='static',
-                   help="Build static library")
 
 def configure(conf):
     conf.load('compiler_c')
@@ -42,7 +42,7 @@ def configure(conf):
     autowaf.configure(conf)
     autowaf.display_header('Sord configuration')
 
-    if conf.env['MSVC_COMPILER']:
+    if conf.env.MSVC_COMPILER:
         conf.env.append_unique('CFLAGS',   ['-TP', '-MD'])
         conf.env.append_unique('CXXFLAGS', ['-TP', '-MD'])
     else:
@@ -52,12 +52,12 @@ def configure(conf):
                       atleast_version='0.14.0', mandatory=True)
     autowaf.check_pkg(conf, 'libpcre', uselib_store='PCRE', mandatory=False)
 
-    conf.env['BUILD_TESTS'] = Options.options.build_tests
-    conf.env['BUILD_UTILS'] = True
-    conf.env['BUILD_STATIC'] = Options.options.static
+    conf.env.BUILD_TESTS  = Options.options.build_tests
+    conf.env.BUILD_UTILS  = True
+    conf.env.BUILD_STATIC = Options.options.static
 
     # Check for gcov library (for test coverage)
-    if conf.env['BUILD_TESTS']:
+    if conf.env.BUILD_TESTS:
         conf.check_cc(lib='gcov',
                       define_name='HAVE_GCOV',
                       mandatory=False)
@@ -78,20 +78,20 @@ def configure(conf):
         conf.env[var] = val
         Logs.warn("Warning: %s unset, using %s\n" % (var, val))
         
-    conf.env['INCLUDES_SORD'] = ['${includedir}/sord-%s' % SORD_MAJOR_VERSION]
-    if not conf.env['INCLUDES_SERD']:
+    conf.env.INCLUDES_SORD = ['${includedir}/sord-%s' % SORD_MAJOR_VERSION]
+    if not conf.env.INCLUDES_SERD:
         fallback('INCLUDES_SERD', ['${includedir}/serd-0'])
 
-    conf.env['LIBPATH_SORD'] = [conf.env['LIBDIR']]
-    if not conf.env['LIBPATH_SERD']:
-        fallback('LIBPATH_SERD', conf.env['LIBPATH_SORD'])
+    conf.env.LIBPATH_SORD = [conf.env.LIBDIR]
+    if not conf.env.LIBPATH_SERD:
+        fallback('LIBPATH_SERD', conf.env.LIBPATH_SORD)
 
-    conf.env['LIB_SORD'] = ['sord-%s' % SORD_MAJOR_VERSION];
-    if not conf.env['LIB_SERD']:
+    conf.env.LIB_SORD = ['sord-%s' % SORD_MAJOR_VERSION];
+    if not conf.env.LIB_SERD:
         fallback('LIB_SERD', 'serd-0')
 
-    autowaf.display_msg(conf, "Utilities", bool(conf.env['BUILD_UTILS']))
-    autowaf.display_msg(conf, "Unit tests", bool(conf.env['BUILD_TESTS']))
+    autowaf.display_msg(conf, "Utilities", bool(conf.env.BUILD_UTILS))
+    autowaf.display_msg(conf, "Unit tests", bool(conf.env.BUILD_TESTS))
     autowaf.display_msg(conf, "Debug dumping", dump)
     print('')
 
@@ -107,10 +107,10 @@ def build(bld):
 
     source = 'src/sord.c src/syntax.c src/zix/hash.c src/zix/tree.c'
 
-    libflags = [ '-fvisibility=hidden' ]
-    libs     = [ 'm' ]
+    libflags = ['-fvisibility=hidden']
+    libs     = ['m']
     defines  = []
-    if bld.env['MSVC_COMPILER']:
+    if bld.env.MSVC_COMPILER:
         libflags = []
         libs     = []
         defines  = ['snprintf=_snprintf']
@@ -130,7 +130,7 @@ def build(bld):
     autowaf.use_lib(bld, obj, 'SERD')
 
     # Static Library
-    if bld.env['BUILD_STATIC']:
+    if bld.env.BUILD_STATIC:
         obj = bld(features        = 'c cstlib',
                   source          = source,
                   includes        = ['.', './src'],
@@ -143,7 +143,7 @@ def build(bld):
                   defines         = ['SORD_INTERNAL'])
         autowaf.use_lib(bld, obj, 'SERD')
 
-    if bld.env['BUILD_TESTS']:
+    if bld.env.BUILD_TESTS:
         test_libs   = libs
         test_cflags = ['']
         if bld.is_defined('HAVE_GCOV'):
@@ -198,7 +198,7 @@ def build(bld):
         autowaf.use_lib(bld, obj, 'SERD')
 
     # Command line utilities
-    if bld.env['BUILD_UTILS']:
+    if bld.env.BUILD_UTILS:
         for i in ['sordi', 'sord_validate']:
             obj = bld(features     = 'c cprogram',
                       source       = 'src/%s.c' % i,
@@ -216,7 +216,7 @@ def build(bld):
     bld.install_files('${MANDIR}/man1', 'doc/sordi.1')
 
     bld.add_post_fun(autowaf.run_ldconfig)
-    if bld.env['DOCS']:
+    if bld.env.DOCS:
         bld.add_post_fun(fix_docs)
 
 def lint(ctx):

@@ -30,17 +30,17 @@ def options(opt):
     opt.load('compiler_cxx')
     autowaf.set_options(opt)
     opt.add_option('--no-utils', action='store_true', dest='no_utils',
-                   help="Do not build command line utilities")
+                   help='Do not build command line utilities')
     opt.add_option('--test', action='store_true', dest='build_tests',
-                   help="Build unit tests")
+                   help='Build unit tests')
     opt.add_option('--static', action='store_true', dest='static',
-                   help="Build static library")
+                   help='Build static library')
     opt.add_option('--no-shared', action='store_true', dest='no_shared',
-                   help="Do not build shared library")
+                   help='Do not build shared library')
     opt.add_option('--static-progs', action='store_true', dest='static_progs',
-                   help="Build programs as static binaries")
+                   help='Build programs as static binaries')
     opt.add_option('--dump', type='string', default='', dest='dump',
-                   help="Dump debugging output (iter, search, write, all)")
+                   help='Dump debugging output (iter, search, write, all)')
 
 def configure(conf):
     conf.load('compiler_c')
@@ -85,7 +85,7 @@ def configure(conf):
 
     def fallback(var, val):
         conf.env[var] = val
-        Logs.warn("Warning: %s unset, using %s\n" % (var, val))
+        Logs.warn('Warning: %s unset, using %s\n' % (var, val))
         
     conf.env.INCLUDES_SORD = ['${includedir}/sord-%s' % SORD_MAJOR_VERSION]
     if not conf.env.INCLUDES_SERD:
@@ -99,9 +99,9 @@ def configure(conf):
     if not conf.env.LIB_SERD:
         fallback('LIB_SERD', 'serd-0')
 
-    autowaf.display_msg(conf, "Utilities", bool(conf.env.BUILD_UTILS))
-    autowaf.display_msg(conf, "Unit tests", bool(conf.env.BUILD_TESTS))
-    autowaf.display_msg(conf, "Debug dumping", dump)
+    autowaf.display_msg(conf, 'Utilities', bool(conf.env.BUILD_UTILS))
+    autowaf.display_msg(conf, 'Unit tests', bool(conf.env.BUILD_TESTS))
+    autowaf.display_msg(conf, 'Debug dumping', dump)
     print('')
 
 def build(bld):
@@ -243,7 +243,7 @@ def fix_docs(ctx):
         autowaf.make_simple_dox(APPNAME)
 
 def upload_docs(ctx):
-    os.system("rsync -ravz --delete -e ssh build/doc/html/ drobilla@drobilla.net:~/drobilla.net/docs/sord/")
+    os.system('rsync -ravz --delete -e ssh build/doc/html/ drobilla@drobilla.net:~/drobilla.net/docs/sord/')
 
 def test(ctx):
     blddir = autowaf.build_dir(APPNAME, 'tests')

@@ -222,7 +222,7 @@ def build(bld):
                 obj.use = 'libsord_static'
             if bld.env.STATIC_PROGS:
                 obj.env.SHLIB_MARKER = obj.env.STLIB_MARKER
-                obj.linkflags        = ['-static']
+                obj.linkflags        = ['-static', '-Wl,--start-group']
             autowaf.use_lib(bld, obj, 'SERD PCRE')
 
     # Documentation

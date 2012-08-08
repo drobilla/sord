@@ -46,13 +46,8 @@ def configure(conf):
     conf.load('compiler_c')
     conf.load('compiler_cxx')
     autowaf.configure(conf)
+    autowaf.set_c99_mode(conf)
     autowaf.display_header('Sord configuration')
-
-    if conf.env.MSVC_COMPILER:
-        conf.env.append_unique('CFLAGS',   ['-TP', '-MD'])
-        conf.env.append_unique('CXXFLAGS', ['-TP', '-MD'])
-    else:
-        conf.env.append_unique('CFLAGS', '-std=c99')
 
     autowaf.check_pkg(conf, 'serd-0', uselib_store='SERD',
                       atleast_version='0.14.0', mandatory=True)

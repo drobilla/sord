@@ -44,7 +44,13 @@ def options(opt):
 
 def configure(conf):
     conf.load('compiler_c')
-    conf.load('compiler_cxx')
+    if Options.options.build_tests:
+        try:
+            conf.load('compiler_cxx')
+        except:
+            Logs.warn("No C++ compiler, sordmm.hpp compile test skipped")
+            pass
+        
     autowaf.configure(conf)
     autowaf.set_c99_mode(conf)
     autowaf.display_header('Sord configuration')
@@ -192,15 +198,16 @@ def build(bld):
         autowaf.use_lib(bld, obj, 'SERD')
 
         # C++ build test
-        obj = bld(features     = 'cxx cxxprogram',
-                  source       = 'src/sordmm_test.cpp',
-                  includes     = ['.', './src'],
-                  use          = 'libsord_profiled',
-                  lib          = test_libs,
-                  target       = 'sordmm_test',
-                  install_path = '',
-                  defines      = defines)
-        autowaf.use_lib(bld, obj, 'SERD')
+        if bld.env.COMPILER_CXX:
+            obj = bld(features     = 'cxx cxxprogram',
+                      source       = 'src/sordmm_test.cpp',
+                      includes     = ['.', './src'],
+                      use          = 'libsord_profiled',
+                      lib          = test_libs,
+                      target       = 'sordmm_test',
+                      install_path = '',
+                      defines      = defines)
+            autowaf.use_lib(bld, obj, 'SERD')
 
     # Utilities
     if bld.env.BUILD_UTILS:

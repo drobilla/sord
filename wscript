@@ -115,7 +115,7 @@ def build(bld):
     autowaf.build_pc(bld, 'SORD', SORD_VERSION, SORD_MAJOR_VERSION, 'SERD',
                      {'SORD_MAJOR_VERSION' : SORD_MAJOR_VERSION})
 
-    source = 'src/sord.c src/syntax.c src/zix/hash.c src/zix/tree.c'
+    source = 'src/sord.c src/syntax.c'
 
     libflags = ['-fvisibility=hidden']
     libs     = ['m']

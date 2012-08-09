@@ -30,44 +30,42 @@ static const unsigned sizes[] = {
 	50331653, 100663319, 201326611, 402653189, 805306457, 1610612741, 0
 };
 
-typedef struct _Entry {
-	const void*    key;   ///< Hash key
-	void*          data;  ///< Value
-	struct _Entry* next;  ///< Next entry in bucket
-	unsigned       hash;  ///< Non-modulo hash value (for cheap rehash)
-} Entry;
+typedef struct ZixHashEntry {
+	const void*          key;   ///< Hash key
+	void*                data;  ///< Value
+	struct ZixHashEntry* next;  ///< Next entry in bucket
+	unsigned             hash;  ///< Non-modulo hash value (for cheap rehash)
+} ZixHashEntry;
 
 struct ZixHashImpl {
 	ZixHashFunc     hash_func;
 	ZixEqualFunc    key_equal_func;
-	Entry**         buckets;
+	ZixHashEntry**  buckets;
 	const unsigned* n_buckets;
 	unsigned        count;
 };
 
-ZixHash*
+ZIX_API ZixHash*
 zix_hash_new(ZixHashFunc  hash_func,
              ZixEqualFunc key_equal_func)
-
 {
 	ZixHash* hash = (ZixHash*)malloc(sizeof(ZixHash));
 	hash->hash_func      = hash_func;
 	hash->key_equal_func = key_equal_func;
 	hash->count          = 0;
 	hash->n_buckets      = &sizes[0];
-	hash->buckets        = (Entry**)malloc(*hash->n_buckets * sizeof(Entry*));
-	memset(hash->buckets, 0, *hash->n_buckets * sizeof(Entry*));
-
+	hash->buckets        = (ZixHashEntry**)calloc(*hash->n_buckets,
+	                                              sizeof(ZixHashEntry*));
 	return hash;
 }
 
-void
+ZIX_API void
 zix_hash_free(ZixHash* hash)
 {
 	for (unsigned b = 0; b < *hash->n_buckets; ++b) {
-		Entry* bucket = hash->buckets[b];
-		for (Entry* e = bucket; e;) {
-			Entry* next = e->next;
+		ZixHashEntry* bucket = hash->buckets[b];
+		for (ZixHashEntry* e = bucket; e;) {
+			ZixHashEntry* next = e->next;
 			free(e);
 			e = next;
 		}
@@ -77,7 +75,7 @@ zix_hash_free(ZixHash* hash)
 	free(hash);
 }
 
-unsigned
+ZIX_API unsigned
 zix_string_hash(const void* key)
 {
 	// Trusty old DJB hash
@@ -89,34 +87,32 @@ zix_string_hash(const void* key)
 	return h;
 }
 
-bool
+ZIX_API bool
 zix_string_equal(const void* a, const void* b)
 {
 	return !strcmp((const char*)a, (const char*)b);
 }
 
-static void
-insert_entry(Entry** bucket,
-             Entry*  entry)
+ZIX_PRIVATE void
+insert_entry(ZixHashEntry** bucket, ZixHashEntry*  entry)
 {
 	entry->next = *bucket;
 	*bucket     = entry;
 }
 
-static ZixStatus
+ZIX_PRIVATE ZixStatus
 rehash(ZixHash* hash, unsigned new_n_buckets)
 {
-	Entry** new_buckets = (Entry**)malloc(new_n_buckets * sizeof(Entry*));
+	ZixHashEntry** new_buckets = (ZixHashEntry**)calloc(new_n_buckets,
+	                                                    sizeof(ZixHashEntry*));
 	if (!new_buckets) {
 		return ZIX_STATUS_NO_MEM;
 	}
 
-	memset(new_buckets, 0, new_n_buckets * sizeof(Entry*));
-
 	for (unsigned b = 0; b < *hash->n_buckets; ++b) {
-		for (Entry* e = hash->buckets[b]; e;) {
-			Entry* const   next = e->next;
-			const unsigned h    = e->hash % new_n_buckets;
+		for (ZixHashEntry* e = hash->buckets[b]; e;) {
+			ZixHashEntry* const next = e->next;
+			const unsigned      h    = e->hash % new_n_buckets;
 			insert_entry(&new_buckets[h], e);
 			e = next;
 		}
@@ -128,12 +124,12 @@ rehash(ZixHash* hash, unsigned new_n_buckets)
 	return ZIX_STATUS_SUCCESS;
 }
 
-static Entry*
+ZIX_PRIVATE ZixHashEntry*
 find_entry(const ZixHash* hash,
            const void*    key,
            unsigned   h)
 {
-	for (Entry* e = hash->buckets[h]; e; e = e->next) {
+	for (ZixHashEntry* e = hash->buckets[h]; e; e = e->next) {
 		if (hash->key_equal_func(e->key, key)) {
 			return e;
 		}
@@ -142,27 +138,27 @@ find_entry(const ZixHash* hash,
 	return NULL;
 }
 
-void*
+ZIX_API void*
 zix_hash_find(const ZixHash* hash, const void* key)
 {
-	const unsigned h     = hash->hash_func(key) % *hash->n_buckets;
-	Entry* const   entry = find_entry(hash, key, h);
+	const unsigned      h     = hash->hash_func(key) % *hash->n_buckets;
+	ZixHashEntry* const entry = find_entry(hash, key, h);
 	return entry ? entry->data : 0;
 }
 
-ZixStatus
+ZIX_API ZixStatus
 zix_hash_insert(ZixHash* hash, const void* key, void* data)
 {
 	unsigned h_nomod = hash->hash_func(key);
 	unsigned h       = h_nomod % *hash->n_buckets;
 
-	Entry* elem = find_entry(hash, key, h);
+	ZixHashEntry* elem = find_entry(hash, key, h);
 	if (elem) {
 		assert(elem->hash == h_nomod);
 		return ZIX_STATUS_EXISTS;
 	}
 
-	elem = (Entry*)malloc(sizeof(Entry));
+	elem = (ZixHashEntry*)malloc(sizeof(ZixHashEntry));
 	if (!elem) {
 		return ZIX_STATUS_NO_MEM;
 	}
@@ -182,13 +178,13 @@ zix_hash_insert(ZixHash* hash, const void* key, void* data)
 	return ZIX_STATUS_SUCCESS;
 }
 
-ZixStatus
+ZIX_API ZixStatus
 zix_hash_remove(ZixHash* hash, const void* key)
 {
 	unsigned h = hash->hash_func(key) % *hash->n_buckets;
 
-	Entry** next_ptr = &hash->buckets[h];
-	for (Entry* e = hash->buckets[h]; e; e = e->next) {
+	ZixHashEntry** next_ptr = &hash->buckets[h];
+	for (ZixHashEntry* e = hash->buckets[h]; e; e = e->next) {
 		if (hash->key_equal_func(e->key, key)) {
 			*next_ptr = e->next;
 			free(e);
@@ -210,15 +206,14 @@ zix_hash_remove(ZixHash* hash, const void* key)
 	return ZIX_STATUS_NOT_FOUND;
 }
 
-ZIX_API
-void
+ZIX_API void
 zix_hash_foreach(const ZixHash* hash,
                  void (*f)(const void* key, void* value, void* user_data),
                  void* user_data)
 {
 	for (unsigned b = 0; b < *hash->n_buckets; ++b) {
-		Entry* bucket = hash->buckets[b];
-		for (Entry* e = bucket; e; e = e->next) {
+		ZixHashEntry* bucket = hash->buckets[b];
+		for (ZixHashEntry* e = bucket; e; e = e->next) {
 			f(e->key, e->data, user_data);
 		}
 	}

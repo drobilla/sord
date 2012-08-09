@@ -22,7 +22,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define ZIX_INLINE
+#include "zix/hash.c"
 #include "zix/hash.h"
+#include "zix/tree.c"
 #include "zix/tree.h"
 
 #include "sord_config.h"
@@ -640,10 +643,10 @@ sord_new(SordWorld* world, unsigned indices, bool graphs)
 
 		if (indices & (1 << i)) {
 			sord->indices[i] = zix_tree_new(
-				false, sord_quad_compare, (void*)ordering);
+				false, sord_quad_compare, (void*)ordering, NULL);
 			if (graphs) {
 				sord->indices[i + (NUM_ORDERS / 2)] = zix_tree_new(
-					false, sord_quad_compare, (void*)g_ordering);
+					false, sord_quad_compare, (void*)g_ordering, NULL);
 			} else {
 				sord->indices[i + (NUM_ORDERS / 2)] = NULL;
 			}
@@ -655,11 +658,11 @@ sord_new(SordWorld* world, unsigned indices, bool graphs)
 
 	if (!sord->indices[DEFAULT_ORDER]) {
 		sord->indices[DEFAULT_ORDER] = zix_tree_new(
-			false, sord_quad_compare, (void*)orderings[DEFAULT_ORDER]);
+			false, sord_quad_compare, (void*)orderings[DEFAULT_ORDER], NULL);
 	}
 	if (graphs && !sord->indices[DEFAULT_GRAPH_ORDER]) {
 		sord->indices[DEFAULT_GRAPH_ORDER] = zix_tree_new(
-			false, sord_quad_compare, (void*)orderings[DEFAULT_GRAPH_ORDER]);
+			false, sord_quad_compare, (void*)orderings[DEFAULT_GRAPH_ORDER], NULL);
 	}
 
 	return sord;

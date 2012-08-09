@@ -26,10 +26,12 @@
 typedef struct ZixTreeNodeImpl ZixTreeNode;
 
 struct ZixTreeImpl {
-	ZixTreeNode*  root;
-	ZixComparator cmp;
-	void*         cmp_data;
-	bool          allow_duplicates;
+	ZixTreeNode*   root;
+	ZixDestroyFunc destroy;
+	ZixComparator  cmp;
+	void*          cmp_data;
+	size_t         size;
+	bool           allow_duplicates;
 };
 
 struct ZixTreeNodeImpl {
@@ -43,38 +45,72 @@ struct ZixTreeNodeImpl {
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
 
-ZIX_API
-ZixTree*
-zix_tree_new(bool allow_duplicates, ZixComparator cmp, void* cmp_data)
+// Uncomment these for debugging features
+// #define ZIX_TREE_DUMP         1
+// #define ZIX_TREE_VERIFY       1
+// #define ZIX_TREE_HYPER_VERIFY 1
+
+#if defined(ZIX_TREE_VERIFY) || defined(ZIX_TREE_HYPER_VERIFY)
+#    include "tree_debug.h"
+#    define ASSERT_BALANCE(n) assert(verify_balance(n))
+#else
+#    define ASSERT_BALANCE(n)
+#endif
+
+#ifdef ZIX_TREE_DUMP
+#    include "tree_debug.h"
+#    define DUMP(t) zix_tree_print(t->root, 0)
+#    define DEBUG_PRINTF(fmt, ...) printf(fmt, __VA_ARGS__)
+#else
+#    define DUMP(t)
+#    define DEBUG_PRINTF(fmt, ...)
+#endif
+
+ZIX_API ZixTree*
+zix_tree_new(bool           allow_duplicates,
+             ZixComparator  cmp,
+             void*          cmp_data,
+             ZixDestroyFunc destroy)
 {
 	ZixTree* t = (ZixTree*)malloc(sizeof(ZixTree));
 	t->root             = NULL;
+	t->destroy          = destroy;
 	t->cmp              = cmp;
 	t->cmp_data         = cmp_data;
+	t->size             = 0;
 	t->allow_duplicates = allow_duplicates;
 	return t;
 }
 
-static void
-zix_tree_free_rec(ZixTreeNode* n)
+ZIX_PRIVATE void
+zix_tree_free_rec(ZixTree* t, ZixTreeNode* n)
 {
 	if (n) {
-		zix_tree_free_rec(n->left);
-		zix_tree_free_rec(n->right);
+		zix_tree_free_rec(t, n->left);
+		zix_tree_free_rec(t, n->right);
+		if (t->destroy) {
+			t->destroy(n->data);
+		}
 		free(n);
 	}
 }
 
-ZIX_API
-void
+ZIX_API void
 zix_tree_free(ZixTree* t)
 {
-	zix_tree_free_rec(t->root);
-
-	free(t);
+	if (t) {
+		zix_tree_free_rec(t, t->root);
+		free(t);
+	}
 }
 
-static void
+ZIX_API size_t
+zix_tree_size(const ZixTree* t)
+{
+	return t->size;
+}
+
+ZIX_PRIVATE void
 rotate(ZixTreeNode* p, ZixTreeNode* q)
 {
 	assert(q->parent == p);
@@ -118,20 +154,26 @@ rotate(ZixTreeNode* p, ZixTreeNode* q)
  *     / \        / \
  *    B   C      A   B
  */
-static ZixTreeNode*
+ZIX_PRIVATE ZixTreeNode*
 rotate_left(ZixTreeNode* p, int* height_change)
 {
 	ZixTreeNode* const q = p->right;
 	*height_change = (q->balance == 0) ? 0 : -1;
+
+	DEBUG_PRINTF("LL %ld\n", (intptr_t)p->data);
 
 	assert(p->balance == 2);
 	assert(q->balance == 0 || q->balance == 1);
 
 	rotate(p, q);
 
+	// p->balance -= 1 + MAX(0, q->balance);
+	// q->balance -= 1 - MIN(0, p->balance);
 	--q->balance;
 	p->balance = -(q->balance);
 
+	ASSERT_BALANCE(p);
+	ASSERT_BALANCE(q);
 	return q;
 }
 
@@ -145,20 +187,26 @@ rotate_left(ZixTreeNode* p, int* height_change)
  *  A   B          B   C
  *
  */
-static ZixTreeNode*
+ZIX_PRIVATE ZixTreeNode*
 rotate_right(ZixTreeNode* p, int* height_change)
 {
 	ZixTreeNode* const q = p->left;
 	*height_change = (q->balance == 0) ? 0 : -1;
+
+	DEBUG_PRINTF("RR %ld\n", (intptr_t)p->data);
 
 	assert(p->balance == -2);
 	assert(q->balance == 0 || q->balance == -1);
 
 	rotate(p, q);
 
+	// p->balance += 1 - MIN(0, q->balance);
+	// q->balance += 1 + MAX(0, p->balance);
 	++q->balance;
 	p->balance = -(q->balance);
 
+	ASSERT_BALANCE(p);
+	ASSERT_BALANCE(q);
 	return q;
 }
 
@@ -174,7 +222,7 @@ rotate_right(ZixTreeNode* p, int* height_change)
  *    B   C
  *
  */
-static ZixTreeNode*
+ZIX_PRIVATE ZixTreeNode*
 rotate_left_right(ZixTreeNode* p, int* height_change)
 {
 	ZixTreeNode* const q = p->left;
@@ -184,15 +232,25 @@ rotate_left_right(ZixTreeNode* p, int* height_change)
 	assert(q->balance == 1);
 	assert(r->balance == -1 || r->balance == 0 || r->balance == 1);
 
+	DEBUG_PRINTF("LR %ld  P: %2d  Q: %2d  R: %2d\n",
+	             (intptr_t)p->data, p->balance, q->balance, r->balance);
+
 	rotate(q, r);
 	rotate(p, r);
 
 	q->balance -= 1 + MAX(0, r->balance);
 	p->balance += 1 - MIN(MIN(0, r->balance) - 1, r->balance + q->balance);
+	// r->balance += MAX(0, p->balance) + MIN(0, q->balance);
+
+	// p->balance = (p->left && p->right) ? -MIN(r->balance, 0) : 0;
+	// q->balance = - MAX(r->balance, 0);
 	r->balance = 0;
 
 	*height_change = -1;
 
+	ASSERT_BALANCE(p);
+	ASSERT_BALANCE(q);
+	ASSERT_BALANCE(r);
 	return r;
 }
 
@@ -208,7 +266,7 @@ rotate_left_right(ZixTreeNode* p, int* height_change)
  *  B   C
  *
  */
-static ZixTreeNode*
+ZIX_PRIVATE ZixTreeNode*
 rotate_right_left(ZixTreeNode* p, int* height_change)
 {
 	ZixTreeNode* const q = p->right;
@@ -218,21 +276,36 @@ rotate_right_left(ZixTreeNode* p, int* height_change)
 	assert(q->balance == -1);
 	assert(r->balance == -1 || r->balance == 0 || r->balance == 1);
 
+	DEBUG_PRINTF("RL %ld  P: %2d  Q: %2d  R: %2d\n",
+	             (intptr_t)p->data, p->balance, q->balance, r->balance);
+
 	rotate(q, r);
 	rotate(p, r);
 
 	q->balance += 1 - MIN(0, r->balance);
 	p->balance -= 1 + MAX(MAX(0, r->balance) + 1, r->balance + q->balance);
+	// r->balance += MAX(0, q->balance) + MIN(0, p->balance);
+
+	// p->balance = (p->left && p->right) ? -MAX(r->balance, 0) : 0;
+	// q->balance = - MIN(r->balance, 0);
 	r->balance = 0;
+	// assert(r->balance == 0);
 
 	*height_change = -1;
 
+	ASSERT_BALANCE(p);
+	ASSERT_BALANCE(q);
+	ASSERT_BALANCE(r);
 	return r;
 }
 
-static ZixTreeNode*
+ZIX_PRIVATE ZixTreeNode*
 zix_tree_rebalance(ZixTree* t, ZixTreeNode* node, int* height_change)
 {
+#ifdef ZIX_TREE_HYPER_VERIFY
+	const size_t old_height = height(node);
+#endif
+	DEBUG_PRINTF("REBALANCE %ld (%d)\n", (intptr_t)node->data, node->balance);
 	*height_change = 0;
 	const bool is_root = !node->parent;
 	assert((is_root && t->root == node) || (!is_root && t->root != node));
@@ -256,14 +329,17 @@ zix_tree_rebalance(ZixTree* t, ZixTreeNode* node, int* height_change)
 		assert(!replacement->parent);
 		t->root = replacement;
 	}
-
+	DUMP(t);
+#ifdef ZIX_TREE_HYPER_VERIFY
+	assert(old_height + *height_change == height(replacement));
+#endif
 	return replacement;
 }
 
-ZIX_API
-ZixStatus
+ZIX_API ZixStatus
 zix_tree_insert(ZixTree* t, void* e, ZixTreeIter** ti)
 {
+	DEBUG_PRINTF("**** INSERT %ld\n", (intptr_t)e);
 	int          cmp = 0;
 	ZixTreeNode* n   = t->root;
 	ZixTreeNode* p   = NULL;
@@ -282,6 +358,7 @@ zix_tree_insert(ZixTree* t, void* e, ZixTreeIter** ti)
 			if (ti) {
 				*ti = n;
 			}
+			DEBUG_PRINTF("%ld EXISTS!\n", (intptr_t)e);
 			return ZIX_STATUS_EXISTS;
 		}
 	}
@@ -319,6 +396,8 @@ zix_tree_insert(ZixTree* t, void* e, ZixTreeIter** ti)
 		}
 	}
 
+	DUMP(t);
+
 	// Rebalance if necessary (at most 1 rotation)
 	assert(!p || p->balance == -1 || p->balance == 0 || p->balance == 1);
 	if (p && p_height_increased) {
@@ -343,11 +422,20 @@ zix_tree_insert(ZixTree* t, void* e, ZixTreeIter** ti)
 		}
 	}
 
+	DUMP(t);
+
+	++t->size;
+
+#ifdef ZIX_TREE_VERIFY
+	if (!verify(t, t->root)) {
+		return ZIX_STATUS_ERROR;
+	}
+#endif
+
 	return ZIX_STATUS_SUCCESS;
 }
 
-ZIX_API
-ZixStatus
+ZIX_API ZixStatus
 zix_tree_remove(ZixTree* t, ZixTreeIter* ti)
 {
 	ZixTreeNode* const n          = ti;
@@ -355,9 +443,16 @@ zix_tree_remove(ZixTree* t, ZixTreeIter* ti)
 	ZixTreeNode*       to_balance = n->parent;  // lowest node to balance
 	int8_t             d_balance  = 0;  // delta(balance) for n->parent
 
+	DEBUG_PRINTF("*** REMOVE %ld\n", (intptr_t)n->data);
+
 	if ((n == t->root) && !n->left && !n->right) {
 		t->root = NULL;
+		if (t->destroy) {
+			t->destroy(n->data);
+		}
 		free(n);
+		--t->size;
+		assert(t->size == 0);
 		return ZIX_STATUS_SUCCESS;
 	}
 
@@ -479,13 +574,25 @@ zix_tree_remove(ZixTree* t, ZixTreeIter* ti)
 		}
 	}
 
+	DUMP(t);
+
+	if (t->destroy) {
+		t->destroy(n->data);
+	}
 	free(n);
+
+	--t->size;
+
+#ifdef ZIX_TREE_VERIFY
+	if (!verify(t, t->root)) {
+		return ZIX_STATUS_ERROR;
+	}
+#endif
 
 	return ZIX_STATUS_SUCCESS;
 }
 
-ZIX_API
-ZixStatus
+ZIX_API ZixStatus
 zix_tree_find(const ZixTree* t, const void* e, ZixTreeIter** ti)
 {
 	ZixTreeNode* n = t->root;
@@ -504,15 +611,13 @@ zix_tree_find(const ZixTree* t, const void* e, ZixTreeIter** ti)
 	return (n) ? ZIX_STATUS_SUCCESS : ZIX_STATUS_NOT_FOUND;
 }
 
-ZIX_API
-void*
+ZIX_API void*
 zix_tree_get(ZixTreeIter* ti)
 {
-	return ti->data;
+	return ti ? ti->data : NULL;
 }
 
-ZIX_API
-ZixTreeIter*
+ZIX_API ZixTreeIter*
 zix_tree_begin(ZixTree* t)
 {
 	if (!t->root) {
@@ -526,22 +631,45 @@ zix_tree_begin(ZixTree* t)
 	return n;
 }
 
-ZIX_API
-ZixTreeIter*
+ZIX_API ZixTreeIter*
 zix_tree_end(ZixTree* t)
 {
 	return NULL;
 }
 
-ZIX_API
-bool
+ZIX_API ZixTreeIter*
+zix_tree_rbegin(ZixTree* t)
+{
+	if (!t->root) {
+		return NULL;
+	}
+
+	ZixTreeNode* n = t->root;
+	while (n->right) {
+		n = n->right;
+	}
+	return n;
+}
+
+ZIX_API ZixTreeIter*
+zix_tree_rend(ZixTree* t)
+{
+	return NULL;
+}
+
+ZIX_API bool
 zix_tree_iter_is_end(ZixTreeIter* i)
 {
 	return !i;
 }
 
-ZIX_API
-ZixTreeIter*
+ZIX_API bool
+zix_tree_iter_is_rend(ZixTreeIter* i)
+{
+	return !i;
+}
+
+ZIX_API ZixTreeIter*
 zix_tree_iter_next(ZixTreeIter* i)
 {
 	if (!i) {
@@ -564,8 +692,7 @@ zix_tree_iter_next(ZixTreeIter* i)
 	return i;
 }
 
-ZIX_API
-ZixTreeIter*
+ZIX_API ZixTreeIter*
 zix_tree_iter_prev(ZixTreeIter* i)
 {
 	if (!i) {

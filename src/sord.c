@@ -146,7 +146,7 @@ struct SordIterImpl {
 static unsigned
 sord_literal_hash(const void* n)
 {
-	SordNode* node = (SordNode*)n;
+	const SordNode* node = (const SordNode*)n;
 	return zix_string_hash(node->node.buf)
 		+ (node->lang ? zix_string_hash(node->lang) : 0);
 }
@@ -154,8 +154,8 @@ sord_literal_hash(const void* n)
 static bool
 sord_literal_equal(const void* a, const void* b)
 {
-	SordNode* a_node = (SordNode*)a;
-	SordNode* b_node = (SordNode*)b;
+	const SordNode* a_node = (const SordNode*)a;
+	const SordNode* b_node = (const SordNode*)b;
 	return (a_node == b_node)
 		|| (zix_string_equal(sord_node_get_string(a_node),
 		                     sord_node_get_string(b_node))
@@ -305,9 +305,9 @@ sord_quad_match(const SordQuad x, const SordQuad y)
 static int
 sord_quad_compare(const void* x_ptr, const void* y_ptr, void* user_data)
 {
-	const int* const ordering = (const int*)user_data;
-	SordNode** const x        = (SordNode**)x_ptr;
-	SordNode** const y        = (SordNode**)y_ptr;
+	const int* const           ordering = (const int*)user_data;
+	const SordNode*const*const x        = (const SordNode*const*)x_ptr;
+	const SordNode*const*const y        = (const SordNode*const*)y_ptr;
 
 	for (int i = 0; i < TUP_LEN; ++i) {
 		const int idx = ordering[i];
@@ -728,7 +728,7 @@ sord_free(SordModel* sord)
 	for (; !sord_iter_end(i); sord_iter_next(i)) {
 		sord_iter_get(i, tup);
 		for (int t = 0; t < TUP_LEN; ++t) {
-			sord_drop_quad_ref(sord, (SordNode*)tup[t], (SordQuadIndex)t);
+			sord_drop_quad_ref(sord, tup[t], (SordQuadIndex)t);
 		}
 	}
 	sord_iter_free(i);
@@ -782,7 +782,7 @@ static inline ZixTreeIter*
 index_search(ZixTree* db, const SordQuad search_key)
 {
 	ZixTreeIter* iter = NULL;
-	zix_tree_find(db, (void*)search_key, &iter);
+	zix_tree_find(db, (const void*)search_key, &iter);
 	return iter;
 }
 
@@ -790,7 +790,7 @@ static inline ZixTreeIter*
 index_lower_bound(ZixTree* db, const SordQuad search_key)
 {
 	ZixTreeIter* iter = NULL;
-	zix_tree_find(db, (void*)search_key, &iter);
+	zix_tree_find(db, (const void*)search_key, &iter);
 	if (!iter) {
 		return NULL;
 	}
@@ -917,7 +917,7 @@ sord_new_node(SerdType type, const uint8_t* data,
 	node->datatype     = datatype;
 	node->refs         = 1;
 	node->refs_as_obj  = 0;
-	node->node.buf     = (uint8_t*)data;
+	node->node.buf     = data;
 	node->node.n_bytes = n_bytes;
 	node->node.n_chars = n_chars;
 	node->node.flags   = flags;
@@ -953,7 +953,7 @@ sord_lookup_literal(SordWorld* world, SordNode* type,
 	key.datatype     = type;
 	key.refs         = 1;
 	key.refs_as_obj  = 1;
-	key.node.buf     = (uint8_t*)str;
+	key.node.buf     = str;
 	key.node.n_bytes = n_bytes;
 	key.node.n_chars = n_chars;
 	key.node.flags   = 0;
@@ -1042,7 +1042,7 @@ sord_new_uri_counted(SordWorld* world, const uint8_t* str,
 
 	node = sord_new_node(SERD_URI, str, n_bytes, n_chars, 0, 0, 0, copy);
 	assert(!zix_hash_find(world->names, node->node.buf));
-	zix_hash_insert(world->names, (char*)node->node.buf, node);
+	zix_hash_insert(world->names, node->node.buf, node);
 	sord_add_node(world, node);
 	return node;
 }
@@ -1084,7 +1084,7 @@ sord_new_blank_counted(SordWorld* world, const uint8_t* str,
 	}
 
 	node = sord_new_node(SERD_BLANK, str, n_bytes, n_chars, 0, 0, 0, true);
-	zix_hash_insert(world->names, (char*)node->node.buf, node);
+	zix_hash_insert(world->names, node->node.buf, node);
 	sord_add_node(world, node);
 	return node;
 }

@@ -251,6 +251,8 @@ main(int argc, char** argv)
 	for (; a < argc && argv[a][0] == '-'; ++a) {
 		if (argv[a][1] == 'l') {
 			one_line_errors = true;
+		} else if (argv[a][1] == 'v') {
+			return print_version();
 		} else {
 			fprintf(stderr, "%s: Unknown option `%s'\n", argv[0], argv[a]);
 			return print_usage(argv[0], true);

@@ -38,13 +38,13 @@ uri(SordWorld* world, int num)
 	if (num == 0)
 		return 0;
 
-	char  uri[]   = "eg:000";
-	char* uri_num = uri + 3;  // First `0'
+	char  str[]   = "eg:000";
+	char* uri_num = str + 3;  // First `0'
 	snprintf(uri_num, DIGITS + 1, "%0*d", DIGITS, num);
-	return sord_new_uri(world, (const uint8_t*)uri);
+	return sord_new_uri(world, (const uint8_t*)str);
 }
 
-int
+static int
 test_fail(const char* fmt, ...)
 {
 	va_list args;
@@ -55,7 +55,7 @@ test_fail(const char* fmt, ...)
 	return 1;
 }
 
-int
+static int
 generate(SordWorld* world,
          SordModel* sord,
          size_t     n_quads,
@@ -175,7 +175,7 @@ generate(SordWorld* world,
 		((t)[1] ? sord_node_get_string((t)[1]) : USTR("*")), \
 		((t)[2] ? sord_node_get_string((t)[2]) : USTR("*"))
 
-int
+static int
 test_read(SordWorld* world, SordModel* sord, SordNode* g,
           const size_t n_quads)
 {

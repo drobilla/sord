@@ -66,8 +66,8 @@ typedef struct {
 int  n_errors        = 0;
 bool one_line_errors = false;
 
-int
-print_version()
+static int
+print_version(void)
 {
 	printf("sord_validate " SORD_VERSION
 	       " <http://drobilla.net/software/sord>\n");
@@ -78,7 +78,7 @@ print_version()
 	return 0;
 }
 
-int
+static int
 print_usage(const char* name, bool error)
 {
 	FILE* const os = error ? stderr : stdout;
@@ -94,7 +94,7 @@ print_usage(const char* name, bool error)
 	return error ? 1 : 0;
 }
 
-uint8_t*
+static uint8_t*
 absolute_path(const uint8_t* path)
 {
 #ifdef _WIN32
@@ -106,7 +106,7 @@ absolute_path(const uint8_t* path)
 #endif
 }
 
-void
+static void
 error(const char* msg, const SordQuad quad)
 {
 	const char* sep = one_line_errors ? "\t" : "\n       ";
@@ -118,7 +118,7 @@ error(const char* msg, const SordQuad quad)
 	        sep, (const char*)sord_node_get_string(quad[SORD_OBJECT]));
 }
 
-bool
+static bool
 is_subclass_of(SordModel*      model,
                const URIs*     uris,
                const SordNode* klass,
@@ -147,16 +147,16 @@ is_subclass_of(SordModel*      model,
 	return false;
 }
 
-bool
+static bool
 regexp_match(const char* pat, const char* str)
 {
 #ifdef HAVE_PCRE
-	const char* error;
+	const char* err;
 	int         erroffset;
-	pcre*       re = pcre_compile(pat, PCRE_ANCHORED, &error, &erroffset, NULL);
+	pcre*       re = pcre_compile(pat, PCRE_ANCHORED, &err, &erroffset, NULL);
 	if (!re) {
 		fprintf(stderr, "Error in regexp \"%s\" at offset %d (%s)\n",
-		        pat, erroffset, error);
+		        pat, erroffset, err);
 		return false;
 	}
 
@@ -169,7 +169,7 @@ regexp_match(const char* pat, const char* str)
 	return true;
 }
 
-bool
+static bool
 literal_is_valid(SordModel*      model,
                  const URIs*     uris,
                  const SordNode* literal,
@@ -197,7 +197,7 @@ literal_is_valid(SordModel*      model,
 	return false;
 }
 
-bool
+static bool
 check_type(SordModel*      model,
            URIs*           uris,
            const SordNode* node,

@@ -36,8 +36,8 @@ typedef struct {
 	SordModel*  sord;
 } State;
 
-int
-print_version()
+static int
+print_version(void)
 {
 	printf("sordi " SORD_VERSION " <http://drobilla.net/software/sord>\n");
 	printf("Copyright 2011-2012 David Robillard <http://drobilla.net>.\n"
@@ -47,7 +47,7 @@ print_version()
 	return 0;
 }
 
-int
+static int
 print_usage(const char* name, bool error)
 {
 	FILE* const os = error ? stderr : stdout;
@@ -62,7 +62,7 @@ print_usage(const char* name, bool error)
 	return error ? 1 : 0;
 }
 
-bool
+static bool
 set_syntax(SerdSyntax* syntax, const char* name)
 {
 	if (!strcmp(name, "turtle")) {
@@ -76,7 +76,7 @@ set_syntax(SerdSyntax* syntax, const char* name)
 	return true;
 }
 
-uint8_t*
+static uint8_t*
 absolute_path(const uint8_t* path)
 {
 #ifdef _WIN32

@@ -727,23 +727,23 @@ sord_free(SordModel* sord)
 	SordIter* i = sord_begin(sord);
 	for (; !sord_iter_end(i); sord_iter_next(i)) {
 		sord_iter_get(i, tup);
-		for (int i = 0; i < TUP_LEN; ++i) {
-			sord_drop_quad_ref(sord, (SordNode*)tup[i], (SordQuadIndex)i);
+		for (int t = 0; t < TUP_LEN; ++t) {
+			sord_drop_quad_ref(sord, (SordNode*)tup[t], (SordQuadIndex)t);
 		}
 	}
 	sord_iter_free(i);
 
 	// Free quads
-	for (ZixTreeIter* i = zix_tree_begin(sord->indices[DEFAULT_ORDER]);
-	     !zix_tree_iter_is_end(i);
-	     i = zix_tree_iter_next(i)) {
-		free(zix_tree_get(i));
+	for (ZixTreeIter* t = zix_tree_begin(sord->indices[DEFAULT_ORDER]);
+	     !zix_tree_iter_is_end(t);
+	     t = zix_tree_iter_next(t)) {
+		free(zix_tree_get(t));
 	}
 
 	// Free indices
-	for (unsigned i = 0; i < NUM_ORDERS; ++i)
-		if (sord->indices[i])
-			zix_tree_free(sord->indices[i]);
+	for (unsigned o = 0; o < NUM_ORDERS; ++o)
+		if (sord->indices[o])
+			zix_tree_free(sord->indices[o]);
 
 	free(sord);
 }
@@ -899,7 +899,7 @@ sord_lookup_name(SordWorld* world, const uint8_t* str)
 	return (SordNode*)zix_hash_find(world->names, str);
 }
 
-char*
+static char*
 sord_strndup(const char* str, size_t len)
 {
 	char* dup = (char*)malloc(len + 1);
@@ -1173,11 +1173,11 @@ sord_node_from_serd_node(SordWorld*      world,
 			SerdURI  abs_uri;
 			SerdNode abs_uri_node = serd_node_new_uri_from_node(
 				sn, &base_uri, &abs_uri);
-			SordNode* ret = sord_new_uri_counted(world,
-			                                     abs_uri_node.buf,
-			                                     abs_uri_node.n_bytes,
-			                                     abs_uri_node.n_chars,
-			                                     true);
+			ret = sord_new_uri_counted(world,
+			                           abs_uri_node.buf,
+			                           abs_uri_node.n_bytes,
+			                           abs_uri_node.n_chars,
+			                           true);
 			serd_node_free(&abs_uri_node);
 			return ret;
 		}
@@ -1194,7 +1194,7 @@ sord_node_from_serd_node(SordWorld*      world,
 		memcpy(buf,                  uri_prefix.buf, uri_prefix.len);
 		memcpy(buf + uri_prefix.len, uri_suffix.buf, uri_suffix.len);
 		buf[uri_len] = '\0';
-		SordNode* ret = sord_new_uri_counted(
+		ret = sord_new_uri_counted(
 			world, buf, uri_prefix.len + uri_suffix.len,
 			uri_prefix.len + uri_suffix.len, false);  // FIXME: UTF-8
 		return ret;

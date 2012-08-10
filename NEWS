@@ -1,6 +1,7 @@
 sord (9999) unstable;
 
   * Add error callback to world for custom error reporting
+  * Performance and space (per node) improvements
   * sordmm.hpp: Add indices and graphs parameters to Model constructor
   * sordmm.hpp: Remove overzealous URI scheme assertion
   * sordmm.hpp: Correctly handle Sord::Node self-assignment

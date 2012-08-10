@@ -1,5 +1,5 @@
 /*
-  Copyright 2011 David Robillard <http://drobilla.net>
+  Copyright 2012 David Robillard <http://drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -14,21 +14,26 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#ifndef SORD_SORD_INTERNAL_H
-#define SORD_SORD_INTERNAL_H
+#ifndef ZIX_DIGEST_H
+#define ZIX_DIGEST_H
 
 #include <stddef.h>
 #include <stdint.h>
 
-#include "sord/sord.h"
+#include "zix/common.h"
 
-/** Node */
-struct SordNodeImpl {
-	SordNode* datatype;     ///< Literal data type (ID of a URI node, or 0)
-	size_t    refs;         ///< Reference count (# of containing quads)
-	size_t    refs_as_obj;  ///< References as a quad object
-	char      lang[16];     ///< Language tag
-	SerdNode  node;         ///< Serd node
-};
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#endif /* SORD_SORD_INTERNAL_H */
+ZIX_API uint32_t
+zix_digest_start(void);
+
+ZIX_API uint32_t
+zix_digest_add(uint32_t hash, const void* buf, const size_t len);
+
+#ifdef __cplusplus
+}  /* extern "C" */
+#endif
+
+#endif  /* ZIX_DIGEST_H */

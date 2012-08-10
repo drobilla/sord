@@ -22,13 +22,25 @@
 
 #include "sord/sord.h"
 
+/** Resource node metadata */
+typedef struct {
+	size_t refs_as_obj;  ///< References as a quad object
+} SordResourceMetadata;
+
+/** Literal node metadata */
+typedef struct {
+	SordNode* datatype;  ///< Optional literal data type URI
+	char      lang[16];  ///< Optional language tag
+} SordLiteralMetadata;
+
 /** Node */
 struct SordNodeImpl {
-	SordNode* datatype;     ///< Literal data type (ID of a URI node, or 0)
-	size_t    refs;         ///< Reference count (# of containing quads)
-	size_t    refs_as_obj;  ///< References as a quad object
-	char      lang[16];     ///< Language tag
-	SerdNode  node;         ///< Serd node
+	SerdNode node;  ///< Serd node
+	size_t   refs;  ///< Reference count (# of containing quads)
+	union {
+		SordResourceMetadata res;
+		SordLiteralMetadata  lit;
+	} meta;
 };
 
 #endif /* SORD_SORD_INTERNAL_H */

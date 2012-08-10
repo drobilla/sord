@@ -148,11 +148,9 @@ sord_node_hash(const void* n)
 	const SordNode* node = (const SordNode*)n;
 	uint32_t        hash = zix_digest_start();
 	hash = zix_digest_add(hash, node->node.buf, node->node.n_bytes);
-	hash = zix_digest_add(hash, node->lang, sizeof(node->lang));
 	hash = zix_digest_add(hash, &node->node.type, sizeof(node->node.type));
-	if (node->datatype) {
-		hash = zix_digest_add(
-			hash, node->datatype->node.buf, node->datatype->node.n_bytes);
+	if (node->node.type == SERD_LITERAL) {
+		hash = zix_digest_add(hash, &node->meta.lit, sizeof(node->meta.lit));
 	}
 	return hash;
 }
@@ -164,9 +162,12 @@ sord_node_hash_equal(const void* a, const void* b)
 	const SordNode* b_node = (const SordNode*)b;
 	return (a_node == b_node)
 		|| ((a_node->node.type == b_node->node.type) &&
-		    (a_node->datatype == b_node->datatype) &&
-		    serd_node_equals(&a_node->node, &b_node->node) &&
-		    !strncmp(a_node->lang, b_node->lang, sizeof(a_node->lang)));
+		    (a_node->node.type != SERD_LITERAL ||
+		     (a_node->meta.lit.datatype == b_node->meta.lit.datatype &&
+		      !strncmp(a_node->meta.lit.lang,
+		               b_node->meta.lit.lang,
+		               sizeof(a_node->meta.lit.lang)))) &&
+		    (serd_node_equals(&a_node->node, &b_node->node)));
 }
 
 static void
@@ -201,7 +202,9 @@ static void
 free_node_entry(const void* value, void* user_data)
 {
 	const SordNode* node = (const SordNode*)value;
-	sord_node_free((SordWorld*)user_data, node->datatype);
+	if (node->node.type == SERD_LITERAL) {
+		sord_node_free((SordWorld*)user_data, node->meta.lit.datatype);
+	}
 	free((uint8_t*)node->node.buf);
 }
 
@@ -242,15 +245,15 @@ sord_node_compare(const SordNode* a, const SordNode* b)
 		             (const char*)sord_node_get_string(b));
 		if (cmp == 0) {
 			// Note: Can't use sord_node_compare here since it does wildcards
-			if (!a->datatype || !b->datatype) {
-				cmp = a->datatype - b->datatype;
+			if (!a->meta.lit.datatype || !b->meta.lit.datatype) {
+				cmp = a->meta.lit.datatype - b->meta.lit.datatype;
 			} else {
-				cmp = strcmp((const char*)a->datatype->node.buf,
-				             (const char*)b->datatype->node.buf);
+				cmp = strcmp((const char*)a->meta.lit.datatype->node.buf,
+				             (const char*)b->meta.lit.datatype->node.buf);
 			}
 		}
 		if (cmp == 0) {
-			cmp = strcmp(a->lang, b->lang);
+			cmp = strcmp(a->meta.lit.lang, b->meta.lit.lang);
 		}
 	default:
 		break;
@@ -659,17 +662,15 @@ sord_node_free_internal(SordWorld* world, SordNode* node)
 {
 	assert(node->refs == 0);
 
-	// Cache members to free since removing from hash will free the node
-	SordNode* const      datatype = node->datatype;
-	const uint8_t* const buf      = node->node.buf;
+	// Cache pointer to buffer to free after node removal and destruction
+	const uint8_t* const buf = node->node.buf;
 
 	// Remove node from hash (which frees the node)
 	if (zix_hash_remove(world->nodes, node)) {
 		error(world, SERD_ERR_INTERNAL, "failed to remove node from hash\n");
 	}
 
-	// Free members
-	sord_node_free(world, datatype);
+	// Free buffer
 	free((uint8_t*)buf);
 }
 
@@ -679,8 +680,8 @@ sord_add_quad_ref(SordModel* sord, const SordNode* node, SordQuadIndex i)
 	if (node) {
 		assert(node->refs > 0);
 		++((SordNode*)node)->refs;
-		if (i == SORD_OBJECT) {
-			++((SordNode*)node)->refs_as_obj;
+		if (node->node.type != SERD_LITERAL && i == SORD_OBJECT) {
+			++((SordNode*)node)->meta.res.refs_as_obj;
 		}
 	}
 }
@@ -693,9 +694,9 @@ sord_drop_quad_ref(SordModel* sord, const SordNode* node, SordQuadIndex i)
 	}
 
 	assert(node->refs > 0);
-	if (i == SORD_OBJECT) {
-		assert(node->refs_as_obj > 0);
-		--((SordNode*)node)->refs_as_obj;
+	if (node->node.type != SERD_LITERAL && i == SORD_OBJECT) {
+		assert(node->meta.res.refs_as_obj > 0);
+		--((SordNode*)node)->meta.res.refs_as_obj;
 	}
 	if (--((SordNode*)node)->refs == 0) {
 		sord_node_free_internal(sord_get_world(sord), (SordNode*)node);
@@ -904,28 +905,31 @@ sord_node_get_type(const SordNode* node)
 }
 
 const uint8_t*
-sord_node_get_string(const SordNode* ref)
+sord_node_get_string(const SordNode* node)
 {
-	return ref->node.buf;
+	return node->node.buf;
 }
 
 const uint8_t*
-sord_node_get_string_counted(const SordNode* ref, size_t* len)
+sord_node_get_string_counted(const SordNode* node, size_t* len)
 {
-	*len = ref->node.n_chars;
-	return ref->node.buf;
+	*len = node->node.n_chars;
+	return node->node.buf;
 }
 
 const char*
-sord_node_get_language(const SordNode* ref)
+sord_node_get_language(const SordNode* node)
 {
-	return ref->lang[0] ? ref->lang : NULL;
+	if (node->node.type != SERD_LITERAL || !node->meta.lit.lang[0]) {
+		return NULL;
+	}
+	return node->meta.lit.lang;
 }
 
 SordNode*
-sord_node_get_datatype(const SordNode* ref)
+sord_node_get_datatype(const SordNode* node)
 {
-	return ref->datatype;
+	return (node->node.type == SERD_LITERAL) ? node->meta.lit.datatype : NULL;
 }
 
 SerdNodeFlags
@@ -937,7 +941,7 @@ sord_node_get_flags(const SordNode* node)
 bool
 sord_node_is_inline_object(const SordNode* node)
 {
-	return (node->node.type == SERD_BLANK) && (node->refs_as_obj == 1);
+	return (node->node.type == SERD_BLANK) && (node->meta.res.refs_as_obj == 1);
 }
 
 static SordNode*
@@ -954,7 +958,9 @@ sord_insert_node(SordWorld* world, const SordNode* key, bool copy)
 		if (copy) {
 			node->node.buf = sord_strndup(node->node.buf, node->node.n_bytes);
 		}
-		node->datatype = sord_node_copy(node->datatype);
+		if (node->node.type == SERD_LITERAL) {
+			node->meta.lit.datatype = sord_node_copy(node->meta.lit.datatype);
+		}
 		return node;
 	default:
 		assert(!node);
@@ -981,7 +987,7 @@ sord_new_uri_counted(SordWorld* world, const uint8_t* str,
 	}
 
 	const SordNode key = {
-		NULL, 1, 0, "", { str, n_bytes, n_chars, 0, SERD_URI }
+		{ str, n_bytes, n_chars, 0, SERD_URI }, 1, { { 0 } }
 	};
 
 	return sord_insert_node(world, &key, copy);
@@ -1018,7 +1024,7 @@ sord_new_blank_counted(SordWorld* world, const uint8_t* str,
                        size_t n_bytes, size_t n_chars)
 {
 	const SordNode key = {
-		NULL, 1, 0, "", { str, n_bytes, n_chars, 0, SERD_BLANK }
+		{ str, n_bytes, n_chars, 0, SERD_BLANK }, 1, { { 0 } }
 	};
 
 	return sord_insert_node(world, &key, true);
@@ -1041,11 +1047,12 @@ sord_new_literal_counted(SordWorld*     world,
                          const char*    lang)
 {
 	SordNode key = {
-		datatype, 1, 0, "", { str, n_bytes, n_chars, flags, SERD_LITERAL }
+		{ str, n_bytes, n_chars, flags, SERD_LITERAL }, 1, { { 0 } }
 	};
-	memset(key.lang, 0, sizeof(key.lang));
+	key.meta.lit.datatype = datatype;
+	memset(key.meta.lit.lang, 0, sizeof(key.meta.lit.lang));
 	if (lang) {
-		strncpy(key.lang, lang, sizeof(key.lang));
+		strncpy(key.meta.lit.lang, lang, sizeof(key.meta.lit.lang));
 	}
 
 	return sord_insert_node(world, &key, true);

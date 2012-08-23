@@ -1,4 +1,4 @@
-sord (9999) unstable;
+sord (0.10.0) stable;
 
   * Add error callback to world for custom error reporting
   * Performance and space (per node) improvements
@@ -6,6 +6,7 @@ sord (9999) unstable;
   * Make all 'zix' symbols private to avoid symbol clashes in static builds
   * Remove problematic "Loaded n statements" output from serdi
   * Strip down API documentation to a single clean page
+  * Fix various hyper-strict warnings
   * Do not require a C++ compiler to build
   * Add option to build utilities as static binaries
   * Upgrade to waf 1.7.2
@@ -13,7 +14,7 @@ sord (9999) unstable;
   * sordmm.hpp: Remove overzealous URI scheme assertion
   * sordmm.hpp: Correctly handle Sord::Node self-assignment
 
- -- David Robillard <d@drobilla.net>
+ -- David Robillard <d@drobilla.net>  Thu, 23 Aug 2012 00:19:51 -0400
 
 sord (0.8.0) stable;
 

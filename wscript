@@ -7,7 +7,7 @@ from waflib.extras import autowaf as autowaf
 import waflib.Logs as Logs, waflib.Options as Options
 
 # Version of this package (even if built as a child)
-SORD_VERSION       = '0.9.0'
+SORD_VERSION       = '0.10.0'
 SORD_MAJOR_VERSION = '0'
 
 # Library version (UNIX style major, minor, micro)
@@ -56,7 +56,7 @@ def configure(conf):
     autowaf.display_header('Sord configuration')
 
     autowaf.check_pkg(conf, 'serd-0', uselib_store='SERD',
-                      atleast_version='0.14.0', mandatory=True)
+                      atleast_version='0.18.0', mandatory=True)
     autowaf.check_pkg(conf, 'libpcre', uselib_store='PCRE', mandatory=False)
 
     conf.env.BUILD_TESTS  = Options.options.build_tests

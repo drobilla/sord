@@ -179,9 +179,6 @@ main(int argc, char** argv)
 
 	serd_reader_free(reader);
 
-	fprintf(stderr, "Loaded %lu statements\n",
-	        (unsigned long)sord_num_quads(sord));
-
 	SerdEnv* write_env = serd_env_new(&base_uri_node);
 
 	int output_style = SERD_STYLE_RESOLVED;

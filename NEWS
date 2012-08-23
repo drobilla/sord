@@ -2,7 +2,13 @@ sord (9999) unstable;
 
   * Add error callback to world for custom error reporting
   * Performance and space (per node) improvements
+  * SSE4.2 accelerated hashing for node interning, where available
+  * Make all 'zix' symbols private to avoid symbol clashes in static builds
   * Remove problematic "Loaded n statements" output from serdi
+  * Strip down API documentation to a single clean page
+  * Do not require a C++ compiler to build
+  * Add option to build utilities as static binaries
+  * Upgrade to waf 1.7.2
   * sordmm.hpp: Add indices and graphs parameters to Model constructor
   * sordmm.hpp: Remove overzealous URI scheme assertion
   * sordmm.hpp: Correctly handle Sord::Node self-assignment

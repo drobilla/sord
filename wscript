@@ -7,7 +7,7 @@ from waflib.extras import autowaf as autowaf
 import waflib.Logs as Logs, waflib.Options as Options
 
 # Version of this package (even if built as a child)
-SORD_VERSION       = '0.10.0'
+SORD_VERSION       = '0.10.1'
 SORD_MAJOR_VERSION = '0'
 
 # Library version (UNIX style major, minor, micro)
@@ -230,8 +230,8 @@ def build(bld):
     # Documentation
     autowaf.build_dox(bld, 'SORD', SORD_VERSION, top, out)
 
-    # Man page
-    bld.install_files('${MANDIR}/man1', 'doc/sordi.1')
+    # Man pages
+    bld.install_files('${MANDIR}/man1', bld.path.ant_glob('doc/*.1'))
 
     bld.add_post_fun(autowaf.run_ldconfig)
     if bld.env.DOCS:

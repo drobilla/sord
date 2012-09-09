@@ -1,8 +1,11 @@
-sord (0.10.1) unstable;
+sord (0.10.3) unstable;
 
+  * Implement better data type validation in sord_validate conformant with
+    the XSD and OWL specifications
+  * Fix memory leaks in sord_validate
   * Install sord_validate man page
 
- -- David Robillard <d@drobilla.net>  Sat, 25 Aug 2012 15:23:44 -0400
+ -- David Robillard <d@drobilla.net>  Sun, 09 Sep 2012 01:41:31 -0400
 
 sord (0.10.0) stable;
 

@@ -2,28 +2,22 @@
 import glob
 import os
 import subprocess
+import waflib.Logs as Logs
+import waflib.Options as Options
+import waflib.extras.autowaf as autowaf
 
-from waflib.extras import autowaf as autowaf
-import waflib.Logs as Logs, waflib.Options as Options
-
-# Version of this package (even if built as a child)
-SORD_VERSION       = '0.10.3'
-SORD_MAJOR_VERSION = '0'
-
-# Library version (UNIX style major, minor, micro)
+# Library and package version (UNIX style major, minor, micro)
 # major increment <=> incompatible changes
 # minor increment <=> compatible changes (additions)
 # micro increment <=> no interface changes
-# Sord uses the same version number for both library and package
-SORD_LIB_VERSION = SORD_VERSION
+SORD_VERSION       = '0.10.3'
+SORD_MAJOR_VERSION = '0'
 
-# Variables for 'waf dist'
-APPNAME = 'sord'
-VERSION = SORD_VERSION
-
-# Mandatory variables
-top = '.'
-out = 'build'
+# Mandatory waf variables
+APPNAME = 'sord'        # Package name for waf dist
+VERSION = SORD_VERSION  # Package version for waf dist
+top     = '.'           # Source directory
+out     = 'build'       # Build directory
 
 def options(opt):
     opt.load('compiler_c')
@@ -55,10 +49,6 @@ def configure(conf):
     autowaf.set_c99_mode(conf)
     autowaf.display_header('Sord configuration')
 
-    autowaf.check_pkg(conf, 'serd-0', uselib_store='SERD',
-                      atleast_version='0.18.0', mandatory=True)
-    autowaf.check_pkg(conf, 'libpcre', uselib_store='PCRE', mandatory=False)
-
     conf.env.BUILD_TESTS  = Options.options.build_tests
     conf.env.BUILD_UTILS  = not Options.options.no_utils
     conf.env.BUILD_SHARED = not Options.options.no_shared
@@ -66,12 +56,16 @@ def configure(conf):
     conf.env.BUILD_STATIC = (Options.options.static or
                              Options.options.static_progs)
 
-    # Check for gcov library (for test coverage)
     if conf.env.BUILD_TESTS:
-        conf.check_cc(lib='gcov',
-                      define_name='HAVE_GCOV',
-                      mandatory=False)
+        conf.check(lib         = 'gcov',
+                   define_name = 'HAVE_GCOV',
+                   mandatory   = False)
 
+    autowaf.check_pkg(conf, 'serd-0', uselib_store='SERD',
+                      atleast_version='0.18.0', mandatory=True)
+    autowaf.check_pkg(conf, 'libpcre', uselib_store='PCRE', mandatory=False)
+
+    # Parse dump options and define things accordingly
     dump = Options.options.dump.split(',')
     all = 'all' in dump
     if all or 'iter' in dump:
@@ -84,21 +78,10 @@ def configure(conf):
     autowaf.define(conf, 'SORD_VERSION', SORD_VERSION)
     conf.write_config_header('sord_config.h', remove=False)
 
-    def fallback(var, val):
-        conf.env[var] = val
-        Logs.warn('Warning: %s unset, using %s\n' % (var, val))
-        
-    conf.env.INCLUDES_SORD = ['${includedir}/sord-%s' % SORD_MAJOR_VERSION]
-    if not conf.env.INCLUDES_SERD:
-        fallback('INCLUDES_SERD', ['${includedir}/serd-0'])
-
-    conf.env.LIBPATH_SORD = [conf.env.LIBDIR]
-    if not conf.env.LIBPATH_SERD:
-        fallback('LIBPATH_SERD', conf.env.LIBPATH_SORD)
-
-    conf.env.LIB_SORD = ['sord-%s' % SORD_MAJOR_VERSION];
-    if not conf.env.LIB_SERD:
-        fallback('LIB_SERD', 'serd-0')
+    # Set up env for building against this serd in case we are a child 
+    conf.env.INCLUDES_SORD = ['${INCLUDEDIR}/sord-%s' % SORD_MAJOR_VERSION]
+    conf.env.LIBPATH_SORD  = [conf.env.LIBDIR]
+    conf.env.LIB_SORD      = ['sord-%s' % SORD_MAJOR_VERSION];
 
     autowaf.display_msg(conf, 'Utilities', bool(conf.env.BUILD_UTILS))
     autowaf.display_msg(conf, 'Unit tests', bool(conf.env.BUILD_TESTS))
@@ -133,7 +116,7 @@ def build(bld):
                   export_includes = ['.'],
                   name            = 'libsord',
                   target          = 'sord-%s' % SORD_MAJOR_VERSION,
-                  vnum            = SORD_LIB_VERSION,
+                  vnum            = SORD_VERSION,
                   install_path    = '${LIBDIR}',
                   libs            = libs,
                   defines         = defines + ['SORD_SHARED', 'SORD_INTERNAL'],
@@ -148,7 +131,7 @@ def build(bld):
                   export_includes = ['.'],
                   name            = 'libsord_static',
                   target          = 'sord-%s' % SORD_MAJOR_VERSION,
-                  vnum            = SORD_LIB_VERSION,
+                  vnum            = SORD_VERSION,
                   install_path    = '${LIBDIR}',
                   libs            = libs,
                   defines         = ['SORD_INTERNAL'])

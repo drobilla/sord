@@ -76,12 +76,8 @@ def configure(conf):
         autowaf.define(conf, 'SORD_DEBUG_WRITE', 1)
 
     autowaf.define(conf, 'SORD_VERSION', SORD_VERSION)
+    autowaf.set_lib_env(conf, 'sord', SORD_VERSION)
     conf.write_config_header('sord_config.h', remove=False)
-
-    # Set up env for building against this serd in case we are a child 
-    conf.env.INCLUDES_SORD = ['${INCLUDEDIR}/sord-%s' % SORD_MAJOR_VERSION]
-    conf.env.LIBPATH_SORD  = [conf.env.LIBDIR]
-    conf.env.LIB_SORD      = ['sord-%s' % SORD_MAJOR_VERSION];
 
     autowaf.display_msg(conf, 'Utilities', bool(conf.env.BUILD_UTILS))
     autowaf.display_msg(conf, 'Unit tests', bool(conf.env.BUILD_TESTS))
@@ -130,7 +126,7 @@ def build(bld):
                   includes        = ['.', './src'],
                   export_includes = ['.'],
                   name            = 'libsord_static',
-                  target          = 'sord-%s' % SORD_MAJOR_VERSION,
+                  target          = 'sord-%s' % lib_suff,
                   vnum            = SORD_VERSION,
                   install_path    = '${LIBDIR}',
                   libs            = libs,

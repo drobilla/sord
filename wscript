@@ -126,7 +126,7 @@ def build(bld):
                   includes        = ['.', './src'],
                   export_includes = ['.'],
                   name            = 'libsord_static',
-                  target          = 'sord-%s' % lib_suff,
+                  target          = 'sord-%s' % SORD_MAJOR_VERSION,
                   vnum            = SORD_VERSION,
                   install_path    = '${LIBDIR}',
                   libs            = libs,

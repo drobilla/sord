@@ -1,4 +1,4 @@
-sord (0.10.3) unstable;
+sord (0.10.4) stable;
 
   * Implement better data type validation in sord_validate conformant with
     the XSD and OWL specifications
@@ -6,7 +6,7 @@ sord (0.10.3) unstable;
   * Install sord_validate man page
   * Disable timestamps in HTML documentation for reproducible build
 
- -- David Robillard <d@drobilla.net>  Sun, 09 Sep 2012 03:19:01 -0400
+ -- David Robillard <d@drobilla.net>  Sun, 14 Oct 2012 18:23:55 -0400
 
 sord (0.10.0) stable;
 

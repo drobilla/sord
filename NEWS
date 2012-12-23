@@ -1,3 +1,9 @@
+sord (0.10.5) unstable;
+
+  * Update to waf 1.7.8 and autowaf r90 (install docs to versioned directory)
+
+ -- David Robillard <d@drobilla.net>  Sat, 22 Dec 2012 20:15:47 -0500
+
 sord (0.10.4) stable;
 
   * Implement better data type validation in sord_validate conformant with

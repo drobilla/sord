@@ -113,7 +113,6 @@ public:
 		: _next_blank_id(0)
 	{
 		_c_obj = sord_world_new();
-		add_prefix("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
 	}
 
 	inline ~World() {

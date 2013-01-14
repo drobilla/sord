@@ -151,6 +151,7 @@ public:
 	inline Node(World& world, Type t, const std::string& s);
 	inline Node(World& world);
 	inline Node(World& world, const SordNode* node);
+	inline Node(World& world, SordNode* node, bool copy=false);
 	inline Node(const Node& other);
 	inline ~Node();
 
@@ -240,6 +241,30 @@ class Literal : public Node {
 public:
 	inline Literal(World& world, const std::string& s)
 		: Node(world, Node::LITERAL, s) {}
+
+	static inline Node decimal(World& world, double d, unsigned frac_digits) {
+		const SerdNode val  = serd_node_new_decimal(d, 7);
+		const SerdNode type = serd_node_from_string(
+			SERD_URI, (const uint8_t*)SORD_NS_XSD "decimal");
+
+		return Node(
+			world,
+			sord_node_from_serd_node(
+				world.c_obj(), world.prefixes().c_obj(), &val, &type, NULL),
+			false);
+	}
+
+	static inline Node integer(World& world, int64_t i) {
+		const SerdNode val  = serd_node_new_integer(i);
+		const SerdNode type = serd_node_from_string(
+			SERD_URI, (const uint8_t*)SORD_NS_XSD "integer");
+
+		return Node(
+			world,
+			sord_node_from_serd_node(
+				world.c_obj(), world.prefixes().c_obj(), &val, &type, NULL),
+			false);
+	}
 };
 
 inline
@@ -278,7 +303,14 @@ inline
 Node::Node(World& world, const SordNode* node)
 	: _world(&world)
 {
-	_c_obj = node ? sord_node_copy(node) : NULL;
+	_c_obj = sord_node_copy(node);
+}
+
+inline
+Node::Node(World& world, SordNode* node, bool copy)
+	: _world(&world)
+{
+	_c_obj = copy ? sord_node_copy(node) : node;
 }
 
 inline

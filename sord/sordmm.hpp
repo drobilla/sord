@@ -161,6 +161,10 @@ public:
 	inline const SordNode* get_node() const { return _c_obj; }
 	inline SordNode*       get_node()       { return _c_obj; }
 
+	const SerdNode* to_serd_node() {
+		return sord_node_to_serd_node(_c_obj);
+	}
+
 	inline bool is_valid() const { return type() != UNKNOWN; }
 
 	inline bool operator<(const Node& other) const {

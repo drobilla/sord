@@ -2,9 +2,10 @@ sord (0.10.5) unstable;
 
   * Update to waf 1.7.8 and autowaf r90 (install docs to versioned directory)
   * sordmm.hpp: Add convenient constructors for decimal and integer literals
+  * sordmm.hpp: Add Node::to_serd_node()
   * sordmm.hpp: Don't automatically add RDF namespace prefix to world
 
- -- David Robillard <d@drobilla.net>  Mon, 14 Jan 2013 00:19:49 -0500
+ -- David Robillard <d@drobilla.net>  Mon, 14 Jan 2013 01:24:56 -0500
 
 sord (0.10.4) stable;
 

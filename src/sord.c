@@ -844,6 +844,31 @@ sord_search(SordModel*      model,
 	return sord_find(model, pat);
 }
 
+const SordNode*
+sord_get(SordModel*      model,
+         const SordNode* s,
+         const SordNode* p,
+         const SordNode* o,
+         const SordNode* g)
+{
+	if ((bool)s + (bool)p + (bool)o != 2) {
+		return NULL;
+	}
+
+	SordIter*       i   = sord_search(model, s, p, o, g);
+	const SordNode* ret = NULL;
+	if (!s) {
+		ret = sord_iter_get_node(i, SORD_SUBJECT);
+	} else if (!p) {
+		ret = sord_iter_get_node(i, SORD_PREDICATE);
+	} else if (!o) {
+		ret = sord_iter_get_node(i, SORD_OBJECT);
+	}
+
+	sord_iter_free(i);
+	return ret;
+}
+
 bool
 sord_ask(SordModel*      model,
          const SordNode* s,

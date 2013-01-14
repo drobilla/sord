@@ -466,6 +466,10 @@ public:
 	                 const Node& predicate,
 	                 const Node& object);
 
+	inline Node get(const Node& subject,
+	                const Node& predicate,
+	                const Node& object);
+
 	inline World& world() const { return _world; }
 
 private:
@@ -629,6 +633,18 @@ Model::find(const Node& subject,
 	                  NULL };
 
 	return Iter(_world, sord_find(_c_obj, quad));
+}
+
+inline Node
+Model::get(const Node& subject,
+           const Node& predicate,
+           const Node& object)
+{
+	return Node(_world, sord_get(_c_obj,
+	                             subject.c_obj(),
+	                             predicate.c_obj(),
+	                             object.c_obj(),
+	                             NULL));
 }
 
 }  // namespace Sord

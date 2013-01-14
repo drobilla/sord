@@ -238,6 +238,22 @@ test_read(SordWorld* world, SordModel* sord, SordNode* g,
 		                 TUP_FMT_ARGS(nomatch));
 	}
 
+	if (sord_get(sord, NULL, NULL, uri(world, 3), g)) {
+		return test_fail("Fail: Get *,*,3 succeeded\n");
+	} else if (!sord_node_equals(
+		           sord_get(sord, uri(world, 1), uri(world, 2), NULL, g),
+		           uri(world, 3))) {
+		return test_fail("Fail: Get 1,2,* != 3\n");
+	} else if (!sord_node_equals(
+		           sord_get(sord, uri(world, 1), NULL, uri(world, 3), g),
+		           uri(world, 2))) {
+		return test_fail("Fail: Get 1,*,3 != 2\n");
+	} else if (!sord_node_equals(
+		           sord_get(sord, NULL, uri(world, 2), uri(world, 3), g),
+		           uri(world, 1))) {
+		return test_fail("Fail: Get *,2,3 != 1\n");
+	}
+
 	for (unsigned i = 0; i < NUM_PATTERNS; ++i) {
 		QueryTest test = patterns[i];
 		SordQuad  pat = { test.query[0], test.query[1], test.query[2], g };

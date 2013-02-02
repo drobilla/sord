@@ -63,6 +63,7 @@ typedef struct {
 	SordNode* rdfs_domain;
 	SordNode* rdfs_range;
 	SordNode* rdfs_subClassOf;
+	SordNode* xsd_anyURI;
 	SordNode* xsd_decimal;
 	SordNode* xsd_maxInclusive;
 	SordNode* xsd_minInclusive;
@@ -349,6 +350,12 @@ check_type(SordModel*      model,
 	} else if (sord_node_get_type(node) == SORD_URI) {
 		if (sord_node_equals(type, uris->foaf_Document)) {
 			return true;  // Questionable...
+		} else if (is_descendant_of(
+			           model, uris,
+			           type, uris->xsd_anyURI, uris->owl_onDatatype)) {
+			/* Type is any URI and this is a URI, so pass.  Restrictions on
+			   anyURI subtypes are not currently checked (very uncommon). */
+			return true;  // Type is anyURI, and this is a URI
 		} else {
 			SordIter* t = sord_search(model, node, uris->rdf_type, NULL, NULL);
 			for (; !sord_iter_end(t); sord_iter_next(t)) {
@@ -446,6 +453,7 @@ main(int argc, char** argv)
 	URI(rdfs, domain);
 	URI(rdfs, range);
 	URI(rdfs, subClassOf);
+	URI(xsd, anyURI);
 	URI(xsd, decimal);
 	URI(xsd, maxInclusive);
 	URI(xsd, minInclusive);
@@ -465,24 +473,29 @@ main(int argc, char** argv)
 		const SordNode* pred = quad[SORD_PREDICATE];
 		const SordNode* obj  = quad[SORD_OBJECT];
 
-		bool is_Property = sord_ask(
-			model, pred, uris.rdf_type, uris.rdf_Property, 0);
-		bool is_OntologyProperty = sord_ask(
-			model, pred, uris.rdf_type, uris.owl_OntologyProperty, 0);
-		bool is_ObjectProperty = sord_ask(
-			model, pred, uris.rdf_type, uris.owl_ObjectProperty, 0);
-		bool is_FunctionalProperty = sord_ask(
-			model, pred, uris.rdf_type, uris.owl_FunctionalProperty, 0);
-		bool is_InverseFunctionalProperty = sord_ask(
-			model, pred, uris.rdf_type, uris.owl_InverseFunctionalProperty, 0);
-		bool is_DatatypeProperty = sord_ask(
-			model, pred, uris.rdf_type, uris.owl_DatatypeProperty, 0);
-		bool is_AnnotationProperty = sord_ask(
-			model, pred, uris.rdf_type, uris.owl_AnnotationProperty, 0);
+		bool is_any_property = false;
+		SordIter* t = sord_search(model, pred, uris.rdf_type, NULL, NULL);
+		for (; !sord_iter_end(t); sord_iter_next(t)) {
+			if (is_descendant_of(model, &uris,
+			                     sord_iter_get_node(t, SORD_OBJECT),
+			                     uris.rdf_Property,
+			                     uris.rdfs_subClassOf)) {
+				is_any_property = true;
+				break;
+			}
+		}
+		sord_iter_free(t);
 
-		if (!is_Property && !is_OntologyProperty && !is_ObjectProperty &&
-		    !is_FunctionalProperty && !is_InverseFunctionalProperty &&
-		    !is_DatatypeProperty && !is_AnnotationProperty) {
+		const bool is_ObjectProperty = sord_ask(
+			model, pred, uris.rdf_type, uris.owl_ObjectProperty, 0);
+		const bool is_FunctionalProperty = sord_ask(
+			model, pred, uris.rdf_type, uris.owl_FunctionalProperty, 0);
+		const bool is_InverseFunctionalProperty = sord_ask(
+			model, pred, uris.rdf_type, uris.owl_InverseFunctionalProperty, 0);
+		const bool is_DatatypeProperty = sord_ask(
+			model, pred, uris.rdf_type, uris.owl_DatatypeProperty, 0);
+
+		if (!is_any_property) {
 			error("Use of undefined property", quad);
 		}
 

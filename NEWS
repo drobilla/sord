@@ -2,11 +2,13 @@ sord (0.10.5) unstable;
 
   * Update to waf 1.7.8 and autowaf r90 (install docs to versioned directory)
   * Add sord_node_get() for easily getting single property values
+  * sord_validate: Pass type check when range is xsd:anyURI and value is a URI
+  * sord_validate: Support any subClassOf rdf:Property, not just baked-in ones
   * sordmm.hpp: Add convenient constructors for decimal and integer literals
   * sordmm.hpp: Add Node::to_serd_node()
   * sordmm.hpp: Don't automatically add RDF namespace prefix to world
 
- -- David Robillard <d@drobilla.net>  Mon, 14 Jan 2013 01:52:25 -0500
+ -- David Robillard <d@drobilla.net>  Sun, 27 Jan 2013 12:30:50 -0500
 
 sord (0.10.4) stable;
 

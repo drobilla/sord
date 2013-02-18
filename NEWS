@@ -1,4 +1,4 @@
-sord (0.10.5) unstable;
+sord (0.12.0) stable;
 
   * Update to waf 1.7.9 and autowaf r90 (install docs to versioned directory)
   * Add sord_get() for easily getting single property values
@@ -8,7 +8,7 @@ sord (0.10.5) unstable;
   * sordmm.hpp: Add Node::to_serd_node()
   * sordmm.hpp: Don't automatically add RDF namespace prefix to world
 
- -- David Robillard <d@drobilla.net>  Sun, 03 Feb 2013 14:18:21 -0500
+ -- David Robillard <d@drobilla.net>  Mon, 18 Feb 2013 11:05:59 -0500
 
 sord (0.10.4) stable;
 

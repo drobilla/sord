@@ -401,10 +401,11 @@ sord_search(SordModel*      model,
    Search for a single node that matches a pattern.
    Exactly one of @p s, @p p, @p o must be NULL.
    This function is mainly useful for predicates that only have one value.
+   The returned node must be freed using sord_node_free.
    @return the first matching node, or NULL if no matches are found.
 */
 SORD_API
-const SordNode*
+SordNode*
 sord_get(SordModel*      model,
          const SordNode* s,
          const SordNode* p,

@@ -844,7 +844,7 @@ sord_search(SordModel*      model,
 	return sord_find(model, pat);
 }
 
-const SordNode*
+SordNode*
 sord_get(SordModel*      model,
          const SordNode* s,
          const SordNode* p,
@@ -855,14 +855,14 @@ sord_get(SordModel*      model,
 		return NULL;
 	}
 
-	SordIter*       i   = sord_search(model, s, p, o, g);
-	const SordNode* ret = NULL;
+	SordIter* i   = sord_search(model, s, p, o, g);
+	SordNode* ret = NULL;
 	if (!s) {
-		ret = sord_iter_get_node(i, SORD_SUBJECT);
+		ret = sord_node_copy(sord_iter_get_node(i, SORD_SUBJECT));
 	} else if (!p) {
-		ret = sord_iter_get_node(i, SORD_PREDICATE);
+		ret = sord_node_copy(sord_iter_get_node(i, SORD_PREDICATE));
 	} else if (!o) {
-		ret = sord_iter_get_node(i, SORD_OBJECT);
+		ret = sord_node_copy(sord_iter_get_node(i, SORD_OBJECT));
 	}
 
 	sord_iter_free(i);

@@ -204,7 +204,10 @@ def build(bld):
             if bld.env.STATIC_PROGS:
                 obj.env.SHLIB_MARKER = obj.env.STLIB_MARKER
                 obj.linkflags        = ['-static', '-Wl,--start-group']
-            autowaf.use_lib(bld, obj, 'SERD PCRE')
+            autowaf.use_lib(bld, obj, 'SERD')
+            if i == 'sord_validate':
+                autowaf.use_lib(bld, obj, 'PCRE')
+                obj.cflags = '-pthread'
 
     # Documentation
     autowaf.build_dox(bld, 'SORD', SORD_VERSION, top, out)

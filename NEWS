@@ -1,9 +1,10 @@
 sord (0.12.1) unstable;
 
+  * Fix iteration over an entire graph (* * * graph)
   * sordmm.hpp: Remove unused members
   * Update to waf 1.7.11
 
- -- David Robillard <d@drobilla.net>  Tue, 20 Aug 2013 11:33:58 -0400
+ -- David Robillard <d@drobilla.net>  Tue, 15 Jul 2014 15:16:07 -0400
 
 sord (0.12.0) stable;
 

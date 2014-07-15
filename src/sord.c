@@ -570,8 +570,14 @@ sord_best_index(SordModel*     sord,
 	*n_prefix = 0;
 	switch (sig) {
 	case 0x000:
-		*mode = ALL;
-		return graph_search ? DEFAULT_GRAPH_ORDER : DEFAULT_ORDER;
+		if (graph_search) {
+			*mode     = RANGE;
+			*n_prefix = 1;
+			return DEFAULT_GRAPH_ORDER;
+		} else {
+			*mode = ALL;
+			return DEFAULT_ORDER;
+		}
 	case 0x111:
 		*mode = SINGLE;
 		return graph_search ? DEFAULT_GRAPH_ORDER : DEFAULT_ORDER;
@@ -809,10 +815,8 @@ sord_find(SordModel* sord, const SordQuad pat)
 	int             n_prefix;
 	const SordOrder index_order = sord_best_index(sord, pat, &mode, &n_prefix);
 
-	SORD_FIND_LOG("Find " TUP_FMT "  index=%s  mode=%d"
-	              "  n_prefix=%d ordering=%d%d%d%d\n",
-	              TUP_FMT_ARGS(pat), order_names[index_order], mode, n_prefix,
-	              ordering[0], ordering[1], ordering[2], ordering[3]);
+	SORD_FIND_LOG("Find " TUP_FMT "  index=%s  mode=%d  n_prefix=%d\n",
+	              TUP_FMT_ARGS(pat), order_names[index_order], mode, n_prefix);
 
 	if (pat[0] && pat[1] && pat[2] && pat[3])
 		mode = SINGLE;  // No duplicate quads (Sord is a set)

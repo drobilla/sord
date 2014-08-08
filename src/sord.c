@@ -336,7 +336,7 @@ sord_iter_forward(SordIter* iter)
 }
 
 /**
-   Seek forward as necessary until @a iter points at a match.
+   Seek forward as necessary until `iter` points at a match.
    @return true iff iterator reached end of valid range.
 */
 static inline bool
@@ -353,7 +353,7 @@ sord_iter_seek_match(SordIter* iter)
 }
 
 /**
-   Seek forward as necessary until @a iter points at a match, or the prefix
+   Seek forward as necessary until `iter` points at a match, or the prefix
    no longer matches iter->pat.
    @return true iff iterator reached end of valid range.
 */
@@ -520,8 +520,8 @@ sord_iter_free(SordIter* iter)
 }
 
 /**
-   Return true iff @a sord has an index for @a order.
-   If @a graphs is true, @a order will be modified to be the
+   Return true iff `sord` has an index for `order`.
+   If `graphs` is true, `order` will be modified to be the
    corresponding order with a G prepended (so G will be the MSN).
 */
 static inline bool
@@ -540,7 +540,7 @@ sord_has_index(SordModel* sord, SordOrder* order, int* n_prefix, bool graphs)
    @param pat Pattern in standard (S P O G) order
    @param mode Set to the (best) iteration mode for iterating over results
    @param n_prefix Set to the length of the range prefix
-   (for @a mode == RANGE and @a mode == FILTER_RANGE)
+   (for `mode` == RANGE and `mode` == FILTER_RANGE)
 */
 static inline SordOrder
 sord_best_index(SordModel*     sord,

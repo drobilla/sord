@@ -159,7 +159,7 @@ sord_world_free(SordWorld* world);
 /**
    Set a function to be called when errors occur.
 
-   The @p error_sink will be called with @p handle as its first argument.  If
+   The `error_sink` will be called with `handle` as its first argument.  If
    no error function is set, errors are printed to stderr.
 */
 SORD_API
@@ -399,7 +399,7 @@ sord_search(SordModel*      model,
             const SordNode* g);
 /**
    Search for a single node that matches a pattern.
-   Exactly one of @p s, @p p, @p o must be NULL.
+   Exactly one of `s`, `p`, `o` must be NULL.
    This function is mainly useful for predicates that only have one value.
    The returned node must be freed using sord_node_free.
    @return the first matching node, or NULL if no matches are found.

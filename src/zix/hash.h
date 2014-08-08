@@ -43,8 +43,8 @@ typedef uint32_t (*ZixHashFunc)(const void* value);
 /**
    Function to visit a hash element.
 */
-typedef void (*ZixHashVisitFunc)(const void* value,
-                                 void*       user_data);
+typedef void (*ZixHashVisitFunc)(void* value,
+                                 void* user_data);
 
 /**
    Create a new hash table.
@@ -124,7 +124,7 @@ zix_hash_find(const ZixHash* hash,
    @param user_data The user_data parameter passed to @p f.
 */
 ZIX_API void
-zix_hash_foreach(const ZixHash*   hash,
+zix_hash_foreach(ZixHash*         hash,
                  ZixHashVisitFunc f,
                  void*            user_data);
 

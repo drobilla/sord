@@ -199,9 +199,9 @@ sord_world_new(void)
 }
 
 static void
-free_node_entry(const void* value, void* user_data)
+free_node_entry(void* value, void* user_data)
 {
-	const SordNode* node = (const SordNode*)value;
+	SordNode* node = (SordNode*)value;
 	if (node->node.type == SERD_LITERAL) {
 		sord_node_free((SordWorld*)user_data, node->meta.lit.datatype);
 	}

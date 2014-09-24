@@ -538,6 +538,13 @@ main(int argc, char** argv)
 		goto fail;
 	}
 
+	SordIter* iter = sord_find(sord, tup);
+	if (!sord_iter_end(iter)) {
+		fprintf(stderr, "Found removed tuple\n");
+		goto fail;
+	}
+	sord_iter_free(iter);
+
 	sord_free(sord);
 
 	sord_world_free(world);

@@ -445,6 +445,8 @@ sord_contains(SordModel* model, const SordQuad pat);
    Add a quad to a model.
 
    Calling this function invalidates all iterators on `model`.
+
+   @return true on success, false, on error.
 */
 SORD_API
 bool

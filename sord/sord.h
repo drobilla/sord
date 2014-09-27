@@ -436,6 +436,8 @@ sord_count(SordModel*      model,
 
 /**
    Check if `model` contains a triple pattern.
+
+   @return true if `model` contains a match for `pat`, otherwise false.
 */
 SORD_API
 bool

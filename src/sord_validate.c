@@ -165,7 +165,7 @@ regexp_match(const uint8_t* pat, const char* str)
 #ifdef HAVE_PCRE
 	// Append a $ to the pattern so we only match if the entire string matches
 	const size_t len  = strlen((const char*)pat);
-	char* const  regx = malloc(len + 2);
+	char* const  regx = (char*)malloc(len + 2);
 	memcpy(regx, pat, len);
 	regx[len]     = '$';
 	regx[len + 1] = '\0';

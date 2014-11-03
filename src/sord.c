@@ -1194,7 +1194,7 @@ sord_add(SordModel* sord, const SordQuad tup)
 	memcpy(quad, tup, sizeof(SordQuad));
 
 	for (unsigned i = 0; i < NUM_ORDERS; ++i) {
-		if (sord->indices[i]) {
+		if (sord->indices[i] && (i < GSPO || tup[3])) {
 			if (!sord_add_to_index(sord, quad, (SordOrder)i)) {
 				assert(i == 0);  // Assuming index coherency
 				free(quad);

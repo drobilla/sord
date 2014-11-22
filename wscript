@@ -190,7 +190,10 @@ def build(bld):
 
     # Utilities
     if bld.env.BUILD_UTILS:
-        for i in ['sordi', 'sord_validate']:
+        utils = ['sordi']
+        if bld.env.HAVE_PCRE:
+            utils += ['sord_validate']
+        for i in utils:
             obj = bld(features     = 'c cprogram',
                       source       = 'src/%s.c' % i,
                       includes     = ['.', './src'],

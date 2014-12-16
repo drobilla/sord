@@ -65,6 +65,17 @@ def configure(conf):
                       atleast_version='0.18.0', mandatory=True)
     autowaf.check_pkg(conf, 'libpcre', uselib_store='PCRE', mandatory=False)
 
+    if conf.is_defined('HAVE_PCRE'):
+        if conf.check(cflags=['-pthread'], mandatory=False):
+            conf.env.PTHREAD_CFLAGS    = ['-pthread']
+            conf.env.PTHREAD_LINKFLAGS = ['-pthread']
+        elif conf.check(linkflags=['-lpthread'], mandatory=False):
+            conf.env.PTHREAD_CFLAGS    = []
+            conf.env.PTHREAD_LINKFLAGS = ['-lpthread']
+        else:
+            conf.env.PTHREAD_CFLAGS    = []
+            conf.env.PTHREAD_LINKFLAGS = []
+
     # Parse dump options and define things accordingly
     dump = Options.options.dump.split(',')
     all = 'all' in dump
@@ -210,7 +221,8 @@ def build(bld):
             autowaf.use_lib(bld, obj, 'SERD')
             if i == 'sord_validate':
                 autowaf.use_lib(bld, obj, 'PCRE')
-                obj.cflags = '-pthread'
+                obj.cflags    = bld.env.PTHREAD_CFLAGS
+                obj.linkflags = bld.env.PTHREAD_LINKFLAGS
 
     # Documentation
     autowaf.build_dox(bld, 'SORD', SORD_VERSION, top, out)

@@ -1220,7 +1220,7 @@ sord_remove(SordModel* sord, const SordQuad tup)
 
 	SordNode* quad = NULL;
 	for (unsigned i = 0; i < NUM_ORDERS; ++i) {
-		if (sord->indices[i]) {
+		if (sord->indices[i] && (i < GSPO || tup[3])) {
 			if (zix_btree_remove(sord->indices[i], tup, (void**)&quad, NULL)) {
 				assert(i == 0);  // Assuming index coherency
 				return;  // Quad not found, do nothing

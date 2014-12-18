@@ -65,7 +65,7 @@ def configure(conf):
                       atleast_version='0.18.0', mandatory=True)
     autowaf.check_pkg(conf, 'libpcre', uselib_store='PCRE', mandatory=False)
 
-    if conf.is_defined('HAVE_PCRE'):
+    if conf.env.HAVE_PCRE:
         if conf.check(cflags=['-pthread'], mandatory=False):
             conf.env.PTHREAD_CFLAGS    = ['-pthread']
             conf.env.PTHREAD_LINKFLAGS = ['-pthread']

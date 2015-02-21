@@ -651,4 +651,3 @@ Model::get(const Node& subject,
 }  // namespace Sord
 
 #endif  // SORD_SORDMM_HPP
-

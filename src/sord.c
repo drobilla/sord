@@ -447,14 +447,14 @@ sord_iter_get_node(const SordIter* iter, SordQuadIndex index)
 	return iter ? ((SordNode**)zix_btree_get(iter->cur))[index] : NULL;
 }
 
-bool
-sord_iter_next(SordIter* iter)
+static bool
+sord_iter_scan_next(SordIter* iter)
 {
-	if (iter->end)
+	if (iter->end) {
 		return true;
+	}
 
 	const SordNode** key;
-	iter->end = sord_iter_forward(iter);
 	if (!iter->end) {
 		switch (iter->mode) {
 		case ALL:
@@ -503,6 +503,17 @@ sord_iter_next(SordIter* iter)
 #endif
 		return false;
 	}
+}
+
+bool
+sord_iter_next(SordIter* iter)
+{
+	if (iter->end) {
+		return true;
+	}
+
+	iter->end = sord_iter_forward(iter);
+	return sord_iter_scan_next(iter);
 }
 
 bool
@@ -1258,6 +1269,7 @@ sord_erase(SordModel* sord, SordIter* iter)
 		}
 	}
 	iter->end = zix_btree_iter_is_end(iter->cur);
+	sord_iter_scan_next(iter);
 
 	free(quad);
 

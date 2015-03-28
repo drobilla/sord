@@ -67,6 +67,7 @@ typedef struct {
 	SordNode* rdfs_Literal;
 	SordNode* rdfs_Resource;
 	SordNode* rdfs_domain;
+	SordNode* rdfs_label;
 	SordNode* rdfs_range;
 	SordNode* rdfs_subClassOf;
 	SordNode* xsd_anyURI;
@@ -455,6 +456,11 @@ check_properties(SordModel* model, URIs* uris)
 			st = error("Use of undefined property", quad);
 		}
 
+		if (!sord_ask(model, pred, uris->rdfs_label, NULL, NULL)) {
+			st = errorf("Property <%s> has no label\n",
+			            sord_node_get_string(pred));
+		}
+
 		if (is_DatatypeProperty &&
 		    sord_node_get_type(obj) != SORD_LITERAL) {
 			st = error("Datatype property with non-literal value", quad);
@@ -714,6 +720,7 @@ main(int argc, char** argv)
 	URI(rdfs, Literal);
 	URI(rdfs, Resource);
 	URI(rdfs, domain);
+	URI(rdfs, label);
 	URI(rdfs, range);
 	URI(rdfs, subClassOf);
 	URI(xsd, anyURI);

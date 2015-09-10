@@ -44,7 +44,7 @@ def configure(conf):
         except:
             Logs.warn("No C++ compiler, sordmm.hpp compile test skipped")
             pass
-        
+
     autowaf.configure(conf)
     autowaf.set_c99_mode(conf)
     autowaf.display_header('Sord configuration')
@@ -129,7 +129,7 @@ def build(bld):
                   defines         = defines + ['SORD_SHARED', 'SORD_INTERNAL'],
                   cflags          = libflags)
         autowaf.use_lib(bld, obj, 'SERD')
-    
+
     # Static Library
     if bld.env.BUILD_STATIC:
         obj = bld(features        = 'c cstlib',
@@ -209,7 +209,7 @@ def build(bld):
                       source       = 'src/%s.c' % i,
                       includes     = ['.', './src'],
                       use          = 'libsord',
-                      lib          = libs, 
+                      lib          = libs,
                       target       = i,
                       install_path = '${BINDIR}',
                       defines      = defines)

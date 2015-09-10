@@ -163,6 +163,7 @@ main(int argc, char** argv)
 		base_uri_node = serd_node_new_file_uri(in_path, NULL, &base_uri, false);
 	}
 
+	free(in_path);
 	if (!base_uri_node.buf) {
 		fprintf(stderr, "Missing base URI\n");
 		return 1;

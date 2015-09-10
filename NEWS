@@ -1,8 +1,9 @@
-sord (0.13.0) unstable;
+sord (0.13.1) unstable;
 
   * Reduce memory usage and increase performance with a better data structure
   * Add sord_erase() for erasing statements via an iterator
   * Fix bugs with stores that contain both graphs and default graph statements
+  * Fix crash caused by multiple deletion of datatype nodes
   * Fix compilation on compilers that do not support -pthread flag
   * Fix minor memory leak in sordi
   * sord_validate: More extensive validation, including cardinality,
@@ -10,7 +11,7 @@ sord (0.13.0) unstable;
   * This release does not break the ABI, but the semantics of iterators has
     changed: any modification to a model invalidates iterators on that model
 
- -- David Robillard <d@drobilla.net>  Thu, 10 Sep 2015 11:46:40 -0400
+ -- David Robillard <d@drobilla.net>  Thu, 10 Sep 2015 11:48:51 -0400
 
 sord (0.12.2) stable;
 

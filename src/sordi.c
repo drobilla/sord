@@ -28,6 +28,9 @@
 #include "sord/sord.h"
 #include "sord_config.h"
 
+#define SORDI_ERROR(msg)       fprintf(stderr, "sordi: " msg);
+#define SORDI_ERRORF(fmt, ...) fprintf(stderr, "sordi: " fmt, __VA_ARGS__);
+
 typedef struct {
 	SerdWriter* writer;
 	SerdEnv*    env;
@@ -51,6 +54,7 @@ static int
 print_usage(const char* name, bool error)
 {
 	FILE* const os = error ? stderr : stdout;
+	fprintf(os, "%s", error ? "\n" : "");
 	fprintf(os, "Usage: %s [OPTION]... INPUT [BASE_URI]\n", name);
 	fprintf(os, "Load and re-serialise RDF data.\n");
 	fprintf(os, "Use - for INPUT to read from standard input.\n\n");
@@ -70,7 +74,7 @@ set_syntax(SerdSyntax* syntax, const char* name)
 	} else if (!strcmp(name, "ntriples")) {
 		*syntax = SERD_NTRIPLES;
 	} else {
-		fprintf(stderr, "Unknown input format `%s'\n", name);
+		SORDI_ERRORF("unknown syntax `%s'\n", name);
 		return false;
 	}
 	return true;
@@ -117,29 +121,29 @@ main(int argc, char** argv)
 			break;
 		} else if (argv[a][1] == 'i') {
 			if (++a == argc) {
-				fprintf(stderr, "Missing value for -i\n");
-				return 1;
+				SORDI_ERROR("option requires an argument -- 'i'\n\n");
+				return print_usage(argv[0], true);
 			}
 			if (!set_syntax(&input_syntax, argv[a])) {
-				return 1;
+				return print_usage(argv[0], true);
 			}
 		} else if (argv[a][1] == 'o') {
 			if (++a == argc) {
-				fprintf(stderr, "Missing value for -o\n");
-				return 1;
+				SORDI_ERROR("option requires an argument -- 'o'\n\n");
+				return print_usage(argv[0], true);
 			}
 			if (!set_syntax(&output_syntax, argv[a])) {
-				return 1;
+				return print_usage(argv[0], true);
 			}
 		} else {
-			fprintf(stderr, "Unknown option `%s'\n", argv[a]);
+			SORDI_ERRORF("invalid option -- '%s'\n", argv[a] + 1);
 			return print_usage(argv[0], true);
 		}
 	}
 
 	if (a == argc) {
-		fprintf(stderr, "Missing input\n");
-		return 1;
+		SORDI_ERROR("missing input\n");
+		return print_usage(argv[0], true);
 	}
 
 	const uint8_t* input   = (const uint8_t*)argv[a++];
@@ -165,8 +169,8 @@ main(int argc, char** argv)
 
 	free(in_path);
 	if (!base_uri_node.buf) {
-		fprintf(stderr, "Missing base URI\n");
-		return 1;
+		SORDI_ERROR("missing base URI\n");
+		return print_usage(argv[0], true);
 	}
 
 	SordWorld*  world  = sord_world_new();

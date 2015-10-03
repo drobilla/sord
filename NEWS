@@ -7,6 +7,7 @@ sord (0.13.1) unstable;
   * Fix compilation on compilers that do not support -pthread flag
   * Fix minor memory leak in sordi
   * Fix using sordi with stdin
+  * Show sordi errors in standard format
   * sord_validate: More extensive validation, including cardinality,
     PlainLiteral, and someValuesFrom restrictions.
   * This release does not break the ABI, but the semantics of iterators has
@@ -14,7 +15,7 @@ sord (0.13.1) unstable;
   * Improve test coverage
   * Upgrade to waf 1.8.14
 
- -- David Robillard <d@drobilla.net>  Sat, 03 Oct 2015 10:56:43 -0400
+ -- David Robillard <d@drobilla.net>  Sat, 03 Oct 2015 11:20:02 -0400
 
 sord (0.12.2) stable;
 

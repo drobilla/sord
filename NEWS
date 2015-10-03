@@ -10,9 +10,10 @@ sord (0.13.1) unstable;
     PlainLiteral, and someValuesFrom restrictions.
   * This release does not break the ABI, but the semantics of iterators has
     changed: any modification to a model invalidates iterators on that model
+  * Improve test coverage
   * Upgrade to waf 1.8.14
 
- -- David Robillard <d@drobilla.net>  Fri, 02 Oct 2015 20:55:15 -0400
+ -- David Robillard <d@drobilla.net>  Fri, 02 Oct 2015 21:13:32 -0400
 
 sord (0.12.2) stable;
 

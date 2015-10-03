@@ -25,6 +25,8 @@ static const int      DIGITS        = 3;
 static const int      MAX_NUM       = 999;
 static const unsigned n_objects_per = 2;
 
+static int n_expected_errors = 0;
+
 typedef struct {
 	SordQuad query;
 	int      expected_num_results;
@@ -353,6 +355,23 @@ test_read(SordWorld* world, SordModel* sord, SordNode* g,
 	return ret;
 }
 
+static SerdStatus
+unexpected_error(void* handle, const SerdError* error)
+{
+	fprintf(stderr, "unexpected error: ");
+	vfprintf(stderr, error->fmt, *error->args);
+	return SERD_SUCCESS;
+}
+
+static SerdStatus
+expected_error(void* handle, const SerdError* error)
+{
+	fprintf(stderr, "expected error: ");
+	vfprintf(stderr, error->fmt, *error->args);
+	++n_expected_errors;
+	return SERD_SUCCESS;
+}
+
 int
 main(int argc, char** argv)
 {
@@ -361,6 +380,53 @@ main(int argc, char** argv)
 	sord_free(NULL);  // Shouldn't crash
 
 	SordWorld* world = sord_world_new();
+
+	sord_world_set_error_sink(world, unexpected_error, NULL);
+
+	// Attempt to create invalid URI
+	SordNode* bad_uri = sord_new_uri(world, USTR("noscheme"));
+	if (bad_uri) {
+		return test_fail("Successfully created invalid URI \"noscheme\"\n");
+	}
+	sord_node_free(world, bad_uri);
+
+	// Attempt to create invalid CURIE
+	SerdEnv*  env    = serd_env_new(NULL);
+	SerdNode  sbadns = serd_node_from_string(SERD_CURIE, USTR("badns:"));
+	SordNode* badns  = sord_node_from_serd_node(world, env, &sbadns, NULL, NULL);
+	if (badns) {
+		return test_fail("Successfully created CURIE with bad namespace\n");
+	}
+	sord_node_free(world, badns);
+	serd_env_free(env);
+
+	// Attempt to create NULL node
+	SordNode* nil_node = sord_node_from_serd_node(
+		world, NULL, &SERD_NODE_NULL, NULL, NULL);
+	if (nil_node) {
+		return test_fail("Successfully created NULL node\n");
+	}
+	sord_node_free(world, nil_node);
+
+	// Attempt to double-free a node
+	SordNode* garbage = sord_new_uri(world, USTR("urn:garbage"));
+	sord_node_free(world, garbage);
+	sord_world_set_error_sink(world, expected_error, NULL);
+	sord_node_free(world, garbage);
+	sord_world_set_error_sink(world, unexpected_error, NULL);
+	if (n_expected_errors != 1) {
+		return test_fail("Successfully freed node twice\n");
+	}
+
+	// Check node flags are set properly
+	SordNode* with_newline = sord_new_literal(world, NULL, USTR("a\nb"), NULL);
+	if (!(sord_node_get_flags(with_newline) & SERD_HAS_NEWLINE)) {
+		return test_fail("Newline flag not set\n");
+	}
+	SordNode* with_quote = sord_new_literal(world, NULL, USTR("a\"b"), NULL);
+	if (!(sord_node_get_flags(with_quote) & SERD_HAS_QUOTE)) {
+		return test_fail("Quote flag not set\n");
+	}
 
 	// Create with minimal indexing
 	SordModel* sord = sord_new(world, SORD_SPO, false);
@@ -373,6 +439,7 @@ main(int argc, char** argv)
 	}
 
 	// Check adding tuples with NULL fields fails
+	sord_world_set_error_sink(world, expected_error, NULL);
 	const size_t initial_num_quads = sord_num_quads(sord);
 	SordQuad tup = { 0, 0, 0, 0};
 	if (sord_add(sord, tup)) {
@@ -391,6 +458,28 @@ main(int argc, char** argv)
 		return test_fail("Num quads %zu != %zu\n",
 		                 sord_num_quads(sord), initial_num_quads);
 	}
+
+	// Check adding tuples with an active iterator fails
+	SordIter* iter = sord_begin(sord);
+	tup[2] = uri(world, 3);
+	if (sord_add(sord, tup)) {
+		return test_fail("Added tuple with active iterator\n");
+	}
+
+	// Check removing tuples with several active iterator fails
+	SordIter* iter2 = sord_begin(sord);
+	if (!sord_erase(sord, iter)) {
+		return test_fail("Erased tuple with several active iterators\n");
+	}
+	n_expected_errors = 0;
+	sord_remove(sord, tup);
+	if (n_expected_errors != 1) {
+		return test_fail("Removed tuple with several active iterators\n");
+	}
+	sord_iter_free(iter);
+	sord_iter_free(iter2);
+
+	sord_world_set_error_sink(world, unexpected_error, NULL);
 
 	// Check interning merges equivalent values
 	SordNode* uri_id   = sord_new_uri(world, USTR("http://example.org"));
@@ -538,7 +627,7 @@ main(int argc, char** argv)
 		goto fail;
 	}
 
-	SordIter* iter = sord_find(sord, tup);
+	iter = sord_find(sord, tup);
 	if (!sord_iter_end(iter)) {
 		fprintf(stderr, "Found removed tuple\n");
 		goto fail;

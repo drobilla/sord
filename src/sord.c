@@ -361,8 +361,7 @@ sord_iter_seek_match(SordIter* iter)
 static inline bool
 sord_iter_seek_match_range(SordIter* iter)
 {
-	if (iter->end)
-		return true;
+	assert(!iter->end);
 
 	do {
 		const SordNode** key = (const SordNode**)zix_btree_get(iter->cur);
@@ -584,14 +583,10 @@ sord_best_index(SordModel*     sord,
 	*n_prefix = 0;
 	switch (sig) {
 	case 0x000:
-		if (graph_search) {
-			*mode     = RANGE;
-			*n_prefix = 1;
-			return DEFAULT_GRAPH_ORDER;
-		} else {
-			*mode = ALL;
-			return DEFAULT_ORDER;
-		}
+		assert(graph_search);
+		*mode     = RANGE;
+		*n_prefix = 1;
+		return DEFAULT_GRAPH_ORDER;
 	case 0x111:
 		*mode = SINGLE;
 		return graph_search ? DEFAULT_GRAPH_ORDER : DEFAULT_ORDER;
@@ -1165,10 +1160,9 @@ sord_node_free(SordWorld* world, SordNode* node)
 {
 	if (!node) {
 		return;
-	}
-
-	assert(node->refs > 0);
-	if (--node->refs == 0) {
+	} else if (node->refs == 0) {
+		error(world, SERD_ERR_BAD_ARG, "attempt to free garbage node\n");
+	} else if (--node->refs == 0) {
 		sord_node_free_internal(world, node);
 	}
 }
@@ -1252,6 +1246,7 @@ sord_erase(SordModel* sord, SordIter* iter)
 {
 	if (sord->n_iters > 1) {
 		error(sord->world, SERD_ERR_BAD_ARG, "erased with many iterators\n");
+		return SERD_ERR_BAD_ARG;
 	}
 
 	SordQuad tup;

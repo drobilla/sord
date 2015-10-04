@@ -27,6 +27,8 @@ def options(opt):
                    help='Do not build command line utilities')
     opt.add_option('--test', action='store_true', dest='build_tests',
                    help='Build unit tests')
+    opt.add_option('--no-coverage', action='store_true', dest='no_coverage',
+                   help='Do not use gcov for code coverage')
     opt.add_option('--static', action='store_true', dest='static',
                    help='Build static library')
     opt.add_option('--no-shared', action='store_true', dest='no_shared',
@@ -56,10 +58,8 @@ def configure(conf):
     conf.env.BUILD_STATIC = (Options.options.static or
                              Options.options.static_progs)
 
-    if conf.env.BUILD_TESTS:
-        conf.check(lib         = 'gcov',
-                   define_name = 'HAVE_GCOV',
-                   mandatory   = False)
+    if conf.env.BUILD_TESTS and not Options.options.no_coverage:
+        conf.check_cc(lib='gcov', define_name='HAVE_GCOV', mandatory=False)
 
     autowaf.check_pkg(conf, 'serd-0', uselib_store='SERD',
                       atleast_version='0.18.0', mandatory=True)

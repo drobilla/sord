@@ -22,6 +22,12 @@
 
 #include "sord/sord.h"
 
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 5)
+#    define SORD_UNREACHABLE() __builtin_unreachable()
+#else
+#    define SORD_UNREACHABLE() assert(false)
+#endif
+
 /** Resource node metadata */
 typedef struct {
 	size_t refs_as_obj;  ///< References as a quad object

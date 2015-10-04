@@ -22,7 +22,6 @@
 #include "sord/sord.h"
 
 static const int      DIGITS        = 3;
-static const int      MAX_NUM       = 999;
 static const unsigned n_objects_per = 2;
 
 static int n_expected_errors = 0;
@@ -89,7 +88,7 @@ generate(SordWorld* world,
 	// Add some literals
 
 	// (98 4 "hello") and (98 4 "hello"^^<5>)
-	SordQuad tup = { 0, 0, 0, 0};
+	SordQuad tup = { 0, 0, 0, 0 };
 	tup[0] = uri(world, 98);
 	tup[1] = uri(world, 4);
 	tup[2] = sord_new_literal(world, 0, USTR("hello"), NULL);
@@ -381,17 +380,20 @@ main(int argc, char** argv)
 
 	SordWorld* world = sord_world_new();
 
-	sord_world_set_error_sink(world, unexpected_error, NULL);
 
 	// Attempt to create invalid URI
+	fprintf(stderr, "expected ");
 	SordNode* bad_uri = sord_new_uri(world, USTR("noscheme"));
 	if (bad_uri) {
 		return test_fail("Successfully created invalid URI \"noscheme\"\n");
 	}
 	sord_node_free(world, bad_uri);
 
+	sord_world_set_error_sink(world, expected_error, NULL);
+
 	// Attempt to create invalid CURIE
-	SerdEnv*  env    = serd_env_new(NULL);
+	SerdNode  base   = serd_node_from_string(SERD_URI, USTR("http://example.org/"));
+	SerdEnv*  env    = serd_env_new(&base);
 	SerdNode  sbadns = serd_node_from_string(SERD_CURIE, USTR("badns:"));
 	SordNode* badns  = sord_node_from_serd_node(world, env, &sbadns, NULL, NULL);
 	if (badns) {
@@ -414,9 +416,11 @@ main(int argc, char** argv)
 	sord_world_set_error_sink(world, expected_error, NULL);
 	sord_node_free(world, garbage);
 	sord_world_set_error_sink(world, unexpected_error, NULL);
-	if (n_expected_errors != 1) {
+	if (n_expected_errors != 2) {
 		return test_fail("Successfully freed node twice\n");
 	}
+
+	sord_world_set_error_sink(world, unexpected_error, NULL);
 
 	// Check node flags are set properly
 	SordNode* with_newline = sord_new_literal(world, NULL, USTR("a\nb"), NULL);
@@ -664,10 +668,50 @@ main(int argc, char** argv)
 	}
 	sord_iter_free(iter);
 
+	// Load file into two separate graphs
 	sord_free(sord);
+	sord = sord_new(world, SORD_SPO, true);
+	env  = serd_env_new(&base);
+	SordNode*   graph1 = sord_new_uri(world, USTR("http://example.org/graph1"));
+	SordNode*   graph2 = sord_new_uri(world, USTR("http://example.org/graph2"));
+	SerdReader* reader = sord_new_reader(sord, env, SERD_TURTLE, graph1);
+	if ((st = serd_reader_read_string(reader, USTR("<s> <p> <o> .")))) {
+		fprintf(stderr, "Failed to read string (%s)\n", serd_strerror(st));
+		goto fail;
+	}
+	serd_reader_free(reader);
+	reader = sord_new_reader(sord, env, SERD_TURTLE, graph2);
+	if ((st = serd_reader_read_string(reader, USTR("<s> <p> <o> .")))) {
+		fprintf(stderr, "Failed to re-read string (%s)\n", serd_strerror(st));
+		goto fail;
+	}
 
+	// Ensure we only see triple once
+	size_t n_triples = 0;
+	for (iter = sord_begin(sord); !sord_iter_end(iter); sord_iter_next(iter)) {
+		fprintf(stderr, "%s %s %s %s\n",
+		        sord_node_get_string(sord_iter_get_node(iter, SORD_SUBJECT)),
+		        sord_node_get_string(sord_iter_get_node(iter, SORD_PREDICATE)),
+		        sord_node_get_string(sord_iter_get_node(iter, SORD_OBJECT)),
+		        sord_node_get_string(sord_iter_get_node(iter, SORD_GRAPH)));
+
+		++n_triples;
+	}
+	if (n_triples != 1) {
+		fprintf(stderr, "Found duplicate triple\n");
+		goto fail;
+	}
+
+	// Test SPO iteration on an SOP indexed store
+	sord_free(sord);
+	sord = sord_new(world, SORD_SOP, false);
+	generate(world, sord, 1, graph42);
+	for (iter = sord_begin(sord); !sord_iter_end(iter); sord_iter_next(iter)) {
+		++n_triples;
+	}
+
+	sord_free(sord);
 	sord_world_free(world);
-
 	return EXIT_SUCCESS;
 
 fail:

@@ -112,7 +112,7 @@ sord_new_reader(SordModel* model,
 	return reader;
 }
 
-static void
+static SerdStatus
 write_statement(SordModel*         sord,
                 SerdWriter*        writer,
                 SordQuad           tup,
@@ -140,7 +140,7 @@ write_statement(SordModel*         sord,
 	// TODO: Subject abbreviation
 
 	if (sord_node_is_inline_object(s) && !(flags & SERD_ANON_CONT)) {
-		return;
+		return SERD_SUCCESS;
 	}
 
 	SerdStatus st = SERD_SUCCESS;
@@ -156,10 +156,10 @@ write_statement(SordModel*         sord,
 
 		if (!st && sub_iter) {
 			flags |= SERD_ANON_CONT;
-			for (; !sord_iter_end(sub_iter); sord_iter_next(sub_iter)) {
+			for (; !st && !sord_iter_end(sub_iter); sord_iter_next(sub_iter)) {
 				SordQuad sub_tup;
 				sord_iter_get(sub_iter, sub_tup);
-				write_statement(sord, writer, sub_tup, flags);
+				st = write_statement(sord, writer, sub_tup, flags);
 			}
 			sord_iter_free(sub_iter);
 			serd_writer_end_anon(writer, so);
@@ -169,11 +169,7 @@ write_statement(SordModel*         sord,
 			writer, flags, NULL, ss, sp, so, sd, &language);
 	}
 
-	if (st) {
-		fprintf(stderr, "Failed to write statement (%s)\n",
-		        serd_strerror(st));
-		return;
-	}
+	return st;
 }
 
 bool
@@ -195,11 +191,13 @@ sord_write_iter(SordIter*   iter,
 	}
 
 	SordModel* model = (SordModel*)sord_iter_get_model(iter);
-	for (; !sord_iter_end(iter); sord_iter_next(iter)) {
+	SerdStatus st    = SERD_SUCCESS;
+	for (; !st && !sord_iter_end(iter); sord_iter_next(iter)) {
 		SordQuad tup;
 		sord_iter_get(iter, tup);
-		write_statement(model, writer, tup, 0);
+		st = write_statement(model, writer, tup, 0);
 	}
 	sord_iter_free(iter);
-	return true;
+
+	return !st;
 }

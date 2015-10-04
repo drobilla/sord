@@ -83,11 +83,13 @@ typedef enum {
 	GPOS,  ///< Graph,  Predicate, Object,    Subject
 } SordOrder;
 
+#ifdef SORD_DEBUG_SEARCH
 /** String name of each ordering (array indexed by SordOrder) */
 static const char* const order_names[NUM_ORDERS] = {
 	"spo",  "sop",  "ops",  "osp",  "pso",  "pos",
 	"gspo", "gsop", "gops", "gosp", "gpso", "gpos"
 };
+#endif
 
 /**
    Quads of indices for each order, from most to least significant
@@ -321,19 +323,19 @@ sord_iter_forward(SordIter* iter)
 		return zix_btree_iter_is_end(iter->cur);
 	}
 
-	SordNode** key = (SordNode**)zix_btree_get(iter->cur);
+	SordNode**     key     = (SordNode**)zix_btree_get(iter->cur);
 	const SordQuad initial = { key[0], key[1], key[2], key[3] };
-	while (true) {
-		zix_btree_iter_increment(iter->cur);
-		if (zix_btree_iter_is_end(iter->cur))
-			return true;
-
+	zix_btree_iter_increment(iter->cur);
+	while (!zix_btree_iter_is_end(iter->cur)) {
 		key = (SordNode**)zix_btree_get(iter->cur);
 		for (int i = 0; i < 3; ++i)
 			if (key[i] != initial[i])
 				return false;
+
+		zix_btree_iter_increment(iter->cur);
 	}
-	assert(false);
+
+	return true;
 }
 
 /**
@@ -612,7 +614,7 @@ sord_best_index(SordModel*     sord,
 	switch (sig) {
 		PAT_CASE(0x011, FILTER_RANGE, OSP, PSO, 1);
 		PAT_CASE(0x101, FILTER_RANGE, SPO, OPS, 1);
-		PAT_CASE(0x110, FILTER_RANGE, SOP, POS, 1);
+		// SPO is always present, so 0x110 is never reached here
 	default: break;
 	}
 
@@ -900,16 +902,14 @@ SordNodeType
 sord_node_get_type(const SordNode* node)
 {
 	switch (node->node.type) {
-	case SERD_BLANK:
-		return SORD_BLANK;
-	case SERD_LITERAL:
-		return SORD_LITERAL;
 	case SERD_URI:
 		return SORD_URI;
+	case SERD_BLANK:
+		return SORD_BLANK;
 	default:
-		fprintf(stderr, "error: invalid node type\n");
-		return (SordNodeType)0;
+		return SORD_LITERAL;
 	}
+	SORD_UNREACHABLE();
 }
 
 const uint8_t*

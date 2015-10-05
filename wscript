@@ -277,6 +277,8 @@ def test(ctx):
     snippet = '<s> <p> <o> .'
     if sys.platform == "win32":
         snippet = snippet.replace('<', '^<').replace('>', '^>')
+    else:
+        snippet = '"%s"' % snippet
 
     autowaf.run_tests(ctx, APPNAME, [
             'sordi_static "file://%s/tests/manifest.ttl" > %s' % (srcdir, nul),

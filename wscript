@@ -2,6 +2,7 @@
 import glob
 import os
 import subprocess
+import sys
 import waflib.Logs as Logs
 import waflib.Options as Options
 import waflib.extras.autowaf as autowaf
@@ -273,14 +274,18 @@ def test(ctx):
 
     nul = os.devnull
 
+    snippet = '<s> <p> <o> .'
+    if sys.platform == "win32":
+        snippet = snippet.replace('<', '^<').replace('>', '^>')
+
     autowaf.run_tests(ctx, APPNAME, [
-            'sordi_static file://%s/tests/manifest.ttl > %s' % (srcdir, nul),
-            'sordi_static %s/tests/UTF-8.ttl > %s' % (srcdir, nul),
+            'sordi_static "file://%s/tests/manifest.ttl" > %s' % (srcdir, nul),
+            'sordi_static "%s/tests/UTF-8.ttl" > %s' % (srcdir, nul),
             'sordi_static -v > %s' % nul,
             'sordi_static -h > %s' % nul,
             'sordi_static -s "<foo> a <#Thingie> ." file:///test > %s' % nul,
-            'echo "<s> <p> <o> ." | sordi_static - http://example.org/',
-            'echo "<s> <p> <o> ." | sordi_static -o turtle - http://example.org/',
+            'echo %s | sordi_static - http://example.org/' % snippet,
+            'echo %s | sordi_static -o turtle - http://example.org/' % snippet,
             'sordi_static %s > %s' % (nul, nul)],
                       0, name='sordi-cmd-good')
 

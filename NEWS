@@ -1,4 +1,4 @@
-sord (0.13.1) unstable;
+sord (0.14.0) stable;
 
   * Reduce memory usage and increase performance with a better data structure
   * Add sord_erase() for erasing statements via an iterator
@@ -15,7 +15,7 @@ sord (0.13.1) unstable;
   * Improve test coverage
   * Upgrade to waf 1.8.14
 
- -- David Robillard <d@drobilla.net>  Sat, 03 Oct 2015 11:20:02 -0400
+ -- David Robillard <d@drobilla.net>  Thu, 08 Oct 2015 15:37:36 -0400
 
 sord (0.12.2) stable;
 

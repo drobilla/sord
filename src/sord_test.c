@@ -206,10 +206,11 @@ test_read(SordWorld* world, SordModel* sord, SordNode* g,
 	SordNode* gb_hello    = sord_new_literal(world, NULL, s, "en-gb");
 	SordNode* us_hello    = sord_new_literal(world, NULL, s, "en-us");
 
-#define NUM_PATTERNS 17
+#define NUM_PATTERNS 18
 
 	QueryTest patterns[NUM_PATTERNS] = {
 		{ { 0, 0, 0 }, (n_quads * n_objects_per) + 12 },
+		{ { uri(world, 1), 0, 0 }, 2 },
 		{ { uri(world, 9), uri(world, 9), uri(world, 9) }, 0 },
 		{ { uri(world, 1), uri(world, 2), uri(world, 4) }, 1 },
 		{ { uri(world, 3), uri(world, 4), uri(world, 0) }, 2 },

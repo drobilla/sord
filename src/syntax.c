@@ -78,6 +78,10 @@ sord_inserter_write_statement(SordInserter*      inserter,
 	SordNode* o = sord_node_from_serd_node(world, env, object,
 	                                       object_datatype, object_lang);
 
+	if (!s || !p || !o) {
+		return SERD_ERR_BAD_ARG;
+	}
+
 	const SordQuad tup = { s, p, o, g };
 	sord_add(inserter->model, tup);
 

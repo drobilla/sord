@@ -2,11 +2,14 @@ sord (0.15.1) unstable;
 
   * Fix construction and comparison of URIs with UTF-8 characters
   * Fix documentation generation
-  * Return error from sord_inserter_write_statement() if a node can not be written
-    (e.g. undefined prefix)
+  * Return error from sord_inserter_write_statement() if a node can not be
+    written (e.g. undefined prefix)
   * Make sord_node_get_counted return byte count, and clarify documentation
   * Safely return NULL from sord_iter_get() for end iterators
   * Add sord_node_get_string_measured() to get both byte and character counts
+  * sord_validate: Do proper numeric comparison for propery bounds checking
+  * sord_validate: Tolerate xsd:decimal literals for double and float
+    properties if literals match pattern
 
  -- David Robillard <d@drobilla.net>  Sat, 09 Jul 2016 11:28:24 -0400
 

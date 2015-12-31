@@ -72,6 +72,7 @@ typedef struct {
 	SordNode* rdfs_subClassOf;
 	SordNode* xsd_anyURI;
 	SordNode* xsd_decimal;
+	SordNode* xsd_double;
 	SordNode* xsd_maxInclusive;
 	SordNode* xsd_minInclusive;
 	SordNode* xsd_pattern;
@@ -205,6 +206,30 @@ regexp_match(const uint8_t* pat, const char* str)
 	return true;
 }
 
+static int
+bound_cmp(SordModel*      model,
+          const URIs*     uris,
+          const SordNode* literal,
+          const SordNode* type,
+          const SordNode* bound)
+{
+	const char* str        = (const char*)sord_node_get_string(literal);
+	const char* bound_str  = (const char*)sord_node_get_string(bound);
+	const bool  is_numeric =
+		is_descendant_of(model, uris, type, uris->xsd_decimal, uris->owl_onDatatype) ||
+		is_descendant_of(model, uris, type, uris->xsd_double, uris->owl_onDatatype);
+
+	if (is_numeric) {
+		const double fbound   = serd_strtod(bound_str, NULL);
+		const double fliteral = serd_strtod(str, NULL);
+		return ((fliteral < fbound) ? -1 :
+		        (fliteral > fbound) ? 1 :
+		        0);
+	} else {
+		return strcmp(str, bound_str);
+	}
+}
+
 static bool
 check_restriction(SordModel*      model,
                   const URIs*     uris,
@@ -220,74 +245,45 @@ check_restriction(SordModel*      model,
 	SordIter* p = sord_search(model, restriction, uris->xsd_pattern, 0, 0);
 	if (p) {
 		const SordNode* pat  = sord_iter_get_node(p, SORD_OBJECT);
-		const bool      good = regexp_match(sord_node_get_string(pat), str);
-		if (!good) {
+		if (!regexp_match(sord_node_get_string(pat), str)) {
 			fprintf(stderr, "`%s' does not match <%s> pattern `%s'\n",
 			        sord_node_get_string(literal),
 			        sord_node_get_string(type),
 			        sord_node_get_string(pat));
+			sord_iter_free(p);
+			return false;
 		}
-
 		sord_iter_free(p);
-		return good;
 	}
-
-	/* We'll do some comparison tricks for xsd:decimal types, where
-	   lexicographical comparison would be incorrect.  Note that if the
-	   literal's type is a descendant of xsd:decimal, we'll end up checking it
-	   against the xsd:decimal pattern so there's no need to validate digits
-	   here.  At worst we'll get a false positive but it will fail later. */
-	const bool is_decimal = is_descendant_of(
-		model, uris, type, uris->xsd_decimal, uris->owl_onDatatype);
 
 	// Check xsd:minInclusive
 	SordIter* l = sord_search(model, restriction, uris->xsd_minInclusive, 0, 0);
 	if (l) {
-		const SordNode* lower     = sord_iter_get_node(l, SORD_OBJECT);
-		size_t          lower_len = 0;
-		const char*     lower_str = (const char*)sord_node_get_string_counted(lower, &lower_len);
-		bool            good      = false;
-		if (!is_decimal || len == lower_len) {
-			 // Not decimal, or equal lengths, strcmp
-			good = (strcmp(str, lower_str) >= 0);
-		} else {
-			// Decimal with different length, only good if longer than the min
-			good = (len > lower_len);
-		}
-		if (!good) {
+		const SordNode* lower = sord_iter_get_node(l, SORD_OBJECT);
+		if (bound_cmp(model, uris, literal, type, lower) < 0) {
 			fprintf(stderr, "`%s' is not >= <%s> minimum `%s'\n",
 			        sord_node_get_string(literal),
 			        sord_node_get_string(type),
 			        sord_node_get_string(lower));
+			sord_iter_free(l);
+			return false;
 		}
-
 		sord_iter_free(l);
-		return good;
 	}
 
 	// Check xsd:maxInclusive
 	SordIter* u = sord_search(model, restriction, uris->xsd_maxInclusive, 0, 0);
 	if (u) {
-		const SordNode* upper     = sord_iter_get_node(u, SORD_OBJECT);
-		size_t          upper_len = 0;
-		const char*     upper_str = (const char*)sord_node_get_string_counted(upper, &upper_len);
-		bool            good      = false;
-		if (!is_decimal || len == upper_len) {
-			 // Not decimal, or equal lengths, strcmp
-			good = (strcmp(str, upper_str) <= 0);
-		} else {
-			// Decimal with different length, only good if shorter than the max
-			good = (len < upper_len);
-		}
-		if (!good) {
+		const SordNode* upper = sord_iter_get_node(u, SORD_OBJECT);
+		if (bound_cmp(model, uris, literal, type, upper) > 0) {
 			fprintf(stderr, "`%s' is not <= <%s> maximum `%s'\n",
 			        sord_node_get_string(literal),
 			        sord_node_get_string(type),
 			        sord_node_get_string(upper));
+			sord_iter_free(u);
+			return false;
 		}
-
 		sord_iter_free(u);
-		return good;
 	}
 
 	--n_restrictions;
@@ -316,7 +312,11 @@ literal_is_valid(SordModel*      model,
 			    datatype, type, uris->owl_onDatatype) &&
 		    !is_descendant_of(
 			    model, uris,
-			    type, datatype, uris->owl_onDatatype)) {
+			    type, datatype, uris->owl_onDatatype) &&
+		    !(sord_node_equals(datatype, uris->xsd_decimal) &&
+		      is_descendant_of(
+			      model, uris,
+			      type, uris->xsd_double, uris->owl_onDatatype))) {
 			errorf("Literal `%s' datatype <%s> is not compatible with <%s>\n",
 			       sord_node_get_string(literal),
 			       sord_node_get_string(datatype),
@@ -725,6 +725,7 @@ main(int argc, char** argv)
 	URI(rdfs, subClassOf);
 	URI(xsd, anyURI);
 	URI(xsd, decimal);
+	URI(xsd, double);
 	URI(xsd, maxInclusive);
 	URI(xsd, minInclusive);
 	URI(xsd, pattern);

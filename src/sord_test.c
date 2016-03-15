@@ -515,17 +515,34 @@ main(int argc, char** argv)
 		goto fail;
 	}
 
-	size_t len;
-	const uint8_t* str = sord_node_get_string_counted(lit_id2, &len);
-	if (strcmp((const char*)str, "hello")) {
-		return test_fail("Literal node corrupt\n");
-	} else if (len != strlen("hello")) {
-		return test_fail("Literal length incorrect\n");
-	}
-
 	if (sord_num_nodes(world) != initial_num_nodes) {
 		return test_fail("Num nodes %zu != %zu\n",
 		                 sord_num_nodes(world), initial_num_nodes);
+	}
+
+	const uint8_t ni_hao[] = { 0xE4, 0xBD, 0xA0, 0xE5, 0xA5, 0xBD };
+	SordNode*     chello   = sord_new_literal(world, NULL, ni_hao, "cmn");
+
+	// Test literal length
+	size_t         n_bytes;
+	size_t         n_chars;
+	const uint8_t* str = sord_node_get_string_counted(lit_id2, &n_bytes);
+	if (strcmp((const char*)str, "hello")) {
+		return test_fail("Literal node corrupt\n");
+	} else if (n_bytes != strlen("hello")) {
+		return test_fail("ASCII literal byte count incorrect\n");
+	}
+
+	str = sord_node_get_string_measured(lit_id2, &n_bytes, &n_chars);
+	if (n_bytes != strlen("hello") || n_chars != strlen("hello")) {
+		return test_fail("ASCII literal measured length incorrect\n");
+	}
+
+	str = sord_node_get_string_measured(chello, &n_bytes, &n_chars);
+	if (n_bytes != 6) {
+		return test_fail("Multi-byte literal byte count incorrect\n");
+	} else if (n_chars != 2) {
+		return test_fail("Multi-byte literal character count incorrect\n");
 	}
 
 	// Check interning doesn't clash non-equivalent values

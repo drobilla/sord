@@ -919,9 +919,19 @@ sord_node_get_string(const SordNode* node)
 }
 
 const uint8_t*
-sord_node_get_string_counted(const SordNode* node, size_t* len)
+sord_node_get_string_counted(const SordNode* node, size_t* bytes)
 {
-	*len = node->node.n_chars;
+	*bytes = node->node.n_bytes;
+	return node->node.buf;
+}
+
+const uint8_t*
+sord_node_get_string_measured(const SordNode* node,
+                              size_t*         bytes,
+                              size_t*         chars)
+{
+	*bytes = node->node.n_bytes;
+	*chars = node->node.n_chars;
 	return node->node.buf;
 }
 

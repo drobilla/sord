@@ -248,11 +248,21 @@ const uint8_t*
 sord_node_get_string(const SordNode* node);
 
 /**
-   Return the string value of a node, and set `len` to its length.
+   Return the string value of a node, and set `bytes` to its length in bytes.
 */
 SORD_API
 const uint8_t*
-sord_node_get_string_counted(const SordNode* node, size_t* len);
+sord_node_get_string_counted(const SordNode* node, size_t* bytes);
+
+/**
+   Return the string value of a node, and set `bytes` to its length in bytes,
+   and `count` to its length in characters.
+*/
+SORD_API
+const uint8_t*
+sord_node_get_string_measured(const SordNode* node,
+                              size_t*         bytes,
+                              size_t*         chars);
 
 /**
    Return the language of a literal node (or NULL).

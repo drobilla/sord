@@ -1,10 +1,12 @@
-sord (0.14.1) unstable;
+sord (0.15.1) unstable;
 
   * Fix documentation generation
   * Return error from sord_inserter_write_statement() if a node can not be written
     (e.g. undefined prefix)
+  * Make sord_node_get_counted return byte count, and clarify documentation
+  * Add sord_node_get_string_measured to get both byte and character counts
 
- -- David Robillard <d@drobilla.net>  Fri, 04 Dec 2015 21:23:36 -0500
+ -- David Robillard <d@drobilla.net>  Tue, 15 Mar 2016 14:51:35 -0400
 
 sord (0.14.0) stable;
 

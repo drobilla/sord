@@ -559,6 +559,8 @@ sord_iter_get(const SordIter* iter, SordQuad quad);
 
 /**
    Return a field of the quad pointed to by `iter`.
+
+   Returns NULL if `iter` is NULL or is at the end.
 */
 SORD_API
 const SordNode*

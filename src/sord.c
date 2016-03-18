@@ -445,7 +445,9 @@ sord_iter_get(const SordIter* iter, SordQuad id)
 const SordNode*
 sord_iter_get_node(const SordIter* iter, SordQuadIndex index)
 {
-	return iter ? ((SordNode**)zix_btree_get(iter->cur))[index] : NULL;
+	return (!sord_iter_end(iter)
+	        ? ((SordNode**)zix_btree_get(iter->cur))[index]
+	        : NULL);
 }
 
 static bool

@@ -4,9 +4,10 @@ sord (0.15.1) unstable;
   * Return error from sord_inserter_write_statement() if a node can not be written
     (e.g. undefined prefix)
   * Make sord_node_get_counted return byte count, and clarify documentation
-  * Add sord_node_get_string_measured to get both byte and character counts
+  * Safely return NULL from sord_iter_get() for end iterators
+  * Add sord_node_get_string_measured() to get both byte and character counts
 
- -- David Robillard <d@drobilla.net>  Tue, 15 Mar 2016 14:51:35 -0400
+ -- David Robillard <d@drobilla.net>  Thu, 17 Mar 2016 21:38:13 -0400
 
 sord (0.14.0) stable;
 

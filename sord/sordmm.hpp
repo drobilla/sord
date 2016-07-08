@@ -378,8 +378,7 @@ inline float
 Node::to_float() const
 {
 	assert(is_float());
-	char* endptr;
-	return serd_strtod((const char*)sord_node_get_string(_c_obj), &endptr);
+	return serd_strtod((const char*)sord_node_get_string(_c_obj), NULL);
 }
 
 inline bool

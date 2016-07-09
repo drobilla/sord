@@ -1,5 +1,6 @@
 sord (0.15.1) unstable;
 
+  * Fix construction and comparison of URIs with UTF-8 characters
   * Fix documentation generation
   * Return error from sord_inserter_write_statement() if a node can not be written
     (e.g. undefined prefix)
@@ -7,7 +8,7 @@ sord (0.15.1) unstable;
   * Safely return NULL from sord_iter_get() for end iterators
   * Add sord_node_get_string_measured() to get both byte and character counts
 
- -- David Robillard <d@drobilla.net>  Thu, 17 Mar 2016 21:38:13 -0400
+ -- David Robillard <d@drobilla.net>  Sat, 09 Jul 2016 11:28:24 -0400
 
 sord (0.14.0) stable;
 

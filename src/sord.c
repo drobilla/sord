@@ -1,5 +1,5 @@
 /*
-  Copyright 2011-2014 David Robillard <http://drobilla.net>
+  Copyright 2011-2016 David Robillard <http://drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -1151,8 +1151,7 @@ sord_node_from_serd_node(SordWorld*      world,
 		memcpy(buf + uri_prefix.len, uri_suffix.buf, uri_suffix.len);
 		buf[uri_len] = '\0';
 		ret = sord_new_uri_counted(
-			world, buf, uri_prefix.len + uri_suffix.len,
-			uri_prefix.len + uri_suffix.len, false);  // FIXME: UTF-8
+			world, buf, uri_len, serd_strlen(buf, NULL, NULL), false);
 		return ret;
 	}
 	case SERD_BLANK:

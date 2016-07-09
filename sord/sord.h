@@ -479,6 +479,7 @@ sord_remove(SordModel* model, const SordQuad quad);
 
    Calling this function invalidates all iterators on `model` except `iter`.
 
+   @param model The model which `iter` points to.
    @param iter Iterator to the element to erase, which is incremented to the
    next value on return.
 */

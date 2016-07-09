@@ -307,7 +307,8 @@ def test(ctx):
             'sordi_static /no/such/file > %s' % nul],
                       1, name='sordi-cmd-bad')
 
-    autowaf.run_tests(ctx, APPNAME, ['sord_test'])
+    Logs.pprint('GREEN', '')
+    autowaf.run_test(ctx, APPNAME, 'sord_test', name='sord_test')
 
     commands = []
     for test in good_tests:
@@ -317,18 +318,20 @@ def test(ctx):
 
     autowaf.run_tests(ctx, APPNAME, commands, 0, name='good')
 
-    Logs.pprint('BOLD', '\nVerifying turtle => ntriples')
+    verify_tests = []
     for test in good_tests:
         out_filename = test + '.out'
         cmp_filename = srcdir + '/' + test.replace('.ttl', '.out')
         if not os.access(out_filename, os.F_OK):
-            Logs.pprint('RED', 'FAIL: %s output is missing' % test)
+            Logs.pprint('RED', '** FAIL %s output is missing' % test)
+            verify_tests += [[out_filename, 1]]
         else:
             out_lines = sorted(open(out_filename).readlines())
             cmp_lines = sorted(open(cmp_filename).readlines())
             if out_lines != cmp_lines:
-                Logs.pprint('RED', 'FAIL: %s is incorrect' % out_filename)
+                verify_tests += [[out_filename, 1]]
             else:
-                Logs.pprint('GREEN', 'Pass: %s' % test)
+                verify_tests += [[out_filename, 0]]
+    autowaf.run_tests(ctx, APPNAME, verify_tests, name='verify_turtle_to_ntriples')
 
     autowaf.post_test(ctx, APPNAME)

@@ -983,7 +983,6 @@ sord_insert_node(SordWorld* world, const SordNode* key, bool copy)
 		}
 		return node;
 	default:
-		assert(!node);
 		error(world, SERD_ERR_INTERNAL,
 		      "error inserting node `%s'\n", key->node.buf);
 	}

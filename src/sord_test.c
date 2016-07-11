@@ -403,6 +403,13 @@ main(int argc, char** argv)
 	sord_node_free(world, badns);
 	serd_env_free(env);
 
+	// Attempt to create node from garbage
+	SerdNode junk = SERD_NODE_NULL;
+	junk.type = 1234;
+	if (sord_node_from_serd_node(world, env, &junk, NULL, NULL)) {
+		return test_fail("Successfully created node from garbage serd node\n");
+	}
+
 	// Attempt to create NULL node
 	SordNode* nil_node = sord_node_from_serd_node(
 		world, NULL, &SERD_NODE_NULL, NULL, NULL);
@@ -656,6 +663,9 @@ main(int argc, char** argv)
 	}
 	sord_iter_free(iter);
 
+	// Test double remove (silent success)
+	sord_remove(sord, tup);
+
 	// Load a couple graphs
 	SordNode* graph42 = uri(world, 42);
 	SordNode* graph43 = uri(world, 43);
@@ -673,6 +683,11 @@ main(int argc, char** argv)
 		}
 	}
 	sord_iter_free(iter);
+
+	iter = sord_begin(sord);
+	if (!sord_erase(sord, iter)) {
+		return test_fail("Succesfully erased iterator on empty model\n");
+	}
 
 	// Ensure only the other graph is left
 	SordQuad quad;

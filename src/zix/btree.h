@@ -81,6 +81,10 @@ zix_btree_insert(ZixBTree* t, void* e);
 /**
    Remove the value `e` from `t`.
 
+   @param t Tree to remove from.
+
+   @param e Value to remove.
+
    @param out Set to point to the removed pointer (which may not equal `e`).
 
    @param next If non-NULL, pointed to the value following `e`.  If *next is

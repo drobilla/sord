@@ -23,13 +23,9 @@ out     = 'build'       # Build directory
 def options(opt):
     opt.load('compiler_c')
     opt.load('compiler_cxx')
-    autowaf.set_options(opt)
+    autowaf.set_options(opt, test=True)
     opt.add_option('--no-utils', action='store_true', dest='no_utils',
                    help='Do not build command line utilities')
-    opt.add_option('--test', action='store_true', dest='build_tests',
-                   help='Build unit tests')
-    opt.add_option('--no-coverage', action='store_true', dest='no_coverage',
-                   help='Do not use gcov for code coverage')
     opt.add_option('--static', action='store_true', dest='static',
                    help='Build static library')
     opt.add_option('--no-shared', action='store_true', dest='no_shared',
@@ -52,15 +48,11 @@ def configure(conf):
     autowaf.set_c99_mode(conf)
     autowaf.display_header('Sord configuration')
 
-    conf.env.BUILD_TESTS  = Options.options.build_tests
     conf.env.BUILD_UTILS  = not Options.options.no_utils
     conf.env.BUILD_SHARED = not Options.options.no_shared
     conf.env.STATIC_PROGS = Options.options.static_progs
     conf.env.BUILD_STATIC = (Options.options.static or
                              Options.options.static_progs)
-
-    if conf.env.BUILD_TESTS and not Options.options.no_coverage:
-        conf.check_cc(lib='gcov', define_name='HAVE_GCOV', mandatory=False)
 
     autowaf.check_pkg(conf, 'serd-0', uselib_store='SERD',
                       atleast_version='0.22.4', mandatory=True)
@@ -146,11 +138,12 @@ def build(bld):
         autowaf.use_lib(bld, obj, 'SERD')
 
     if bld.env.BUILD_TESTS:
-        test_libs   = libs
-        test_cflags = ['']
-        if bld.is_defined('HAVE_GCOV'):
-            test_libs   += ['gcov']
-            test_cflags += ['-fprofile-arcs', '-ftest-coverage']
+        test_libs      = libs
+        test_cflags    = ['']
+        test_linkflags = ['']
+        if not bld.env.NO_COVERAGE:
+            test_cflags    += ['--coverage']
+            test_linkflags += ['--coverage']
 
         # Profiled static library for test coverage
         obj = bld(features     = 'c cstlib',
@@ -161,6 +154,7 @@ def build(bld):
                   install_path = '',
                   defines      = defines,
                   cflags       = test_cflags,
+                  linkflags    = test_linkflags,
                   lib          = test_libs)
         autowaf.use_lib(bld, obj, 'SERD')
 
@@ -173,7 +167,8 @@ def build(bld):
                   target       = 'sord_test',
                   install_path = '',
                   defines      = defines,
-                  cflags       = test_cflags)
+                  cflags       = test_cflags,
+                  linkflags    = test_linkflags)
         autowaf.use_lib(bld, obj, 'SERD')
 
         # Static profiled sordi for tests
@@ -185,7 +180,8 @@ def build(bld):
                   target       = 'sordi_static',
                   install_path = '',
                   defines      = defines,
-                  cflags       = test_cflags)
+                  cflags       = test_cflags,
+                  linkflags    = test_linkflags)
         autowaf.use_lib(bld, obj, 'SERD')
 
         # C++ build test
@@ -197,7 +193,9 @@ def build(bld):
                       lib          = test_libs,
                       target       = 'sordmm_test',
                       install_path = '',
-                      defines      = defines)
+                      defines      = defines,
+                      cxxflags     = test_cflags,
+                      linkflags    = test_linkflags)
             autowaf.use_lib(bld, obj, 'SERD')
 
     # Utilities

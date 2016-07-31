@@ -80,7 +80,7 @@ typedef enum {
 	GOPS,  ///< Graph,  Object,    Predicate, Subject
 	GOSP,  ///< Graph,  Object,    Subject,   Predicate
 	GPSO,  ///< Graph,  Predicate, Subject,   Object
-	GPOS,  ///< Graph,  Predicate, Object,    Subject
+	GPOS   ///< Graph,  Predicate, Object,    Subject
 } SordOrder;
 
 #ifdef SORD_DEBUG_SEARCH

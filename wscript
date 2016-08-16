@@ -333,3 +333,14 @@ def test(ctx):
     autowaf.run_tests(ctx, APPNAME, verify_tests, name='verify_turtle_to_ntriples')
 
     autowaf.post_test(ctx, APPNAME)
+
+def posts(ctx):
+    path = str(ctx.path.abspath())
+    autowaf.news_to_posts(
+        os.path.join(path, 'NEWS'),
+        {'title'        : 'Sord',
+         'description'  : autowaf.get_blurb(os.path.join(path, 'README')),
+         'dist_pattern' : 'http://download.drobilla.net/sord-%s.tar.bz2'},
+        { 'Author' : 'drobilla',
+          'Tags'   : 'Hacking, RDF' },
+        os.path.join(out, 'posts'))

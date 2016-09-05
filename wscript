@@ -342,5 +342,5 @@ def posts(ctx):
          'description'  : autowaf.get_blurb(os.path.join(path, 'README')),
          'dist_pattern' : 'http://download.drobilla.net/sord-%s.tar.bz2'},
         { 'Author' : 'drobilla',
-          'Tags'   : 'Hacking, RDF' },
+          'Tags'   : 'Hacking, RDF, Sord' },
         os.path.join(out, 'posts'))

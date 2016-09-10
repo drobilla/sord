@@ -108,9 +108,9 @@ typedef const SordNode* SordQuad[4];
 */
 typedef enum {
 	SORD_SUBJECT   = 0,  /**< Subject */
-	SORD_PREDICATE = 1,  /**< Predicate (a.k.a. "key") */
-	SORD_OBJECT    = 2,  /**< Object    (a.k.a. "value") */
-	SORD_GRAPH     = 3   /**< Graph     (a.k.a. "context") */
+	SORD_PREDICATE = 1,  /**< Predicate ("key") */
+	SORD_OBJECT    = 2,  /**< Object    ("value") */
+	SORD_GRAPH     = 3   /**< Graph     ("context") */
 } SordQuadIndex;
 
 /**
@@ -178,7 +178,7 @@ sord_world_set_error_sink(SordWorld*    world,
    Get a URI node from a string.
 
    Note this function measures `str`, which is a common bottleneck.
-   Use sord_node_from_serd_node instead if `str` is already measured.
+   Use sord_node_from_serd_node() instead if `str` is already measured.
 */
 SORD_API
 SordNode*
@@ -197,7 +197,7 @@ sord_new_relative_uri(SordWorld*     world,
    Get a blank node from a string.
 
    Note this function measures `str`, which is a common bottleneck.
-   Use sord_node_from_serd_node instead if `str` is already measured.
+   Use sord_node_from_serd_node() instead if `str` is already measured.
 */
 SORD_API
 SordNode*
@@ -207,7 +207,7 @@ sord_new_blank(SordWorld* world, const uint8_t* str);
    Get a literal node from a string.
 
    Note this function measures `str`, which is a common bottleneck.
-   Use sord_node_from_serd_node instead if `str` is already measured.
+   Use sord_node_from_serd_node() instead if `str` is already measured.
 */
 SORD_API
 SordNode*
@@ -318,7 +318,7 @@ sord_node_to_serd_node(const SordNode* node);
 /**
    Create a new SordNode from a SerdNode.
 
-   The returned node must be freed using sord_node_free.
+   The returned node must be freed using sord_node_free().
 */
 SORD_API
 SordNode*
@@ -411,7 +411,7 @@ sord_search(SordModel*      model,
    Search for a single node that matches a pattern.
    Exactly one of `s`, `p`, `o` must be NULL.
    This function is mainly useful for predicates that only have one value.
-   The returned node must be freed using sord_node_free.
+   The returned node must be freed using sord_node_free().
    @return the first matching node, or NULL if no matches are found.
 */
 SORD_API

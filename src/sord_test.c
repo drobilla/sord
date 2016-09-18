@@ -689,6 +689,7 @@ main(int argc, char** argv)
 	if (sord_erase(sord, iter)) {
 		return test_fail("Failed to erase begin iterator on non-empty model\n");
 	}
+	sord_iter_free(iter);
 
 	// Ensure only the other graph is left
 	SordQuad quad;
@@ -719,6 +720,8 @@ main(int argc, char** argv)
 		fprintf(stderr, "Failed to re-read string (%s)\n", serd_strerror(st));
 		goto fail;
 	}
+	serd_reader_free(reader);
+	serd_env_free(env);
 
 	// Ensure we only see triple once
 	size_t n_triples = 0;
@@ -731,6 +734,7 @@ main(int argc, char** argv)
 
 		++n_triples;
 	}
+	sord_iter_free(iter);
 	if (n_triples != 1) {
 		fprintf(stderr, "Found duplicate triple\n");
 		goto fail;
@@ -743,6 +747,7 @@ main(int argc, char** argv)
 	for (iter = sord_begin(sord); !sord_iter_end(iter); sord_iter_next(iter)) {
 		++n_triples;
 	}
+	sord_iter_free(iter);
 
 	sord_free(sord);
 	sord_world_free(world);

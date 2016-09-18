@@ -684,9 +684,10 @@ main(int argc, char** argv)
 	}
 	sord_iter_free(iter);
 
+	// Erase the first tuple (an element in the default graph)
 	iter = sord_begin(sord);
-	if (!sord_erase(sord, iter)) {
-		return test_fail("Succesfully erased iterator on empty model\n");
+	if (sord_erase(sord, iter)) {
+		return test_fail("Failed to erase begin iterator on non-empty model\n");
 	}
 
 	// Ensure only the other graph is left

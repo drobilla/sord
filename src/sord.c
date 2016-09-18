@@ -1266,7 +1266,7 @@ sord_erase(SordModel* sord, SordIter* iter)
 
 	SordNode* quad = NULL;
 	for (unsigned i = 0; i < NUM_ORDERS; ++i) {
-		if (sord->indices[i]) {
+		if (sord->indices[i] && (i < GSPO || tup[3])) {
 			if (zix_btree_remove(sord->indices[i], tup, (void**)&quad,
 			                     i == iter->order ? &iter->cur : NULL)) {
 				return (i == 0) ? SERD_ERR_NOT_FOUND : SERD_ERR_INTERNAL;

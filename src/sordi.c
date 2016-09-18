@@ -80,18 +80,6 @@ set_syntax(SerdSyntax* syntax, const char* name)
 	return true;
 }
 
-static uint8_t*
-absolute_path(const uint8_t* path)
-{
-#ifdef _WIN32
-	char* out = (char*)malloc(MAX_PATH);
-	GetFullPathName((const char*)path, MAX_PATH, out, NULL);
-	return (uint8_t*)out;
-#else
-	return (uint8_t*)realpath((const char*)path, NULL);
-#endif
-}
-
 int
 main(int argc, char** argv)
 {
@@ -146,45 +134,39 @@ main(int argc, char** argv)
 		return print_usage(argv[0], true);
 	}
 
-	const uint8_t* input   = (const uint8_t*)argv[a++];
-	uint8_t*       in_path = NULL;
+	const uint8_t* input = (const uint8_t*)argv[a++];
 	if (from_file) {
 		in_name = in_name ? in_name : input;
 		if (!in_fd) {
-			in_path = absolute_path(serd_uri_to_path(in_name));
-			if (!in_path || !(in_fd = fopen((const char*)in_path, "rb"))) {
+			input = serd_uri_to_path(in_name);
+			if (!input || !(in_fd = fopen((const char*)input, "rb"))) {
 				return 1;
 			}
 		}
 	}
 
-	SerdURI  base_uri      = SERD_URI_NULL;
-	SerdNode base_uri_node = SERD_NODE_NULL;
+	SerdURI  base_uri = SERD_URI_NULL;
+	SerdNode base     = SERD_NODE_NULL;
 	if (a < argc) {  // Base URI given on command line
-		base_uri_node = serd_node_new_uri_from_string(
+		base = serd_node_new_uri_from_string(
 			(const uint8_t*)argv[a], NULL, &base_uri);
-	} else if (in_fd != stdin && from_file) {  // Use input file URI
-		base_uri_node = serd_node_new_file_uri(in_path, NULL, &base_uri, false);
-	}
-
-	free(in_path);
-	if (!base_uri_node.buf) {
-		SORDI_ERROR("missing base URI\n");
-		return print_usage(argv[0], true);
+	} else if (from_file && in_fd != stdin) {  // Use input file URI
+		base = serd_node_new_file_uri(input, NULL, &base_uri, false);
 	}
 
 	SordWorld*  world  = sord_world_new();
 	SordModel*  sord   = sord_new(world, SORD_SPO|SORD_OPS, false);
-	SerdEnv*    env    = serd_env_new(&base_uri_node);
+	SerdEnv*    env    = serd_env_new(&base);
 	SerdReader* reader = sord_new_reader(sord, env, input_syntax, NULL);
 
-	const SerdStatus status = (from_file)
+	SerdStatus status = (from_file)
 		? serd_reader_read_file_handle(reader, in_fd, in_name)
 		: serd_reader_read_string(reader, input);
 
 	serd_reader_free(reader);
 
-	SerdEnv* write_env = serd_env_new(&base_uri_node);
+	FILE*    out_fd    = stdout;
+	SerdEnv* write_env = serd_env_new(&base);
 
 	int output_style = SERD_STYLE_RESOLVED;
 	if (output_syntax == SERD_NTRIPLES) {
@@ -211,10 +193,19 @@ main(int argc, char** argv)
 
 	serd_env_free(env);
 	serd_env_free(write_env);
-	serd_node_free(&base_uri_node);
+	serd_node_free(&base);
 
 	sord_free(sord);
 	sord_world_free(world);
+
+	if (from_file) {
+		fclose(in_fd);
+	}
+
+	if (fclose(out_fd)) {
+		perror("sordi: write error");
+		status = SERD_ERR_UNKNOWN;
+	}
 
 	return (status > SERD_FAILURE) ? 1 : 0;
 }

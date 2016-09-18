@@ -290,6 +290,14 @@ def test(ctx):
                       0, name='sordi-cmd-good')
 
     autowaf.run_tests(ctx, APPNAME, [
+        # Test read error by reading a directory
+        'sordi_static "file://%s/"' % srcdir,
+
+        # Test write error by writing to /dev/full
+        'sordi_static "file://%s/tests/manifest.ttl" > /dev/full' % srcdir
+    ], 1, name='io_errors')
+
+    autowaf.run_tests(ctx, APPNAME, [
             'sordi_static > %s' % nul,
             'sordi_static ftp://example.org/unsupported.ttl > %s' % nul,
             'sordi_static -i > %s' % nul,

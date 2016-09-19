@@ -289,13 +289,15 @@ def test(ctx):
             'sordi_static %s > %s' % (nul, nul)],
                       0, name='sordi-cmd-good')
 
-    autowaf.run_tests(ctx, APPNAME, [
-        # Test read error by reading a directory
-        'sordi_static "file://%s/"' % srcdir,
+    # Test read error by reading a directory
+    autowaf.run_test(ctx, APPNAME, 'sordi_static "file://%s/"' % srcdir,
+                     1, name='read_error')
 
-        # Test write error by writing to /dev/full
-        'sordi_static "file://%s/tests/manifest.ttl" > /dev/full' % srcdir
-    ], 1, name='io_errors')
+    # Test write error by writing to /dev/full
+    if os.path.exists('/dev/full'):
+        autowaf.run_test(ctx, APPNAME,
+                         'sordi_static "file://%s/tests/good/manifest.ttl" > /dev/full' % srcdir,
+                         1, name='write_error')
 
     autowaf.run_tests(ctx, APPNAME, [
             'sordi_static > %s' % nul,

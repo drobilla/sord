@@ -209,7 +209,7 @@ test_read(SordWorld* world, SordModel* sord, SordNode* g,
 #define NUM_PATTERNS 18
 
 	QueryTest patterns[NUM_PATTERNS] = {
-		{ { 0, 0, 0 }, (n_quads * n_objects_per) + 12 },
+		{ { 0, 0, 0 }, (int)(n_quads * n_objects_per) + 12 },
 		{ { uri(world, 1), 0, 0 }, 2 },
 		{ { uri(world, 9), uri(world, 9), uri(world, 9) }, 0 },
 		{ { uri(world, 1), uri(world, 2), uri(world, 4) }, 1 },
@@ -372,6 +372,14 @@ expected_error(void* handle, const SerdError* error)
 	return SERD_SUCCESS;
 }
 
+static int
+finished(SordWorld* world, SordModel* sord, int status)
+{
+	sord_free(sord);
+	sord_world_free(world);
+	return status;
+}
+
 int
 main(int argc, char** argv)
 {
@@ -405,7 +413,7 @@ main(int argc, char** argv)
 
 	// Attempt to create node from garbage
 	SerdNode junk = SERD_NODE_NULL;
-	junk.type = 1234;
+	junk.type = (SerdType)1234;
 	if (sord_node_from_serd_node(world, env, &junk, NULL, NULL)) {
 		return test_fail("Successfully created node from garbage serd node\n");
 	}
@@ -512,14 +520,14 @@ main(int argc, char** argv)
 	SordNode* lit_id2   = sord_new_literal(world, uri_id, USTR("hello"), NULL);
 	if (uri_id2 != uri_id || !sord_node_equals(uri_id2, uri_id)) {
 		fprintf(stderr, "Fail: URI interning failed (duplicates)\n");
-		goto fail;
+		return finished(world, sord, EXIT_FAILURE);
 	} else if (blank_id2 != blank_id
 	           || !sord_node_equals(blank_id2, blank_id)) {
 		fprintf(stderr, "Fail: Blank node interning failed (duplicates)\n");
-		goto fail;
+		return finished(world, sord, EXIT_FAILURE);
 	} else if (lit_id2 != lit_id || !sord_node_equals(lit_id2, lit_id)) {
 		fprintf(stderr, "Fail: Literal interning failed (duplicates)\n");
-		goto fail;
+		return finished(world, sord, EXIT_FAILURE);
 	}
 
 	if (sord_num_nodes(world) != initial_num_nodes) {
@@ -558,13 +566,13 @@ main(int argc, char** argv)
 	SordNode* lit_id3   = sord_new_literal(world, uri_id, USTR("helloX"), NULL);
 	if (uri_id3 == uri_id || sord_node_equals(uri_id3, uri_id)) {
 		fprintf(stderr, "Fail: URI interning failed (clash)\n");
-		goto fail;
+		return finished(world, sord, EXIT_FAILURE);
 	} else if (blank_id3 == blank_id || sord_node_equals(blank_id3, blank_id)) {
 		fprintf(stderr, "Fail: Blank node interning failed (clash)\n");
-		goto fail;
+		return finished(world, sord, EXIT_FAILURE);
 	} else if (lit_id3 == lit_id || sord_node_equals(lit_id3, lit_id)) {
 		fprintf(stderr, "Fail: Literal interning failed (clash)\n");
-		goto fail;
+		return finished(world, sord, EXIT_FAILURE);
 	}
 
 	// Check literal interning
@@ -575,7 +583,7 @@ main(int argc, char** argv)
 	    || lit4 == lit6 || sord_node_equals(lit4, lit6)
 	    || lit5 == lit6 || sord_node_equals(lit5, lit6)) {
 		fprintf(stderr, "Fail: Literal interning failed (type/lang clash)\n");
-		goto fail;
+		return finished(world, sord, EXIT_FAILURE);
 	}
 
 	// Check relative URI construction
@@ -585,7 +593,7 @@ main(int argc, char** argv)
 	           "http://example.org/a/b")) {
 		fprintf(stderr, "Fail: Bad relative URI constructed: <%s>\n",
 		        sord_node_get_string(reluri));
-		goto fail;
+		return finished(world, sord, EXIT_FAILURE);
 	}
 	SordNode* reluri2 = sord_new_relative_uri(
 		world, USTR("http://drobilla.net/"), USTR("http://example.org/"));
@@ -593,7 +601,7 @@ main(int argc, char** argv)
 	           "http://drobilla.net/")) {
 		fprintf(stderr, "Fail: Bad relative URI constructed: <%s>\n",
 		        sord_node_get_string(reluri));
-		goto fail;
+		return finished(world, sord, EXIT_FAILURE);
 	}
 
 	// Check comparison with NULL
@@ -617,7 +625,7 @@ main(int argc, char** argv)
 		printf("Testing Index `%s'\n", index_names[i]);
 		generate(world, sord, n_quads, 0);
 		if (test_read(world, sord, 0, n_quads))
-			goto fail;
+			return finished(world, sord, EXIT_FAILURE);
 		sord_free(sord);
 	}
 
@@ -631,7 +639,7 @@ main(int argc, char** argv)
 		SordNode* graph = uri(world, 42);
 		generate(world, sord, n_quads, graph);
 		if (test_read(world, sord, graph, n_quads))
-			goto fail;
+			return finished(world, sord, EXIT_FAILURE);
 		sord_free(sord);
 	}
 
@@ -644,7 +652,7 @@ main(int argc, char** argv)
 	sord_add(sord, tup);
 	if (!sord_ask(sord, tup[0], tup[1], tup[2], tup[3])) {
 		fprintf(stderr, "Failed to add tuple\n");
-		goto fail;
+		return finished(world, sord, EXIT_FAILURE);
 	}
 	sord_node_free(world, (SordNode*)tup[2]);
 	tup[2] = sord_new_literal(world, 0, USTR("hi"), NULL);
@@ -653,13 +661,13 @@ main(int argc, char** argv)
 	if (sord_num_quads(sord) != 1) {
 		fprintf(stderr, "Remove failed (%zu quads, expected 1)\n",
 		        sord_num_quads(sord));
-		goto fail;
+		return finished(world, sord, EXIT_FAILURE);
 	}
 
 	iter = sord_find(sord, tup);
 	if (!sord_iter_end(iter)) {
 		fprintf(stderr, "Found removed tuple\n");
-		goto fail;
+		return finished(world, sord, EXIT_FAILURE);
 	}
 	sord_iter_free(iter);
 
@@ -679,7 +687,7 @@ main(int argc, char** argv)
 		if ((st = sord_erase(sord, iter))) {
 			fprintf(stderr, "Remove by iterator failed (%s)\n",
 			        serd_strerror(st));
-			goto fail;
+			return finished(world, sord, EXIT_FAILURE);
 		}
 	}
 	sord_iter_free(iter);
@@ -698,7 +706,7 @@ main(int argc, char** argv)
 		sord_iter_get(iter, quad);
 		if (!sord_quad_match(quad, pat)) {
 			fprintf(stderr, "Graph removal via iteration failed\n");
-			goto fail;
+			return finished(world, sord, EXIT_FAILURE);
 		}
 	}
 	sord_iter_free(iter);
@@ -712,13 +720,13 @@ main(int argc, char** argv)
 	SerdReader* reader = sord_new_reader(sord, env, SERD_TURTLE, graph1);
 	if ((st = serd_reader_read_string(reader, USTR("<s> <p> <o> .")))) {
 		fprintf(stderr, "Failed to read string (%s)\n", serd_strerror(st));
-		goto fail;
+		return finished(world, sord, EXIT_FAILURE);
 	}
 	serd_reader_free(reader);
 	reader = sord_new_reader(sord, env, SERD_TURTLE, graph2);
 	if ((st = serd_reader_read_string(reader, USTR("<s> <p> <o> .")))) {
 		fprintf(stderr, "Failed to re-read string (%s)\n", serd_strerror(st));
-		goto fail;
+		return finished(world, sord, EXIT_FAILURE);
 	}
 	serd_reader_free(reader);
 	serd_env_free(env);
@@ -737,7 +745,7 @@ main(int argc, char** argv)
 	sord_iter_free(iter);
 	if (n_triples != 1) {
 		fprintf(stderr, "Found duplicate triple\n");
-		goto fail;
+		return finished(world, sord, EXIT_FAILURE);
 	}
 
 	// Test SPO iteration on an SOP indexed store
@@ -749,12 +757,5 @@ main(int argc, char** argv)
 	}
 	sord_iter_free(iter);
 
-	sord_free(sord);
-	sord_world_free(world);
-	return EXIT_SUCCESS;
-
-fail:
-	sord_free(sord);
-	sord_world_free(world);
-	return EXIT_FAILURE;
+	return finished(world, sord, EXIT_SUCCESS);
 }

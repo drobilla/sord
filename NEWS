@@ -1,4 +1,4 @@
-sord (0.15.1) unstable;
+sord (0.16.0) stable;
 
   * Fix construction and comparison of URIs with UTF-8 characters
   * Fix documentation generation
@@ -11,7 +11,7 @@ sord (0.15.1) unstable;
   * sord_validate: Tolerate xsd:decimal literals for double and float
     properties if literals match pattern
 
- -- David Robillard <d@drobilla.net>  Sat, 09 Jul 2016 11:28:24 -0400
+ -- David Robillard <d@drobilla.net>  Mon, 19 Sep 2016 22:23:17 -0400
 
 sord (0.14.0) stable;
 

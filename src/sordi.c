@@ -14,8 +14,6 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#define _BSD_SOURCE  // for realpath
-
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>

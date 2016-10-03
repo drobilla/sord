@@ -642,9 +642,7 @@ Model::get(const Node& subject,
 {
 	SordNode* c_node = sord_get(
 		_c_obj, subject.c_obj(), predicate.c_obj(), object.c_obj(), NULL);
-	Node node(_world, c_node);
-	sord_node_free(_world.c_obj(), c_node);
-	return node;
+	return Node(_world, c_node, false);
 }
 
 }  // namespace Sord

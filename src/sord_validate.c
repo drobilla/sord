@@ -676,7 +676,7 @@ main(int argc, char** argv)
 
 		SerdURI  base_uri;
 		SerdNode base_uri_node = serd_node_new_file_uri(
-			in_path, NULL, &base_uri, false);
+			in_path, NULL, &base_uri, true);
 
 		serd_env_set_base_uri(env, &base_uri_node);
 		const SerdStatus st = serd_reader_read_file(reader, in_path);

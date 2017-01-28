@@ -1,3 +1,9 @@
+sord (0.16.1) unstable;
+
+  * sord_validate: Update copyright notice
+
+ -- David Robillard <d@drobilla.net>  Sat, 28 Jan 2017 14:26:03 -0500
+
 sord (0.16.0) stable;
 
   * Fix construction and comparison of URIs with UTF-8 characters

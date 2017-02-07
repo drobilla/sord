@@ -2,8 +2,9 @@ sord (0.16.1) unstable;
 
   * sord_validate: Fix restriction count reporting
   * sord_validate: Use consistent error format
+  * sord_validate: Add support for maximum cardinality
 
- -- David Robillard <d@drobilla.net>  Tue, 07 Feb 2017 22:17:34 +0100
+ -- David Robillard <d@drobilla.net>  Tue, 07 Feb 2017 22:21:10 +0100
 
 sord (0.16.0) stable;
 

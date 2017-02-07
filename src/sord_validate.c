@@ -54,6 +54,7 @@ typedef struct {
 	SordNode* owl_Thing;
 	SordNode* owl_cardinality;
 	SordNode* owl_equivalentClass;
+	SordNode* owl_maxCardinality;
 	SordNode* owl_minCardinality;
 	SordNode* owl_onDatatype;
 	SordNode* owl_onProperty;
@@ -563,6 +564,19 @@ check_instance(SordModel*      model,
 		}
 	}
 
+	// Check maximum cardinality
+	const SordNode* maxCard = sord_get(
+		model, restriction, uris->owl_maxCardinality, NULL, NULL);
+	if (maxCard) {
+		const unsigned m = atoi((const char*)sord_node_get_string(maxCard));
+		if (values < m) {
+			st = errorf(quad, "Property %s on %s has %u > %u values",
+			            sord_node_get_string(prop),
+			            sord_node_get_string(instance),
+			            values, m);
+		}
+	}
+
 	// Check someValuesFrom
 	SordIter* sf = sord_search(
 		model, restriction, uris->owl_someValuesFrom, NULL, NULL);
@@ -710,6 +724,7 @@ main(int argc, char** argv)
 	URI(owl, Thing);
 	URI(owl, cardinality);
 	URI(owl, equivalentClass);
+	URI(owl, maxCardinality);
 	URI(owl, minCardinality);
 	URI(owl, onDatatype);
 	URI(owl, onProperty);

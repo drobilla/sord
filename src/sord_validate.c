@@ -420,6 +420,19 @@ check_type(SordModel*      model,
 	return false;
 }
 
+static uint64_t
+count_non_blanks(SordIter* i, SordQuadIndex field)
+{
+	uint64_t n = 0;
+	for (; !sord_iter_end(i); sord_iter_next(i)) {
+		const SordNode* node = sord_iter_get_node(i, field);
+		if (sord_node_get_type(node) != SORD_BLANK) {
+			++n;
+		}
+	}
+	return n;
+}
+
 static int
 check_properties(SordModel* model, URIs* uris)
 {
@@ -474,14 +487,23 @@ check_properties(SordModel* model, URIs* uris)
 			st = errorf(quad, "Object property with literal value");
 		}
 
-		if (is_FunctionalProperty &&
-		    sord_count(model, subj, pred, NULL, NULL) > 1) {
-			st = errorf(quad, "Functional property with many objects");
+		if (is_FunctionalProperty) {
+			SordIter*      o = sord_search(model, subj, pred, NULL, NULL);
+			const uint64_t n = count_non_blanks(o, SORD_OBJECT);
+			if (n > 1) {
+				st = errorf(quad, "Functional property with %u objects", n);
+			}
+			sord_iter_free(o);
 		}
 
-		if (is_InverseFunctionalProperty &&
-		    sord_count(model, NULL, pred, obj, NULL) > 1) {
-			st = errorf(quad, "Inverse functional property with many subjects");
+		if (is_InverseFunctionalProperty) {
+			SordIter*      s = sord_search(model, NULL, pred, obj, NULL);
+			const unsigned n = count_non_blanks(s, SORD_SUBJECT);
+			if (n > 1) {
+				st = errorf(
+					quad, "Inverse functional property with %u subjects", n);
+			}
+			sord_iter_free(s);
 		}
 
 		if (sord_node_equals(pred, uris->rdf_type) &&

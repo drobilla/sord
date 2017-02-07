@@ -1,5 +1,5 @@
 /*
-  Copyright 2012-2016 David Robillard <http://drobilla.net>
+  Copyright 2012-2017 David Robillard <http://drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -89,7 +89,7 @@ print_version(void)
 {
 	printf("sord_validate " SORD_VERSION
 	       " <http://drobilla.net/software/sord>\n");
-	printf("Copyright 2012-2016 David Robillard <http://drobilla.net>.\n"
+	printf("Copyright 2012-2017 David Robillard <http://drobilla.net>.\n"
 	       "License: <http://www.opensource.org/licenses/isc>\n"
 	       "This is free software; you are free to change and redistribute it."
 	       "\nThere is NO WARRANTY, to the extent permitted by law.\n");
@@ -240,7 +240,6 @@ check_restriction(SordModel*      model,
 {
 	size_t      len = 0;
 	const char* str = (const char*)sord_node_get_string_counted(literal, &len);
-	++n_restrictions;
 
 	// Check xsd:pattern
 	SordIter* p = sord_search(model, restriction, uris->xsd_pattern, 0, 0);
@@ -255,6 +254,7 @@ check_restriction(SordModel*      model,
 			return false;
 		}
 		sord_iter_free(p);
+		++n_restrictions;
 	}
 
 	// Check xsd:minInclusive
@@ -270,6 +270,7 @@ check_restriction(SordModel*      model,
 			return false;
 		}
 		sord_iter_free(l);
+		++n_restrictions;
 	}
 
 	// Check xsd:maxInclusive
@@ -285,9 +286,9 @@ check_restriction(SordModel*      model,
 			return false;
 		}
 		sord_iter_free(u);
+		++n_restrictions;
 	}
 
-	--n_restrictions;
 	return true;  // Unknown restriction, be quietly tolerant
 }
 

@@ -61,7 +61,8 @@ def configure(conf):
     if conf.env.HAVE_PCRE:
         if conf.check(cflags=['-pthread'], mandatory=False):
             conf.env.PTHREAD_CFLAGS    = ['-pthread']
-            conf.env.PTHREAD_LINKFLAGS = ['-pthread']
+            if conf.env.CC_NAME != 'clang':
+                conf.env.PTHREAD_LINKFLAGS = ['-pthread']
         elif conf.check(linkflags=['-lpthread'], mandatory=False):
             conf.env.PTHREAD_CFLAGS    = []
             conf.env.PTHREAD_LINKFLAGS = ['-lpthread']

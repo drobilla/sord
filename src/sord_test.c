@@ -535,7 +535,7 @@ main(int argc, char** argv)
 		                 sord_num_nodes(world), initial_num_nodes);
 	}
 
-	const uint8_t ni_hao[] = { 0xE4, 0xBD, 0xA0, 0xE5, 0xA5, 0xBD };
+	const uint8_t ni_hao[] = { 0xE4, 0xBD, 0xA0, 0xE5, 0xA5, 0xBD, 0 };
 	SordNode*     chello   = sord_new_literal(world, NULL, ni_hao, "cmn");
 
 	// Test literal length

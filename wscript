@@ -20,20 +20,21 @@ VERSION = SORD_VERSION  # Package version for waf dist
 top     = '.'           # Source directory
 out     = 'build'       # Build directory
 
-def options(opt):
-    opt.load('compiler_c')
-    opt.load('compiler_cxx')
-    autowaf.set_options(opt, test=True)
+def options(ctx):
+    ctx.load('compiler_c')
+    ctx.load('compiler_cxx')
+    autowaf.set_options(ctx, test=True)
+    opt = ctx.get_option_group('Configuration options')
     opt.add_option('--no-utils', action='store_true', dest='no_utils',
-                   help='Do not build command line utilities')
+                   help='do not build command line utilities')
     opt.add_option('--static', action='store_true', dest='static',
-                   help='Build static library')
+                   help='build static library')
     opt.add_option('--no-shared', action='store_true', dest='no_shared',
-                   help='Do not build shared library')
+                   help='do not build shared library')
     opt.add_option('--static-progs', action='store_true', dest='static_progs',
-                   help='Build programs as static binaries')
+                   help='build programs as static binaries')
     opt.add_option('--dump', type='string', default='', dest='dump',
-                   help='Dump debugging output (iter, search, write, all)')
+                   help='dump debugging output (iter, search, write, all)')
 
 def configure(conf):
     conf.load('compiler_c')

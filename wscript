@@ -275,7 +275,7 @@ def test(ctx):
 
     nul = os.devnull
 
-    snippet = '<s> <p> <o> .'
+    snippet = '<http://example.org/s> <http://example.org/p> <http://example.org/o> .'
     if sys.platform == "win32":
         snippet = snippet.replace('<', '^<').replace('>', '^>')
     else:

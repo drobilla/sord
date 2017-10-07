@@ -45,7 +45,6 @@ def configure(conf):
             pass
 
     autowaf.configure(conf)
-    autowaf.set_c99_mode(conf)
     autowaf.display_header('Sord configuration')
 
     conf.env.BUILD_UTILS  = not Options.options.no_utils

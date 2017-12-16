@@ -554,6 +554,8 @@ main(int argc, char** argv)
 	str = sord_node_get_string_measured(lit_id2, &n_bytes, &n_chars);
 	if (n_bytes != strlen("hello") || n_chars != strlen("hello")) {
 		return test_fail("ASCII literal measured length incorrect\n");
+	} else if (strcmp((const char*)str, "hello")) {
+		return test_fail("ASCII literal string incorrect\n");
 	}
 
 	str = sord_node_get_string_measured(chello, &n_bytes, &n_chars);
@@ -561,6 +563,8 @@ main(int argc, char** argv)
 		return test_fail("Multi-byte literal byte count incorrect\n");
 	} else if (n_chars != 2) {
 		return test_fail("Multi-byte literal character count incorrect\n");
+	} else if (strcmp((const char*)str, (const char*)ni_hao)) {
+		return test_fail("Multi-byte literal string incorrect\n");
 	}
 
 	// Check interning doesn't clash non-equivalent values

@@ -50,7 +50,7 @@
 
 #define NUM_ORDERS          12
 #define STATEMENT_LEN       3
-#define TUP_LEN             STATEMENT_LEN + 1
+#define TUP_LEN             (STATEMENT_LEN + 1)
 #define DEFAULT_ORDER       SPO
 #define DEFAULT_GRAPH_ORDER GSPO
 
@@ -328,9 +328,11 @@ sord_iter_forward(SordIter* iter)
 	zix_btree_iter_increment(iter->cur);
 	while (!zix_btree_iter_is_end(iter->cur)) {
 		key = (SordNode**)zix_btree_get(iter->cur);
-		for (int i = 0; i < 3; ++i)
-			if (key[i] != initial[i])
+		for (int i = 0; i < 3; ++i) {
+			if (key[i] != initial[i]) {
 				return false;
+			}
+		}
 
 		zix_btree_iter_increment(iter->cur);
 	}
@@ -349,8 +351,9 @@ sord_iter_seek_match(SordIter* iter)
 	     !zix_btree_iter_is_end(iter->cur);
 	     sord_iter_forward(iter)) {
 		const SordNode** const key = (const SordNode**)zix_btree_get(iter->cur);
-		if (sord_quad_match_inline(key, iter->pat))
+		if (sord_quad_match_inline(key, iter->pat)) {
 			return (iter->end = false);
+		}
 	}
 	return true;
 }
@@ -368,8 +371,9 @@ sord_iter_seek_match_range(SordIter* iter)
 	do {
 		const SordNode** key = (const SordNode**)zix_btree_get(iter->cur);
 
-		if (sord_quad_match_inline(key, iter->pat))
+		if (sord_quad_match_inline(key, iter->pat)) {
 			return false;  // Found match
+		}
 
 		for (int i = 0; i < iter->n_prefix; ++i) {
 			const int idx = orderings[iter->order][i];
@@ -726,8 +730,9 @@ sord_drop_quad_ref(SordModel* sord, const SordNode* node, SordQuadIndex i)
 void
 sord_free(SordModel* sord)
 {
-	if (!sord)
+	if (!sord) {
 		return;
+	}
 
 	// Free nodes
 	SordQuad tup;
@@ -748,9 +753,11 @@ sord_free(SordModel* sord)
 	zix_btree_iter_free(t);
 
 	// Free indices
-	for (unsigned o = 0; o < NUM_ORDERS; ++o)
-		if (sord->indices[o])
+	for (unsigned o = 0; o < NUM_ORDERS; ++o) {
+		if (sord->indices[o]) {
 			zix_btree_free(sord->indices[o]);
+		}
+	}
 
 	free(sord);
 }
@@ -788,8 +795,9 @@ sord_begin(const SordModel* sord)
 SordIter*
 sord_find(SordModel* sord, const SordQuad pat)
 {
-	if (!pat[0] && !pat[1] && !pat[2] && !pat[3])
+	if (!pat[0] && !pat[1] && !pat[2] && !pat[3]) {
 		return sord_begin(sord);
+	}
 
 	SearchMode      mode;
 	int             n_prefix;
@@ -798,8 +806,9 @@ sord_find(SordModel* sord, const SordQuad pat)
 	SORD_FIND_LOG("Find " TUP_FMT "  index=%s  mode=%d  n_prefix=%d\n",
 	              TUP_FMT_ARGS(pat), order_names[index_order], mode, n_prefix);
 
-	if (pat[0] && pat[1] && pat[2] && pat[3])
+	if (pat[0] && pat[1] && pat[2] && pat[3]) {
 		mode = SINGLE;  // No duplicate quads (Sord is a set)
+	}
 
 	ZixBTree* const db  = sord->indices[index_order];
 	ZixBTreeIter*   cur = NULL;
@@ -1218,8 +1227,9 @@ sord_add(SordModel* sord, const SordQuad tup)
 		}
 	}
 
-	for (int i = 0; i < TUP_LEN; ++i)
+	for (int i = 0; i < TUP_LEN; ++i) {
 		sord_add_quad_ref(sord, tup[i], (SordQuadIndex)i);
+	}
 
 	++sord->n_quads;
 	return true;
@@ -1245,8 +1255,9 @@ sord_remove(SordModel* sord, const SordQuad tup)
 
 	free(quad);
 
-	for (int i = 0; i < TUP_LEN; ++i)
+	for (int i = 0; i < TUP_LEN; ++i) {
 		sord_drop_quad_ref(sord, tup[i], (SordQuadIndex)i);
+	}
 
 	--sord->n_quads;
 }
@@ -1278,8 +1289,9 @@ sord_erase(SordModel* sord, SordIter* iter)
 
 	free(quad);
 
-	for (int i = 0; i < TUP_LEN; ++i)
+	for (int i = 0; i < TUP_LEN; ++i) {
 		sord_drop_quad_ref(sord, tup[i], (SordQuadIndex)i);
+	}
 
 	--sord->n_quads;
 	return SERD_SUCCESS;

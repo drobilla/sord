@@ -404,14 +404,14 @@ main(int argc, char** argv)
 	sord_world_set_error_sink(world, expected_error, NULL);
 
 	// Attempt to create invalid CURIE
-	SerdNode  base   = serd_node_from_string(SERD_URI, USTR("http://example.org/"));
-	SerdEnv*  env    = serd_env_new(&base);
-	SerdNode  sbadns = serd_node_from_string(SERD_CURIE, USTR("badns:"));
-	SordNode* badns  = sord_node_from_serd_node(world, env, &sbadns, NULL, NULL);
-	if (badns) {
+	SerdNode  base = serd_node_from_string(SERD_URI, USTR("http://example.org/"));
+	SerdEnv*  env  = serd_env_new(&base);
+	SerdNode  sbad = serd_node_from_string(SERD_CURIE, USTR("bad:"));
+	SordNode* bad  = sord_node_from_serd_node(world, env, &sbad, NULL, NULL);
+	if (bad) {
 		return test_fail("Successfully created CURIE with bad namespace\n");
 	}
-	sord_node_free(world, badns);
+	sord_node_free(world, bad);
 	serd_env_free(env);
 
 	// Attempt to create node from garbage

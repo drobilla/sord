@@ -237,7 +237,7 @@ def build(bld):
         bld.add_post_fun(fix_docs)
 
 def lint(ctx):
-    subprocess.call('cpplint.py --filter=+whitespace/comments,-whitespace/tab,-whitespace/braces,-whitespace/labels,-build/header_guard,-readability/casting,-readability/todo,-build/include src/*.* sord/* src/zix/*.*', shell=True)
+    subprocess.call('clang-tidy -checks="*,-misc-unused-parameters,-readability-else-after-return,-llvm-header-guard,-google-readability-todo,-llvm-include-order,-clang-analyzer-alpha.*,-readability-inconsistent-declaration-parameter-name" -extra-arg="-std=c99" -extra-arg="-I." -extra-arg="-I../serd" -extra-arg="-I./src" -extra-arg="-Ibuild" ./sord/*.h ./src/*.c ./src/*.h', shell=True)
 
 def fix_docs(ctx):
     if ctx.cmd == 'build':

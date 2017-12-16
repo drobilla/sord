@@ -14,8 +14,8 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#define _BSD_SOURCE     1 // for realpath
-#define _DEFAULT_SOURCE 1 // for realpath
+#define _BSD_SOURCE     1  // for realpath
+#define _DEFAULT_SOURCE 1  // for realpath
 
 #include <assert.h>
 #include <stdlib.h>
@@ -33,7 +33,7 @@
 #    include <pcre.h>
 #endif
 
-#define USTR(s) ((const uint8_t*)s)
+#define USTR(s) ((const uint8_t*)(s))
 
 #define NS_foaf (const uint8_t*)"http://xmlns.com/foaf/0.1/"
 #define NS_owl  (const uint8_t*)"http://www.w3.org/2002/07/owl#"
@@ -155,8 +155,9 @@ is_descendant_of(SordModel*      model,
 {
 	if (!child) {
 		return false;
-	} else if (sord_node_equals(child, parent) ||
-	           sord_ask(model, child, uris->owl_equivalentClass, parent, NULL)) {
+	} else if (
+		sord_node_equals(child, parent) ||
+		sord_ask(model, child, uris->owl_equivalentClass, parent, NULL)) {
 		return true;
 	}
 
@@ -211,11 +212,12 @@ bound_cmp(SordModel*      model,
           const SordNode* type,
           const SordNode* bound)
 {
-	const char* str        = (const char*)sord_node_get_string(literal);
-	const char* bound_str  = (const char*)sord_node_get_string(bound);
-	const bool  is_numeric =
-		is_descendant_of(model, uris, type, uris->xsd_decimal, uris->owl_onDatatype) ||
-		is_descendant_of(model, uris, type, uris->xsd_double, uris->owl_onDatatype);
+	const char*     str        = (const char*)sord_node_get_string(literal);
+	const char*     bound_str  = (const char*)sord_node_get_string(bound);
+	const SordNode* pred       = uris->owl_onDatatype;
+	const bool      is_numeric =
+		is_descendant_of(model, uris, type, uris->xsd_decimal, pred) ||
+		is_descendant_of(model, uris, type, uris->xsd_double, pred);
 
 	if (is_numeric) {
 		const double fbound   = serd_strtod(bound_str, NULL);

@@ -103,7 +103,7 @@ sord_new_reader(SordModel* model,
 	SordInserter* inserter = sord_inserter_new(model, env);
 
 	SerdReader* reader = serd_reader_new(
-		syntax, inserter, (void (*)(void*))sord_inserter_free,
+		syntax, inserter, (void (*)(void* ptr))sord_inserter_free,
 		(SerdBaseSink)sord_inserter_set_base_uri,
 		(SerdPrefixSink)sord_inserter_set_prefix,
 		(SerdStatementSink)sord_inserter_write_statement,

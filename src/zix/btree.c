@@ -24,7 +24,10 @@
 
 // #define ZIX_BTREE_DEBUG 1
 
-#define ZIX_BTREE_PAGE_SIZE  4096
+#ifndef ZIX_BTREE_PAGE_SIZE
+#    define ZIX_BTREE_PAGE_SIZE 4096
+#endif
+
 #define ZIX_BTREE_NODE_SPACE (ZIX_BTREE_PAGE_SIZE - 2 * sizeof(uint16_t))
 #define ZIX_BTREE_LEAF_VALS  ((ZIX_BTREE_NODE_SPACE / sizeof(void*)) - 1)
 #define ZIX_BTREE_INODE_VALS (ZIX_BTREE_LEAF_VALS / 2)
@@ -319,12 +322,9 @@ zix_btree_insert(ZixBTree* const t, void* const e)
 ZIX_PRIVATE ZixBTreeIter*
 zix_btree_iter_new(const ZixBTree* const t)
 {
-	const size_t        s = t->height * sizeof(ZixBTreeIterFrame);
-	ZixBTreeIter* const i = (ZixBTreeIter*)malloc(sizeof(ZixBTreeIter) + s);
-	if (i) {
-		i->level = 0;
-	}
-	return i;
+	const size_t s = t->height * sizeof(ZixBTreeIterFrame);
+
+	return (ZixBTreeIter*)calloc(1, sizeof(ZixBTreeIter) + s);
 }
 
 ZIX_PRIVATE void
@@ -641,6 +641,7 @@ zix_btree_lower_bound(const ZixBTree* const t,
 	}
 
 	const ZixBTreeIterFrame* const frame = &(*ti)->stack[(*ti)->level];
+	assert(frame->node);
 	if (frame->index == frame->node->n_vals) {
 		if (found) {
 			// Found on a previous level but went too far
@@ -658,6 +659,7 @@ ZIX_API void*
 zix_btree_get(const ZixBTreeIter* const ti)
 {
 	const ZixBTreeIterFrame* const frame = &ti->stack[ti->level];
+	assert(frame->node);
 	assert(frame->index < frame->node->n_vals);
 	return frame->node->vals[frame->index];
 }

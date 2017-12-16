@@ -36,8 +36,9 @@ typedef struct {
 static SordNode*
 uri(SordWorld* world, int num)
 {
-	if (num == 0)
+	if (num == 0) {
 		return 0;
+	}
 
 	char  str[]   = "eg:000";
 	char* uri_num = str + 3;  // First `0'
@@ -189,8 +190,9 @@ test_read(SordWorld* world, SordModel* sord, SordNode* g,
 		return test_fail("Fail: Iterator has incorrect sord pointer\n");
 	}
 
-	for (; !sord_iter_end(iter); sord_iter_next(iter))
+	for (; !sord_iter_end(iter); sord_iter_next(iter)) {
 		sord_iter_get(iter, id);
+	}
 
 	// Attempt to increment past end
 	if (!sord_iter_next(iter)) {
@@ -312,8 +314,9 @@ test_read(SordWorld* world, SordModel* sord, SordNode* g,
 	iter = sord_search(sord, NULL, NULL, NULL, NULL);
 	for (; !sord_iter_end(iter); sord_iter_next(iter)) {
 		sord_iter_get(iter, id);
-		if (id[0] == last_subject)
+		if (id[0] == last_subject) {
 			continue;
+		}
 
 		SordQuad  subpat          = { id[0], 0, 0 };
 		SordIter* subiter         = sord_find(sord, subpat);
@@ -624,8 +627,9 @@ main(int argc, char** argv)
 		sord = sord_new(world, (1 << i), false);
 		printf("Testing Index `%s'\n", index_names[i]);
 		generate(world, sord, n_quads, 0);
-		if (test_read(world, sord, 0, n_quads))
+		if (test_read(world, sord, 0, n_quads)) {
 			return finished(world, sord, EXIT_FAILURE);
+		}
 		sord_free(sord);
 	}
 
@@ -638,8 +642,9 @@ main(int argc, char** argv)
 		printf("Testing Index `%s'\n", graph_index_names[i]);
 		SordNode* graph = uri(world, 42);
 		generate(world, sord, n_quads, graph);
-		if (test_read(world, sord, graph, n_quads))
+		if (test_read(world, sord, graph, n_quads)) {
 			return finished(world, sord, EXIT_FAILURE);
+		}
 		sord_free(sord);
 	}
 

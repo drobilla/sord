@@ -37,16 +37,16 @@ def options(ctx):
                    help='dump debugging output (iter, search, write, all)')
 
 def configure(conf):
-    conf.load('compiler_c')
+    autowaf.display_header('Sord configuration')
+    conf.load('compiler_c', cache=True)
     if Options.options.build_tests:
         try:
-            conf.load('compiler_cxx')
+            conf.load('compiler_cxx', cache=True)
         except:
             Logs.warn("No C++ compiler, sordmm.hpp compile test skipped")
             pass
 
-    autowaf.configure(conf)
-    autowaf.display_header('Sord configuration')
+    conf.load('autowaf', cache=True)
 
     conf.env.BUILD_UTILS  = not Options.options.no_utils
     conf.env.BUILD_SHARED = not Options.options.no_shared
@@ -84,6 +84,7 @@ def configure(conf):
     autowaf.set_lib_env(conf, 'sord', SORD_VERSION)
     conf.write_config_header('sord_config.h', remove=False)
 
+    autowaf.display_summary(conf)
     autowaf.display_msg(conf, 'Static library', bool(conf.env.BUILD_STATIC))
     autowaf.display_msg(conf, 'Shared library', bool(conf.env.BUILD_SHARED))
     autowaf.display_msg(conf, 'Utilities', bool(conf.env.BUILD_UTILS))

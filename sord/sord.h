@@ -190,7 +190,7 @@ sord_new_uri(SordWorld* world, const uint8_t* uri);
 SORD_API
 SordNode*
 sord_new_relative_uri(SordWorld*     world,
-                      const uint8_t* str,
+                      const uint8_t* uri,
                       const uint8_t* base_uri);
 
 /**
@@ -462,7 +462,7 @@ sord_contains(SordModel* model, const SordQuad pat);
 */
 SORD_API
 bool
-sord_add(SordModel* model, const SordQuad quad);
+sord_add(SordModel* model, const SordQuad tup);
 
 /**
    Remove a quad from a model.
@@ -472,7 +472,7 @@ sord_add(SordModel* model, const SordQuad quad);
 */
 SORD_API
 void
-sord_remove(SordModel* model, const SordQuad quad);
+sord_remove(SordModel* model, const SordQuad tup);
 
 /**
    Remove a quad from a model via an iterator.
@@ -556,7 +556,7 @@ sord_inserter_write_statement(SordInserter*      inserter,
 */
 SORD_API
 void
-sord_iter_get(const SordIter* iter, SordQuad quad);
+sord_iter_get(const SordIter* iter, SordQuad tup);
 
 /**
    Return a field of the quad pointed to by `iter`.

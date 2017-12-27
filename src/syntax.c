@@ -46,17 +46,17 @@ sord_inserter_free(SordInserter* inserter)
 
 SerdStatus
 sord_inserter_set_base_uri(SordInserter*   inserter,
-                           const SerdNode* uri_node)
+                           const SerdNode* uri)
 {
-	return serd_env_set_base_uri(inserter->env, uri_node);
+	return serd_env_set_base_uri(inserter->env, uri);
 }
 
 SerdStatus
 sord_inserter_set_prefix(SordInserter*   inserter,
                          const SerdNode* name,
-                         const SerdNode* uri_node)
+                         const SerdNode* uri)
 {
-	return serd_env_set_prefix(inserter->env, name, uri_node);
+	return serd_env_set_prefix(inserter->env, name, uri);
 }
 
 SerdStatus

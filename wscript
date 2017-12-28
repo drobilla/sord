@@ -238,7 +238,19 @@ def build(bld):
         bld.add_post_fun(fix_docs)
 
 def lint(ctx):
-    subprocess.call('clang-tidy -checks="*,-misc-unused-parameters,-readability-else-after-return,-llvm-header-guard,-google-readability-todo,-llvm-include-order,-clang-analyzer-alpha.*,-readability-inconsistent-declaration-parameter-name" -extra-arg="-std=c99" -extra-arg="-I." -extra-arg="-I../serd" -extra-arg="-I./src" -extra-arg="-Ibuild" ./sord/*.h ./src/*.c ./src/*.h', shell=True)
+    "checks code for style issues"
+    import subprocess
+    cmd = ("clang-tidy -p=. -header-filter=.* -checks=\"*," +
+           "-cert-dcl03-c," +
+           "-clang-analyzer-alpha.*," +
+           "-google-readability-todo," +
+           "-llvm-header-guard," +
+           "-llvm-include-order," +
+           "-misc-static-assert," +
+           "-misc-unused-parameters," +
+           "-readability-else-after-return\" " +
+           "../src/*.c")
+    subprocess.call(cmd, cwd='build', shell=True)
 
 def fix_docs(ctx):
     if ctx.cmd == 'build':

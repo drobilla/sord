@@ -429,18 +429,6 @@ main(int argc, char** argv)
 	}
 	sord_node_free(world, nil_node);
 
-	// Attempt to double-free a node
-	SordNode* garbage = sord_new_uri(world, USTR("urn:garbage"));
-	sord_node_free(world, garbage);
-	sord_world_set_error_sink(world, expected_error, NULL);
-	sord_node_free(world, garbage);
-	sord_world_set_error_sink(world, unexpected_error, NULL);
-	if (n_expected_errors != 2) {
-		return test_fail("Successfully freed node twice\n");
-	}
-
-	sord_world_set_error_sink(world, unexpected_error, NULL);
-
 	// Check node flags are set properly
 	SordNode* with_newline = sord_new_literal(world, NULL, USTR("a\nb"), NULL);
 	if (!(sord_node_get_flags(with_newline) & SERD_HAS_NEWLINE)) {

@@ -110,7 +110,7 @@ def build(bld):
     if bld.env.MSVC_COMPILER:
         libflags = []
         libs     = []
-        defines  = ['snprintf=_snprintf']
+        defines  = []
 
     # Shared Library
     if bld.env.BUILD_SHARED:

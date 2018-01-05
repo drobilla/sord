@@ -549,7 +549,7 @@ static inline bool
 sord_has_index(SordModel* model, SordOrder* order, int* n_prefix, bool graphs)
 {
 	if (graphs) {
-		*order    += GSPO;
+		*order     = (SordOrder)(*order + GSPO);
 		*n_prefix += 1;
 	}
 

@@ -47,6 +47,7 @@ def configure(conf):
             pass
 
     conf.load('autowaf', cache=True)
+    autowaf.set_c_lang(conf, 'c99')
 
     conf.env.BUILD_UTILS  = not Options.options.no_utils
     conf.env.BUILD_SHARED = not Options.options.no_shared

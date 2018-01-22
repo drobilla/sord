@@ -161,7 +161,7 @@ public:
 	inline const SordNode* get_node() const { return _c_obj; }
 	inline SordNode*       get_node()       { return _c_obj; }
 
-	const SerdNode* to_serd_node() {
+	const SerdNode* to_serd_node() const {
 		return sord_node_to_serd_node(_c_obj);
 	}
 

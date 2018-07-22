@@ -522,7 +522,7 @@ Model::load_file(SerdEnv*           env,
 	SerdReader* reader = sord_new_reader(_c_obj, env, syntax, NULL);
 	serd_reader_read_file(reader, path);
 	serd_reader_free(reader);
-	free(path);
+	serd_free(path);
 }
 
 inline SerdStatus
@@ -537,10 +537,10 @@ Model::write_to_file(const std::string& uri, SerdSyntax syntax, SerdStyle style)
 	FILE* const fd = fopen((const char*)path, "w");
 	if (!fd) {
 		fprintf(stderr, "Failed to open file %s\n", path);
-		free(path);
+		serd_free(path);
 		return SERD_ERR_UNKNOWN;
 	}
-	free(path);
+	serd_free(path);
 
 	SerdURI base_uri = SERD_URI_NULL;
 	if (serd_uri_parse((const uint8_t*)uri.c_str(), &base_uri)) {

@@ -56,7 +56,7 @@ def configure(conf):
                              Options.options.static_progs)
 
     autowaf.check_pkg(conf, 'serd-0', uselib_store='SERD',
-                      atleast_version='0.22.4', mandatory=True)
+                      atleast_version='0.29.4', mandatory=True)
     autowaf.check_pkg(conf, 'libpcre', uselib_store='PCRE', mandatory=False)
 
     if conf.env.HAVE_PCRE:

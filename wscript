@@ -11,7 +11,7 @@ import waflib.extras.autowaf as autowaf
 # major increment <=> incompatible changes
 # minor increment <=> compatible changes (additions)
 # micro increment <=> no interface changes
-SORD_VERSION       = '0.16.1'
+SORD_VERSION       = '0.16.2'
 SORD_MAJOR_VERSION = '0'
 
 # Mandatory waf variables
@@ -56,7 +56,7 @@ def configure(conf):
                              Options.options.static_progs)
 
     autowaf.check_pkg(conf, 'serd-0', uselib_store='SERD',
-                      atleast_version='0.29.4', mandatory=True)
+                      atleast_version='0.30.0', mandatory=True)
     autowaf.check_pkg(conf, 'libpcre', uselib_store='PCRE', mandatory=False)
 
     if conf.env.HAVE_PCRE:

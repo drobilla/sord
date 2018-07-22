@@ -1,4 +1,4 @@
-sord (0.16.1) unstable;
+sord (0.16.2) stable;
 
   * sord_validate: Fix restriction count reporting
   * sord_validate: Use consistent error format
@@ -6,7 +6,7 @@ sord (0.16.1) unstable;
   * sord_validate: Only report functional / inverse functional property
     errors if the subjects / objects are not blank
 
- -- David Robillard <d@drobilla.net>  Tue, 07 Feb 2017 22:52:31 +0100
+ -- David Robillard <d@drobilla.net>  Sun, 22 Jul 2018 20:38:03 +0200
 
 sord (0.16.0) stable;
 

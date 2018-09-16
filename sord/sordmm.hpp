@@ -246,7 +246,7 @@ public:
 		: Node(world, Node::LITERAL, s) {}
 
 	static inline Node decimal(World& world, double d, unsigned frac_digits) {
-		const SerdNode val  = serd_node_new_decimal(d, 7);
+		const SerdNode val  = serd_node_new_decimal(d, frac_digits);
 		const SerdNode type = serd_node_from_string(
 			SERD_URI, (const uint8_t*)SORD_NS_XSD "decimal");
 
@@ -493,8 +493,8 @@ inline void
 Model::load_string(SerdEnv*           env,
                    SerdSyntax         syntax,
                    const char*        str,
-                   size_t             len,
-                   const std::string& base_uri)
+                   size_t             /*len*/,
+                   const std::string& /*base_uri*/)
 {
 	SerdReader* reader = sord_new_reader(_c_obj, env, syntax, NULL);
 	serd_reader_read_string(reader, (const uint8_t*)str);
@@ -510,7 +510,7 @@ inline void
 Model::load_file(SerdEnv*           env,
                  SerdSyntax         syntax,
                  const std::string& data_uri,
-                 const std::string& base_uri)
+                 const std::string& /*base_uri*/)
 {
 	uint8_t* path = serd_file_uri_parse((const uint8_t*)data_uri.c_str(), NULL);
 	if (!path) {

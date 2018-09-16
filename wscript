@@ -1,11 +1,11 @@
 #!/usr/bin/env python
+
 import glob
 import os
-import subprocess
 import sys
-import waflib.Logs as Logs
-import waflib.Options as Options
-import waflib.extras.autowaf as autowaf
+
+from waflib import Logs, Options
+from waflib.extras import autowaf
 
 # Library and package version (UNIX style major, minor, micro)
 # major increment <=> incompatible changes
@@ -25,14 +25,13 @@ def options(ctx):
     ctx.load('compiler_cxx')
     autowaf.set_options(ctx, test=True)
     opt = ctx.get_option_group('Configuration options')
-    opt.add_option('--no-utils', action='store_true', dest='no_utils',
-                   help='do not build command line utilities')
-    opt.add_option('--static', action='store_true', dest='static',
-                   help='build static library')
-    opt.add_option('--no-shared', action='store_true', dest='no_shared',
-                   help='do not build shared library')
-    opt.add_option('--static-progs', action='store_true', dest='static_progs',
-                   help='build programs as static binaries')
+    autowaf.add_flags(
+        opt,
+        {'no-utils':     'do not build command line utilities',
+         'static':       'build static library',
+         'no-shared':    'do not build shared library',
+         'static-progs': 'build programs as static binaries'})
+
     opt.add_option('--dump', type='string', default='', dest='dump',
                    help='dump debugging output (iter, search, write, all)')
 
@@ -81,17 +80,16 @@ def configure(conf):
     if all or 'write' in dump:
         autowaf.define(conf, 'SORD_DEBUG_WRITE', 1)
 
-    autowaf.define(conf, 'SORD_VERSION', SORD_VERSION)
     autowaf.set_lib_env(conf, 'sord', SORD_VERSION)
     conf.write_config_header('sord_config.h', remove=False)
 
-    autowaf.display_summary(conf)
-    autowaf.display_msg(conf, 'Static library', bool(conf.env.BUILD_STATIC))
-    autowaf.display_msg(conf, 'Shared library', bool(conf.env.BUILD_SHARED))
-    autowaf.display_msg(conf, 'Utilities', bool(conf.env.BUILD_UTILS))
-    autowaf.display_msg(conf, 'Unit tests', bool(conf.env.BUILD_TESTS))
-    autowaf.display_msg(conf, 'Debug dumping', dump)
-    print('')
+    autowaf.display_summary(
+        conf,
+        {'Static library': bool(conf.env.BUILD_STATIC),
+         'Shared library': bool(conf.env.BUILD_SHARED),
+         'Utilities':      bool(conf.env.BUILD_UTILS),
+         'Unit tests':     bool(conf.env.BUILD_TESTS),
+         'Debug dumping':  dump})
 
 def build(bld):
     # C/C++ Headers

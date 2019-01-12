@@ -2,6 +2,7 @@ import glob
 import os
 import subprocess
 import sys
+import time
 
 from waflib import Build, Context, Logs, Options, Utils
 from waflib.TaskGen import feature, before, after
@@ -69,7 +70,7 @@ def set_options(opt, debug_by_default=False, test=False):
     opts.add_option('-s', '--strict', action='store_true', default=False,
                     dest='strict',
                     help="use strict compiler flags and show all warnings")
-    opts.add_option('--ultra-strict', action='store_true', default=False,
+    opts.add_option('-S', '--ultra-strict', action='store_true', default=False,
                     dest='ultra_strict',
                     help="use extremely strict compiler flags (likely noisy)")
     opts.add_option('--docs', action='store_true', default=False, dest='docs',
@@ -86,9 +87,6 @@ def set_options(opt, debug_by_default=False, test=False):
         test_opts.add_option('--wrapper', type='string',
                              dest='test_wrapper',
                              help='command prefix for tests (e.g. valgrind)')
-        test_opts.add_option('--verbose-tests', action='store_true',
-                             default=False, dest='verbose_tests',
-                             help='always show test output')
 
     g_step = 1
 
@@ -180,6 +178,16 @@ def check_pkg(conf, name, **args):
     else:
         conf.env[var_name] = CheckType.OPTIONAL
 
+    if not conf.env.MSVC_COMPILER and 'system' in args and args['system']:
+        includes = conf.env['INCLUDES_' + nameify(args['uselib_store'])]
+        for path in includes:
+            if 'COMPILER_CC' in conf.env:
+                conf.env.append_value('CFLAGS', ['-isystem', path])
+            if 'COMPILER_CXX' in conf.env:
+                conf.env.append_value('CXXFLAGS', ['-isystem', path])
+
+        conf.env.append_value('CXXFLAGS', ['-isystem', '/usr/local/include'])
+
 def normpath(path):
     if sys.platform == 'win32':
         return os.path.normpath(path).replace('\\', '/')
@@ -238,16 +246,37 @@ def configure(conf):
             conf.env['CXXFLAGS'] = ['-O0', '-g']
     else:
         if conf.env['MSVC_COMPILER']:
-            conf.env['CFLAGS']   = ['/MD', '/FS', '/DNDEBUG']
-            conf.env['CXXFLAGS'] = ['/MD', '/FS', '/DNDEBUG']
+            append_cxx_flags(['/MD', '/FS', '/DNDEBUG'])
         else:
             append_cxx_flags(['-DNDEBUG'])
 
     if conf.env.MSVC_COMPILER:
         Options.options.no_coverage = True
-        if Options.options.strict:
-            conf.env.append_value('CFLAGS', ['/Wall'])
-            conf.env.append_value('CXXFLAGS', ['/Wall'])
+        append_cxx_flags(['/nologo',
+                          '/FS',
+                          '/DNDEBUG',
+                          '/D_CRT_SECURE_NO_WARNINGS',
+                          '/experimental:external',
+                          '/external:W0',
+                          '/external:anglebrackets'])
+        conf.env.append_value('LINKFLAGS', '/nologo')
+        if Options.options.strict or Options.options.ultra_strict:
+            ms_strict_flags = ['/Wall',
+                               '/wd4061',
+                               '/wd4200',
+                               '/wd4514',
+                               '/wd4571',
+                               '/wd4625',
+                               '/wd4626',
+                               '/wd4706',
+                               '/wd4710',
+                               '/wd4820',
+                               '/wd5026',
+                               '/wd5027',
+                               '/wd5045']
+            conf.env.append_value('CFLAGS', ms_strict_flags)
+            conf.env.append_value('CXXFLAGS', ms_strict_flags)
+            conf.env.append_value('CXXFLAGS', ['/EHsc'])
     else:
         if Options.options.ultra_strict:
             Options.options.strict = True
@@ -335,7 +364,7 @@ def set_c_lang(conf, lang):
     "Set a specific C language standard, like 'c99' or 'c11'"
     if conf.env.MSVC_COMPILER:
         # MSVC has no hope or desire to compile C99, just compile as C++
-        conf.env.append_unique('CFLAGS', ['-TP'])
+        conf.env.append_unique('CFLAGS', ['/TP'])
     else:
         flag = '-std=%s' % lang
         conf.check(cflags=['-Werror', flag],
@@ -359,7 +388,7 @@ def set_modern_c_flags(conf):
     if 'COMPILER_CC' in conf.env:
         if conf.env.MSVC_COMPILER:
             # MSVC has no hope or desire to compile C99, just compile as C++
-            conf.env.append_unique('CFLAGS', ['-TP'])
+            conf.env.append_unique('CFLAGS', ['/TP'])
         else:
             for flag in ['-std=c11', '-std=c99']:
                 if conf.check(cflags=['-Werror', flag], mandatory=False,
@@ -721,8 +750,6 @@ def cd_to_build_dir(ctx, appname):
         os.chdir(os.path.join('build', appname))
     else:
         os.chdir('build')
-    Logs.pprint('GREEN', ("Waf: Entering directory `%s'" %
-                          os.path.abspath(os.getcwd())))
 
 def cd_to_orig_dir(ctx, child):
     if child:
@@ -730,8 +757,17 @@ def cd_to_orig_dir(ctx, child):
     else:
         os.chdir('..')
 
+def bench_time():
+    if hasattr(time, 'perf_counter'): # Added in Python 3.3
+        return time.perf_counter()
+    else:
+        return time.time()
+
 def pre_test(ctx, appname, dirs=['src']):
+    Logs.pprint('GREEN', '\n[==========] Running %s tests' % appname)
+
     if not hasattr(ctx, 'autowaf_tests_total'):
+        ctx.autowaf_tests_start_time   = bench_time()
         ctx.autowaf_tests_total        = 0
         ctx.autowaf_tests_failed       = 0
         ctx.autowaf_local_tests_total  = 0
@@ -755,6 +791,9 @@ def pre_test(ctx, appname, dirs=['src']):
                 Logs.warn('Failed to run lcov, no coverage report generated')
         finally:
             clear_log.close()
+
+class TestFailed(Exception):
+    pass
 
 def post_test(ctx, appname, dirs=['src'], remove=['*boost*', 'c++*']):
     if not ctx.env.NO_COVERAGE:
@@ -796,21 +835,22 @@ def post_test(ctx, appname, dirs=['src'], remove=['*boost*', 'c++*']):
             coverage_lcov.close()
             coverage_log.close()
 
-    if ctx.autowaf_tests[appname]['failed'] > 0:
-        Logs.pprint('RED', '\nSummary:  %d / %d %s tests failed' % (
-            ctx.autowaf_tests[appname]['failed'],
-            ctx.autowaf_tests[appname]['total'],
-            appname))
-    else:
-        Logs.pprint('GREEN', '\nSummary:  All %d %s tests passed' % (
-            ctx.autowaf_tests[appname]['total'], appname))
-
+    duration = (bench_time() - ctx.autowaf_tests_start_time) * 1000.0
+    total_tests = ctx.autowaf_tests[appname]['total']
+    failed_tests = ctx.autowaf_tests[appname]['failed']
+    passed_tests = total_tests - failed_tests
+    Logs.pprint('GREEN', '\n[==========] %d tests from %s ran (%d ms total)' % (
+        total_tests, appname, duration))
     if not ctx.env.NO_COVERAGE:
-        Logs.pprint('GREEN', 'Coverage: <file://%s>\n'
+        Logs.pprint('GREEN', '[----------] Coverage: <file://%s>'
                     % os.path.abspath('coverage/index.html'))
 
-    Logs.pprint('GREEN', ("Waf: Leaving directory `%s'" %
-                          os.path.abspath(os.getcwd())))
+    Logs.pprint('GREEN', '[  PASSED  ] %d tests' % passed_tests)
+    if failed_tests > 0:
+        Logs.pprint('RED', '[  FAILED  ] %d tests' % failed_tests)
+        raise TestFailed('Tests from %s failed' % appname)
+    Logs.pprint('', '')
+
     top_level = (len(ctx.stack_path) > 1)
     if top_level:
         cd_to_orig_dir(ctx, top_level)
@@ -844,7 +884,7 @@ def run_test(ctx,
         if isinstance(test, type([])):
             s = ' '.join(test)
         if header and not quiet:
-            Logs.pprint('Green', '\n** Test %s' % s)
+            Logs.pprint('Green', '\n[ RUN      ] %s' % s)
         cmd = test
         if Options.options.test_wrapper:
             cmd = Options.options.test_wrapper + ' ' + test
@@ -859,17 +899,18 @@ def run_test(ctx,
     success = desired_status is None or returncode == desired_status
     if success:
         if not quiet:
-            Logs.pprint('GREEN', '** Pass %s' % name)
+            Logs.pprint('GREEN', '[       OK ] %s' % name)
     else:
-        Logs.pprint('RED', '** FAIL %s' % name)
+        Logs.pprint('RED', '[  FAILED  ] %s' % name)
         ctx.autowaf_tests_failed += 1
+        ctx.autowaf_local_tests_failed += 1
         ctx.autowaf_tests[appname]['failed'] += 1
         if type(test) != list and not callable(test):
             Logs.pprint('RED', test)
 
-    if Options.options.verbose_tests and type(test) != list and not callable(test):
-        sys.stdout.write(out[0])
-        sys.stderr.write(out[1])
+    if Options.options.verbose and type(test) != list and not callable(test):
+        sys.stdout.write(out[0].decode('utf-8'))
+        sys.stderr.write(out[1].decode('utf-8'))
 
     return (success, out)
 
@@ -882,7 +923,8 @@ def tests_name(ctx, appname, name='*'):
 def begin_tests(ctx, appname, name='*'):
     ctx.autowaf_local_tests_failed = 0
     ctx.autowaf_local_tests_total  = 0
-    Logs.pprint('GREEN', '\n** Begin %s tests' % (
+    ctx.autowaf_local_tests_start_time = bench_time()
+    Logs.pprint('GREEN', '\n[----------] %s' % (
         tests_name(ctx, appname, name)))
 
     class Handle:
@@ -895,13 +937,15 @@ def begin_tests(ctx, appname, name='*'):
     return Handle()
 
 def end_tests(ctx, appname, name='*'):
+    duration = (bench_time() - ctx.autowaf_local_tests_start_time) * 1000.0
+    total = ctx.autowaf_local_tests_total
     failures = ctx.autowaf_local_tests_failed
     if failures == 0:
-        Logs.pprint('GREEN', '** Passed all %d %s tests' % (
-            ctx.autowaf_local_tests_total, tests_name(ctx, appname, name)))
+        Logs.pprint('GREEN', '[----------] %d tests from %s (%d ms total)' % (
+            ctx.autowaf_local_tests_total, tests_name(ctx, appname, name), duration))
     else:
-        Logs.pprint('RED', '** Failed %d / %d %s tests' % (
-            failures, ctx.autowaf_local_tests_total, tests_name(ctx, appname, name)))
+        Logs.pprint('RED', '[----------] %d/%d tests from %s (%d ms total)' % (
+            total - failures, total, tests_name(ctx, appname, name), duration))
 
 def run_tests(ctx,
               appname,

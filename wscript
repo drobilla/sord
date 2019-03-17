@@ -23,9 +23,9 @@ out     = 'build'       # Build directory
 def options(ctx):
     ctx.load('compiler_c')
     ctx.load('compiler_cxx')
-    autowaf.set_options(ctx, test=True)
-    opt = ctx.get_option_group('Configuration options')
-    autowaf.add_flags(
+    opt = ctx.configuration_options()
+
+    ctx.add_flags(
         opt,
         {'no-utils':     'do not build command line utilities',
          'static':       'build static library',
@@ -36,7 +36,6 @@ def options(ctx):
                    help='dump debugging output (iter, search, write, all)')
 
 def configure(conf):
-    autowaf.display_header('Sord configuration')
     conf.load('compiler_c', cache=True)
     if Options.options.build_tests:
         try:
@@ -261,103 +260,71 @@ def upload_docs(ctx):
         os.system('soelim %s | pre-grohtml troff -man -wall -Thtml | post-grohtml > build/%s.html' % (page, page))
         os.system('rsync -avz --delete -e ssh build/%s.html drobilla@drobilla.net:~/drobilla.net/man/' % page)
 
-def test(ctx):
-    blddir = autowaf.build_dir(APPNAME, 'tests')
+def test(tst):
+    import tempfile
     try:
-        os.makedirs(blddir)
+        test_dir = os.path.join
+        os.mkdir('tests')
+        for i in glob.glob('tests/*.*'):
+            os.remove(i)
     except:
         pass
 
-    for i in glob.glob(blddir + '/*.*'):
-        os.remove(i)
+    srcdir = tst.path.abspath()
+    sordi = './sordi_static'
+    base = 'http://example.org/'
+    snippet = '<{0}s> <{0}p> <{0}o> .\n'.format(base)
+    manifest = 'file://%s/tests/manifest.ttl' % srcdir
 
-    srcdir   = ctx.path.abspath()
-    orig_dir = os.path.abspath(os.curdir)
+    with tst.group('Unit') as check:
+        check(['./sord_test'])
 
-    os.chdir(srcdir)
+    with tst.group('GoodCommands') as check:
+        check([sordi, manifest])
+        check([sordi, '%s/tests/UTF-8.ttl' % srcdir])
+        check([sordi, '-v'])
+        check([sordi, '-h'])
+        check([sordi, '-s', '<foo> a <#Thingie> .', 'file:///test'])
+        check([sordi, os.devnull], stdout=os.devnull)
+        with tempfile.TemporaryFile(mode='r+') as stdin:
+            stdin.write(snippet + '\n')
+            check([sordi, '-', 'http://example.org/'], stdin=stdin)
+            check([sordi, '-o', 'turtle', '-', 'http://example.org/'], stdin=stdin)
 
-    good_tests = glob.glob('tests/test-*.ttl')
-    good_tests.sort()
+    with tst.group('BadCommands', expected=1) as check:
+        check([sordi])
+        check([sordi, 'ftp://example.org/unsupported.ttl'])
+        check([sordi, '-i'])
+        check([sordi, '-o'])
+        check([sordi, '-z'])
+        check([sordi, '-p'])
+        check([sordi, '-c'])
+        check([sordi, '-i illegal'])
+        check([sordi, '-o illegal'])
+        check([sordi, '-i turtle'])
+        check([sordi, '-i ntriples'])
+        check([sordi, '/no/such/file'])
 
-    os.chdir(orig_dir)
+    with tst.group('IoErrors', expected=1) as check:
+        check([sordi, 'file://%s/' % srcdir], name='Read directory')
+        if os.path.exists('/dev/full'):
+            check([sordi, manifest], stdout='/dev/full', name='Write error')
 
-    autowaf.pre_test(ctx, APPNAME)
+    with tst.group('good', verbosity=0) as check:
+        suite_base = 'http://www.w3.org/2001/sw/DataAccess/df1/'
+        good_tests = glob.glob(os.path.join(srcdir, 'tests', 'test-*.ttl'))
+        for test in good_tests:
+            path = os.path.relpath(test, srcdir)
+            base_uri = suite_base + path.replace('\\', '/')
 
-    os.environ['PATH'] = '.' + os.pathsep + os.getenv('PATH')
+            out_path = path + '.out'
+            check([sordi, test, base_uri], stdout=out_path)
 
-    nul = os.devnull
-
-    snippet = '<http://example.org/s> <http://example.org/p> <http://example.org/o> .'
-    if sys.platform == "win32":
-        snippet = snippet.replace('<', '^<').replace('>', '^>')
-    else:
-        snippet = '"%s"' % snippet
-
-    autowaf.run_tests(ctx, APPNAME, [
-            'sordi_static "file://%s/tests/manifest.ttl" > %s' % (srcdir, nul),
-            'sordi_static "%s/tests/UTF-8.ttl" > %s' % (srcdir, nul),
-            'sordi_static -v > %s' % nul,
-            'sordi_static -h > %s' % nul,
-            'sordi_static -s "<foo> a <#Thingie> ." file:///test > %s' % nul,
-            'echo %s | sordi_static - http://example.org/' % snippet,
-            'echo %s | sordi_static -o turtle - http://example.org/' % snippet,
-            'sordi_static %s > %s' % (nul, nul)],
-                      0, name='sordi-cmd-good')
-
-    # Test read error by reading a directory
-    autowaf.run_test(ctx, APPNAME, 'sordi_static "file://%s/"' % srcdir,
-                     1, name='read_error')
-
-    # Test write error by writing to /dev/full
-    if os.path.exists('/dev/full'):
-        autowaf.run_test(ctx, APPNAME,
-                         'sordi_static "file://%s/tests/good/manifest.ttl" > /dev/full' % srcdir,
-                         1, name='write_error')
-
-    autowaf.run_tests(ctx, APPNAME, [
-            'sordi_static > %s' % nul,
-            'sordi_static ftp://example.org/unsupported.ttl > %s' % nul,
-            'sordi_static -i > %s' % nul,
-            'sordi_static -o > %s' % nul,
-            'sordi_static -z > %s' % nul,
-            'sordi_static -p > %s' % nul,
-            'sordi_static -c > %s' % nul,
-            'sordi_static -i illegal > %s' % nul,
-            'sordi_static -o illegal > %s' % nul,
-            'sordi_static -i turtle > %s' % nul,
-            'sordi_static -i ntriples > %s' % nul,
-            'echo "<s> <p> <o> ." | sordi_static -',
-            'sordi_static /no/such/file > %s' % nul],
-                      1, name='sordi-cmd-bad')
-
-    Logs.pprint('GREEN', '')
-    autowaf.run_test(ctx, APPNAME, 'sord_test', name='sord_test')
-
-    commands = []
-    for test in good_tests:
-        base_uri = 'http://www.w3.org/2001/sw/DataAccess/df1/' + test.replace('\\', '/')
-        commands += [ 'sordi_static "%s" "%s" > %s.out' % (
-                os.path.join(srcdir, test), base_uri, test) ]
-
-    autowaf.run_tests(ctx, APPNAME, commands, 0, name='good')
-
-    verify_tests = []
-    for test in good_tests:
-        out_filename = test + '.out'
-        cmp_filename = srcdir + '/' + test.replace('.ttl', '.out')
-        if not os.access(out_filename, os.F_OK):
-            Logs.pprint('RED', '** FAIL %s output is missing' % test)
-            verify_tests += [[out_filename, 1]]
-        else:
-            out_lines = sorted(open(out_filename).readlines())
-            cmp_lines = sorted(open(cmp_filename).readlines())
-            if out_lines != cmp_lines:
-                verify_tests += [[out_filename, 1]]
-            else:
-                verify_tests += [[out_filename, 0]]
-    autowaf.run_tests(ctx, APPNAME, verify_tests, name='verify_turtle_to_ntriples')
-
-    autowaf.post_test(ctx, APPNAME)
+            check_path = test.replace('.ttl', '.out')
+            out_lines = sorted(open(out_path).readlines())
+            cmp_lines = sorted(open(check_path).readlines())
+            check(lambda: out_lines == cmp_lines,
+                  name='%s check' % path)
 
 def posts(ctx):
     path = str(ctx.path.abspath())

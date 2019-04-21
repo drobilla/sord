@@ -121,9 +121,9 @@ def build(bld):
                   vnum            = SORD_VERSION,
                   install_path    = '${LIBDIR}',
                   libs            = libs,
+                  uselib          = 'SERD',
                   defines         = defines + ['SORD_SHARED', 'SORD_INTERNAL'],
                   cflags          = libflags)
-        autowaf.use_lib(bld, obj, 'SERD')
 
     # Static Library
     if bld.env.BUILD_STATIC:
@@ -136,8 +136,8 @@ def build(bld):
                   vnum            = SORD_VERSION,
                   install_path    = '${LIBDIR}',
                   libs            = libs,
+                  uselib          = 'SERD',
                   defines         = ['SORD_INTERNAL'])
-        autowaf.use_lib(bld, obj, 'SERD')
 
     if bld.env.BUILD_TESTS:
         test_libs      = libs
@@ -157,8 +157,8 @@ def build(bld):
                   defines      = defines,
                   cflags       = test_cflags,
                   linkflags    = test_linkflags,
-                  lib          = test_libs)
-        autowaf.use_lib(bld, obj, 'SERD')
+                  lib          = test_libs,
+                  uselib       = 'SERD')
 
         # Unit test program
         obj = bld(features     = 'c cprogram',
@@ -170,8 +170,8 @@ def build(bld):
                   install_path = '',
                   defines      = defines,
                   cflags       = test_cflags,
-                  linkflags    = test_linkflags)
-        autowaf.use_lib(bld, obj, 'SERD')
+                  linkflags    = test_linkflags,
+                  uselib       = 'SERD')
 
         # Static profiled sordi for tests
         obj = bld(features     = 'c cprogram',
@@ -183,8 +183,8 @@ def build(bld):
                   install_path = '',
                   defines      = defines,
                   cflags       = test_cflags,
-                  linkflags    = test_linkflags)
-        autowaf.use_lib(bld, obj, 'SERD')
+                  linkflags    = test_linkflags,
+                  uselib       = 'SERD')
 
         # C++ build test
         if bld.env.COMPILER_CXX:
@@ -197,8 +197,8 @@ def build(bld):
                       install_path = '',
                       defines      = defines,
                       cxxflags     = test_cflags,
-                      linkflags    = test_linkflags)
-            autowaf.use_lib(bld, obj, 'SERD')
+                      linkflags    = test_linkflags,
+                      uselib       = 'SERD')
 
     # Utilities
     if bld.env.BUILD_UTILS:
@@ -211,6 +211,7 @@ def build(bld):
                       includes     = ['.', './src'],
                       use          = 'libsord',
                       lib          = libs,
+                      uselib       = 'SERD',
                       target       = i,
                       install_path = '${BINDIR}',
                       defines      = defines)
@@ -219,9 +220,8 @@ def build(bld):
             if bld.env.STATIC_PROGS:
                 obj.env.SHLIB_MARKER = obj.env.STLIB_MARKER
                 obj.linkflags        = ['-static', '-Wl,--start-group']
-            autowaf.use_lib(bld, obj, 'SERD')
             if i == 'sord_validate':
-                autowaf.use_lib(bld, obj, 'PCRE')
+                obj.uselib    += ' PCRE'
                 obj.cflags    = bld.env.PTHREAD_CFLAGS
                 obj.linkflags = bld.env.PTHREAD_LINKFLAGS
 

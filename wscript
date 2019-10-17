@@ -269,6 +269,10 @@ def test(tst):
     except:
         pass
 
+    if sys.platform == 'win32':
+        Logs.warn('Tests disabled on Windows')
+        return
+
     srcdir = tst.path.abspath()
     sordi = './sordi_static'
     base = 'http://example.org/'

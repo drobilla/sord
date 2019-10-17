@@ -73,11 +73,11 @@ def configure(conf):
     dump = Options.options.dump.split(',')
     all = 'all' in dump
     if all or 'iter' in dump:
-        autowaf.define(conf, 'SORD_DEBUG_ITER', 1)
+        conf.define('SORD_DEBUG_ITER', 1)
     if all or 'search' in dump:
-        autowaf.define(conf, 'SORD_DEBUG_SEARCH', 1)
+        conf.define('SORD_DEBUG_SEARCH', 1)
     if all or 'write' in dump:
-        autowaf.define(conf, 'SORD_DEBUG_WRITE', 1)
+        conf.define('SORD_DEBUG_WRITE', 1)
 
     autowaf.set_lib_env(conf, 'sord', SORD_VERSION)
     conf.write_config_header('sord_config.h', remove=False)

@@ -53,9 +53,8 @@ def configure(conf):
     conf.env.BUILD_STATIC = (Options.options.static or
                              Options.options.static_progs)
 
-    autowaf.check_pkg(conf, 'serd-0', uselib_store='SERD',
-                      atleast_version='0.30.0', mandatory=True)
-    autowaf.check_pkg(conf, 'libpcre', uselib_store='PCRE', mandatory=False)
+    conf.check_pkg('serd-0 >= 0.30.0', uselib_store='SERD')
+    conf.check_pkg('libpcre', uselib_store='PCRE', mandatory=False)
 
     if conf.env.HAVE_PCRE:
         if conf.check(cflags=['-pthread'], mandatory=False):

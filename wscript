@@ -269,8 +269,9 @@ def test(tst):
     except:
         pass
 
-    if sys.platform == 'win32':
-        Logs.warn('Tests disabled on Windows')
+    if sys.platform == 'win32' and '/DNDEBUG' not in tst.env.CFLAGS:
+        # FIXME: Sort out DLL memory freeing situation in next major version
+        Logs.warn("Skipping tests for Windows debug build")
         return
 
     srcdir = tst.path.abspath()

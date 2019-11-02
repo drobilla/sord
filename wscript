@@ -20,6 +20,11 @@ VERSION = SORD_VERSION  # Package version for waf dist
 top     = '.'           # Source directory
 out     = 'build'       # Build directory
 
+# Release variables
+uri          = 'http://drobilla.net/sw/sord'
+dist_pattern = 'http://download.drobilla.net/sord-%d.%d.%d.tar.bz2'
+post_tags    = ['Hacking', 'RDF', 'Sord']
+
 def options(ctx):
     ctx.load('compiler_c')
     ctx.load('compiler_cxx')

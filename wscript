@@ -101,8 +101,9 @@ def build(bld):
     bld.install_files(includedir, bld.path.ant_glob('sord/*.hpp'))
 
     # Pkgconfig file
-    autowaf.build_pc(bld, 'SORD', SORD_VERSION, SORD_MAJOR_VERSION, 'SERD',
-                     {'SORD_MAJOR_VERSION' : SORD_MAJOR_VERSION})
+    autowaf.build_pc(bld, 'SORD', SORD_VERSION, SORD_MAJOR_VERSION, [],
+                     {'SORD_MAJOR_VERSION' : SORD_MAJOR_VERSION,
+                      'SORD_PKG_DEPS'      : 'serd-0'})
 
     source = 'src/sord.c src/syntax.c'
 

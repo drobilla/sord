@@ -690,8 +690,12 @@ sord_node_free_internal(SordWorld* world, SordNode* node)
 	const uint8_t* const buf = node->node.buf;
 
 	// Remove node from hash (which frees the node)
-	if (zix_hash_remove(world->nodes, node)) {
-		error(world, SERD_ERR_INTERNAL, "failed to remove node from hash\n");
+	if (world) {
+		if (zix_hash_remove(world->nodes, node)) {
+			error(world, SERD_ERR_INTERNAL, "failed to remove node from hash\n");
+		}
+	} else {
+		fprintf(stderr, "World already destroyed! Freeing node after world is gone?\n");
 	}
 
 	// Free buffer

@@ -262,6 +262,7 @@ sord_node_compare(const SordNode* a, const SordNode* b)
 		if (cmp == 0) {
 			cmp = strcmp(a->meta.lit.lang, b->meta.lit.lang);
 		}
+		break;
 	default:
 		break;
 	}

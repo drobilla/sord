@@ -139,7 +139,7 @@ write_statement(SordModel*         sord,
 		language.n_bytes = lang_len;
 		language.n_chars = lang_len;
 		language.buf     = (const uint8_t*)lang_str;
-	};
+	}
 
 	// TODO: Subject abbreviation
 

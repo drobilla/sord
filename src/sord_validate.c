@@ -39,8 +39,6 @@
 #    define SORD_LOG_FUNC(fmt, arg1)
 #endif
 
-#define USTR(s) ((const uint8_t*)(s))
-
 #define NS_foaf (const uint8_t*)"http://xmlns.com/foaf/0.1/"
 #define NS_owl  (const uint8_t*)"http://www.w3.org/2002/07/owl#"
 #define NS_rdf  (const uint8_t*)"http://www.w3.org/1999/02/22-rdf-syntax-ns#"

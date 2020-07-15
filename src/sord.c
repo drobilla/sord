@@ -68,9 +68,6 @@
 	TUP_FMT_ELEM((t)[2]), \
 	TUP_FMT_ELEM((t)[3])
 
-#define TUP_S 0
-#define TUP_P 1
-#define TUP_O 2
 #define TUP_G 3
 
 /** Triple ordering */

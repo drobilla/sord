@@ -14,12 +14,19 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+#include <inttypes.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "sord/sord.h"
+
+#ifdef __GNUC__
+#    define SORD_LOG_FUNC(fmt, arg1) __attribute__((format(printf, fmt, arg1)))
+#else
+#    define SORD_LOG_FUNC(fmt, arg1)
+#endif
 
 static const int      DIGITS        = 3;
 static const unsigned n_objects_per = 2;
@@ -46,6 +53,7 @@ uri(SordWorld* world, int num)
 	return sord_new_uri(world, (const uint8_t*)str);
 }
 
+SORD_LOG_FUNC(1, 2)
 static int
 test_fail(const char* fmt, ...)
 {
@@ -280,7 +288,7 @@ test_read(SordWorld* world, SordModel* sord, SordNode* g,
 			return test_fail("Fail: Expected %d results, got %d\n",
 			                 test.expected_num_results, num_results);
 		}
-		fprintf(stderr, "OK (%u matches)\n", test.expected_num_results);
+		fprintf(stderr, "OK (%i matches)\n", test.expected_num_results);
 	}
 
 	// Query blank node subject
@@ -320,7 +328,7 @@ test_read(SordWorld* world, SordModel* sord, SordNode* g,
 
 		SordQuad  subpat          = { id[0], 0, 0 };
 		SordIter* subiter         = sord_find(sord, subpat);
-		uint64_t  num_sub_results = 0;
+		unsigned  num_sub_results = 0;
 		if (sord_iter_get_node(subiter, SORD_SUBJECT) != id[0]) {
 			return test_fail("Fail: Incorrect initial submatch\n");
 		}
@@ -339,14 +347,14 @@ test_read(SordWorld* world, SordModel* sord, SordNode* g,
 		if (num_sub_results != n_objects_per) {
 			return test_fail(
 				"Fail: Nested query " TUP_FMT " failed"
-				" (%d results, expected %d)\n",
+				" (%u results, expected %u)\n",
 				TUP_FMT_ARGS(subpat), num_sub_results, n_objects_per);
 		}
 
 		uint64_t count = sord_count(sord, id[0], 0, 0, 0);
 		if (count != num_sub_results) {
-			return test_fail("Fail: Query " TUP_FMT " sord_count() %d"
-			                 "does not match result count %d\n",
+			return test_fail("Fail: Query " TUP_FMT " sord_count() %" PRIu64
+			                 "does not match result count %u\n",
 			                 TUP_FMT_ARGS(subpat), count, num_sub_results);
 		}
 

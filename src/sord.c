@@ -30,6 +30,12 @@
 #include "sord_config.h"
 #include "sord_internal.h"
 
+#ifdef __GNUC__
+#    define SORD_LOG_FUNC(fmt, arg1) __attribute__((format(printf, fmt, arg1)))
+#else
+#    define SORD_LOG_FUNC(fmt, arg1)
+#endif
+
 #define SORD_LOG(prefix, ...) fprintf(stderr, "[Sord::" prefix "] " __VA_ARGS__)
 
 #ifdef SORD_DEBUG_ITER
@@ -173,6 +179,7 @@ sord_node_hash_equal(const void* a, const void* b)
 		    (serd_node_equals(&a_node->node, &b_node->node)));
 }
 
+SORD_LOG_FUNC(3, 4)
 static void
 error(SordWorld* world, SerdStatus st, const char* fmt, ...)
 {
@@ -803,7 +810,7 @@ sord_find(SordModel* model, const SordQuad pat)
 	int             n_prefix;
 	const SordOrder index_order = sord_best_index(model, pat, &mode, &n_prefix);
 
-	SORD_FIND_LOG("Find " TUP_FMT "  index=%s  mode=%d  n_prefix=%d\n",
+	SORD_FIND_LOG("Find " TUP_FMT "  index=%s  mode=%u  n_prefix=%d\n",
 	              TUP_FMT_ARGS(pat), order_names[index_order], mode, n_prefix);
 
 	if (pat[0] && pat[1] && pat[2] && pat[3]) {

@@ -33,6 +33,12 @@
 #    include <pcre.h>
 #endif
 
+#ifdef __GNUC__
+#    define SORD_LOG_FUNC(fmt, arg1) __attribute__((format(printf, fmt, arg1)))
+#else
+#    define SORD_LOG_FUNC(fmt, arg1)
+#endif
+
 #define USTR(s) ((const uint8_t*)(s))
 
 #define NS_foaf (const uint8_t*)"http://xmlns.com/foaf/0.1/"
@@ -127,6 +133,7 @@ absolute_path(const uint8_t* path)
 #endif
 }
 
+SORD_LOG_FUNC(2, 3)
 static int
 errorf(const SordQuad quad, const char* fmt, ...)
 {
@@ -491,7 +498,7 @@ check_properties(SordModel* model, URIs* uris)
 
 		if (is_FunctionalProperty) {
 			SordIter*      o = sord_search(model, subj, pred, NULL, NULL);
-			const uint64_t n = count_non_blanks(o, SORD_OBJECT);
+			const unsigned n = count_non_blanks(o, SORD_OBJECT);
 			if (n > 1) {
 				st = errorf(quad, "Functional property with %u objects", n);
 			}

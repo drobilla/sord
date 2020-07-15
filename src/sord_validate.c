@@ -87,9 +87,9 @@ typedef struct {
 	SordNode* xsd_string;
 } URIs;
 
-int  n_errors        = 0;
-int  n_restrictions  = 0;
-bool one_line_errors = false;
+static int  n_errors        = 0;
+static int  n_restrictions  = 0;
+static bool one_line_errors = false;
 
 static int
 print_version(void)

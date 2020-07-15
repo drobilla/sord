@@ -1120,7 +1120,7 @@ sord_node_from_serd_node(SordWorld*      world,
 		return NULL;
 	case SERD_LITERAL:
 		datatype_node = sord_node_from_serd_node(
-			world, env, datatype, NULL, NULL),
+			world, env, datatype, NULL, NULL);
 		ret = sord_new_literal_counted(
 			world,
 			datatype_node,

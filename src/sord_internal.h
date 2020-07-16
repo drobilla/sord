@@ -22,7 +22,7 @@
 
 #include "sord/sord.h"
 
-#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 5)
+#if defined(__GNUC__) && __GNUC__ > 4
 #    define SORD_UNREACHABLE() __builtin_unreachable()
 #else
 #    define SORD_UNREACHABLE() assert(false)

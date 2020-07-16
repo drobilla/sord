@@ -567,12 +567,20 @@ Model::write_to_file(const std::string& uri, SerdSyntax syntax, SerdStyle style)
 	return SERD_SUCCESS;
 }
 
+extern "C" {
+
 static size_t
 string_sink(const void* buf, size_t len, void* stream)
 {
-	std::string* str = (std::string*)stream;
-	str->append((const char*)buf, len);
-	return len;
+	try {
+		std::string* str = (std::string*)stream;
+		str->append((const char*)buf, len);
+		return len;
+	} catch (...) {
+		return 0;
+	}
+}
+
 }
 
 inline std::string

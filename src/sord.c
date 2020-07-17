@@ -303,7 +303,7 @@ sord_quad_match(const SordQuad x, const SordQuad y)
    other possible ID, except itself.
 */
 static int
-sord_quad_compare(const void* x_ptr, const void* y_ptr, void* user_data)
+sord_quad_compare(const void* x_ptr, const void* y_ptr, const void* user_data)
 {
 	const int* const           ordering = (const int*)user_data;
 	const SordNode*const*const x        = (const SordNode*const*)x_ptr;

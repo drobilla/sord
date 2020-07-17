@@ -1,5 +1,5 @@
 /*
-  Copyright 2012 David Robillard <http://drobilla.net>
+  Copyright 2016 David Robillard <http://drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -52,6 +52,12 @@ extern "C" {
 #    include <stdbool.h>
 #endif
 
+#ifdef __GNUC__
+#define ZIX_UNUSED  __attribute__((__unused__))
+#else
+#define ZIX_UNUSED
+#endif
+
 typedef enum {
 	ZIX_STATUS_SUCCESS,
 	ZIX_STATUS_ERROR,
@@ -59,13 +65,30 @@ typedef enum {
 	ZIX_STATUS_NOT_FOUND,
 	ZIX_STATUS_EXISTS,
 	ZIX_STATUS_BAD_ARG,
-	ZIX_STATUS_BAD_PERMS,
+	ZIX_STATUS_BAD_PERMS
 } ZixStatus;
+
+static inline const char*
+zix_strerror(const ZixStatus status)
+{
+	switch (status) {
+	case ZIX_STATUS_SUCCESS:   return "Success";
+	case ZIX_STATUS_ERROR:     return "Unknown error";
+	case ZIX_STATUS_NO_MEM:    return "Out of memory";
+	case ZIX_STATUS_NOT_FOUND: return "Not found";
+	case ZIX_STATUS_EXISTS:    return "Exists";
+	case ZIX_STATUS_BAD_ARG:   return "Bad argument";
+	case ZIX_STATUS_BAD_PERMS: return "Bad permissions";
+	}
+	return "Unknown error";
+}
 
 /**
    Function for comparing two elements.
 */
-typedef int (*ZixComparator)(const void* a, const void* b, void* user_data);
+typedef int (*ZixComparator)(const void* a,
+                             const void* b,
+                             const void* user_data);
 
 /**
    Function for testing equality of two elements.

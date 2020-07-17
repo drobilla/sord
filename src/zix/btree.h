@@ -17,14 +17,13 @@
 #ifndef ZIX_BTREE_H
 #define ZIX_BTREE_H
 
-#include <stddef.h>
-
 #include "zix/common.h"
+
+#include <stdbool.h>
+#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {
-#else
-#    include <stdbool.h>
 #endif
 
 /**
@@ -57,7 +56,7 @@ typedef struct ZixBTreeIterImpl ZixBTreeIter;
 */
 ZIX_API ZixBTree*
 zix_btree_new(ZixComparator  cmp,
-              void*          cmp_data,
+              const void*    cmp_data,
               ZixDestroyFunc destroy);
 
 /**
@@ -124,6 +123,26 @@ zix_btree_get(const ZixBTreeIter* ti);
 */
 ZIX_API ZixBTreeIter*
 zix_btree_begin(const ZixBTree* t);
+
+/**
+   Return an iterator to the end of `t` (one past the last element).
+
+   The returned iterator must be freed with zix_btree_iter_free().
+*/
+ZIX_API ZixBTreeIter*
+zix_btree_end(const ZixBTree* t);
+
+/**
+   Return a new copy of `i`.
+*/
+ZIX_API ZixBTreeIter*
+zix_btree_iter_copy(const ZixBTreeIter* i);
+
+/**
+   Return true iff `lhs` is equal to `rhs`.
+*/
+ZIX_API bool
+zix_btree_iter_equals(const ZixBTreeIter* lhs, const ZixBTreeIter* rhs);
 
 /**
    Return true iff `i` is an iterator to the end of its tree.

@@ -17,10 +17,10 @@
 #ifndef ZIX_DIGEST_H
 #define ZIX_DIGEST_H
 
+#include "zix/common.h"
+
 #include <stddef.h>
 #include <stdint.h>
-
-#include "zix/common.h"
 
 #ifdef __cplusplus
 extern "C" {

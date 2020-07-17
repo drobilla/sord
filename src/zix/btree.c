@@ -689,7 +689,7 @@ zix_btree_begin(const ZixBTree* const t)
 ZIX_API bool
 zix_btree_iter_is_end(const ZixBTreeIter* const i)
 {
-	return !i || i->stack[0].node == NULL;
+	return !i || (i->level == 0 && i->stack[0].node == NULL);
 }
 
 ZIX_API void

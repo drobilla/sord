@@ -30,8 +30,17 @@
 #include <string>
 #include <sstream>
 
+#if defined(__clang__)
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
+#endif
+
 #include "serd/serd.h"
 #include "sord/sord.h"
+
+#if defined(__clang__)
+#    pragma clang diagnostic pop
+#endif
 
 #define SORD_NS_XSD "http://www.w3.org/2001/XMLSchema#"
 
@@ -51,7 +60,7 @@ private:
 template <typename T>
 class Wrapper {
 public:
-	inline Wrapper(T c_obj = NULL) : _c_obj(c_obj) {}
+	inline Wrapper(T c_obj = nullptr) : _c_obj(c_obj) {}
 
 	inline T       c_obj()       { return _c_obj; }
 	inline const T c_obj() const { return _c_obj; }
@@ -63,7 +72,7 @@ protected:
 /** Collection of RDF namespaces with prefixes. */
 class Namespaces : public Wrapper<SerdEnv*> {
 public:
-	Namespaces() : Wrapper<SerdEnv*>(serd_env_new(NULL)) {}
+	Namespaces() : Wrapper<SerdEnv*>(serd_env_new(nullptr)) {}
 	~Namespaces() { serd_env_free(_c_obj); }
 
 	static inline SerdNode string_to_node(SerdType type, const std::string& s) {
@@ -145,7 +154,7 @@ public:
 		LITERAL  = SORD_LITERAL
 	};
 
-	inline Node() : Wrapper<SordNode*>(NULL), _world(NULL) {}
+	inline Node() : Wrapper<SordNode*>(nullptr), _world(nullptr) {}
 
 	inline Node(World& world, Type t, const std::string& s);
 	inline Node(World& world);
@@ -181,7 +190,7 @@ public:
 				sord_node_free(_world->c_obj(), _c_obj);
 			}
 			_world = other._world;
-			_c_obj = other._c_obj ? sord_node_copy(other._c_obj) : NULL;
+			_c_obj = other._c_obj ? sord_node_copy(other._c_obj) : nullptr;
 		}
 		return *this;
 	}
@@ -253,7 +262,7 @@ public:
 		return Node(
 			world,
 			sord_node_from_serd_node(
-				world.c_obj(), world.prefixes().c_obj(), &val, &type, NULL),
+				world.c_obj(), world.prefixes().c_obj(), &val, &type, nullptr),
 			false);
 	}
 
@@ -265,7 +274,7 @@ public:
 		return Node(
 			world,
 			sord_node_from_serd_node(
-				world.c_obj(), world.prefixes().c_obj(), &val, &type, NULL),
+				world.c_obj(), world.prefixes().c_obj(), &val, &type, nullptr),
 			false);
 	}
 };
@@ -281,14 +290,14 @@ Node::Node(World& world, Type type, const std::string& s)
 		break;
 	case LITERAL:
 		_c_obj = sord_new_literal(
-			world.world(), NULL, (const unsigned char*)s.c_str(), NULL);
+			world.world(), nullptr, (const unsigned char*)s.c_str(), nullptr);
 		break;
 	case BLANK:
 		_c_obj = sord_new_blank(
 			world.world(), (const unsigned char*)s.c_str());
 		break;
 	default:
-		_c_obj = NULL;
+		_c_obj = nullptr;
 	}
 
 	assert(this->type() == type);
@@ -322,7 +331,7 @@ Node::Node(const Node& other)
 	, _world(other._world)
 {
 	if (_world) {
-		_c_obj = other._c_obj ? sord_node_copy(other._c_obj) : NULL;
+		_c_obj = other._c_obj ? sord_node_copy(other._c_obj) : nullptr;
 	}
 
 	assert((!_c_obj && !other._c_obj) || to_string() == other.to_string());
@@ -378,7 +387,7 @@ inline float
 Node::to_float() const
 {
 	assert(is_float());
-	return serd_strtod((const char*)sord_node_get_string(_c_obj), NULL);
+	return serd_strtod((const char*)sord_node_get_string(_c_obj), nullptr);
 }
 
 inline bool
@@ -496,7 +505,7 @@ Model::load_string(SerdEnv*           env,
                    size_t             /*len*/,
                    const std::string& /*base_uri*/)
 {
-	SerdReader* reader = sord_new_reader(_c_obj, env, syntax, NULL);
+	SerdReader* reader = sord_new_reader(_c_obj, env, syntax, nullptr);
 	serd_reader_read_string(reader, (const uint8_t*)str);
 	serd_reader_free(reader);
 }
@@ -512,14 +521,14 @@ Model::load_file(SerdEnv*           env,
                  const std::string& data_uri,
                  const std::string& /*base_uri*/)
 {
-	uint8_t* path = serd_file_uri_parse((const uint8_t*)data_uri.c_str(), NULL);
+	uint8_t* path = serd_file_uri_parse((const uint8_t*)data_uri.c_str(), nullptr);
 	if (!path) {
 		fprintf(stderr, "Failed to parse file URI <%s>\n", data_uri.c_str());
 		return;
 	}
 
 	// FIXME: blank prefix parameter?
-	SerdReader* reader = sord_new_reader(_c_obj, env, syntax, NULL);
+	SerdReader* reader = sord_new_reader(_c_obj, env, syntax, nullptr);
 	serd_reader_read_file(reader, path);
 	serd_reader_free(reader);
 	serd_free(path);
@@ -528,7 +537,7 @@ Model::load_file(SerdEnv*           env,
 inline SerdStatus
 Model::write_to_file(const std::string& uri, SerdSyntax syntax, SerdStyle style)
 {
-	uint8_t* path = serd_file_uri_parse((const uint8_t*)uri.c_str(), NULL);
+	uint8_t* path = serd_file_uri_parse((const uint8_t*)uri.c_str(), nullptr);
 	if (!path) {
 		fprintf(stderr, "Failed to parse file URI <%s>\n", uri.c_str());
 		return SERD_ERR_BAD_ARG;
@@ -560,7 +569,7 @@ Model::write_to_file(const std::string& uri, SerdSyntax syntax, SerdStyle style)
 	                 (SerdPrefixSink)serd_writer_set_prefix,
 	                 writer);
 
-	sord_write(_c_obj, writer, 0);
+	sord_write(_c_obj, writer, nullptr);
 	serd_writer_free(writer);
 	fclose(fd);
 
@@ -611,7 +620,7 @@ Model::write_to_string(const std::string& base_uri_str,
 	                 (SerdPrefixSink)serd_writer_set_prefix,
 	                 writer);
 
-	sord_write(_c_obj, writer, 0);
+	sord_write(_c_obj, writer, nullptr);
 
 	serd_writer_free(writer);
 	return ret;
@@ -625,7 +634,7 @@ Model::add_statement(const Node& subject,
 	SordQuad quad = { subject.c_obj(),
 	                  predicate.c_obj(),
 	                  object.c_obj(),
-	                  NULL };
+	                  nullptr };
 
 	sord_add(_c_obj, quad);
 }
@@ -638,7 +647,7 @@ Model::find(const Node& subject,
 	SordQuad quad = { subject.c_obj(),
 	                  predicate.c_obj(),
 	                  object.c_obj(),
-	                  NULL };
+	                  nullptr };
 
 	return Iter(_world, sord_find(_c_obj, quad));
 }
@@ -649,7 +658,7 @@ Model::get(const Node& subject,
            const Node& object)
 {
 	SordNode* c_node = sord_get(
-		_c_obj, subject.c_obj(), predicate.c_obj(), object.c_obj(), NULL);
+		_c_obj, subject.c_obj(), predicate.c_obj(), object.c_obj(), nullptr);
 	return Node(_world, c_node, false);
 }
 

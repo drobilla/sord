@@ -105,13 +105,11 @@ def configure(conf):
                 '-Wno-effc++',
                 '-Wno-multiple-inheritance',
                 '-Wno-old-style-cast',
-                '-Wno-zero-as-null-pointer-constant',
             ],
             'clang': [
                 '-Wno-deprecated-copy-dtor',
                 '-Wno-implicit-float-conversion',
                 '-Wno-old-style-cast',
-                '-Wno-zero-as-null-pointer-constant',
             ],
             'msvc': [
                 '/wd4571',  # catch semantics changed

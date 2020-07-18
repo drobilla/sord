@@ -76,8 +76,11 @@ public:
 	~Namespaces() { serd_env_free(_c_obj); }
 
 	static inline SerdNode string_to_node(SerdType type, const std::string& s) {
-		SerdNode ret = {
-			(const uint8_t*)s.c_str(), s.length(), s.length(), 0, type };
+		SerdNode ret = {reinterpret_cast<const uint8_t*>(s.c_str()),
+		                s.length(),
+		                s.length(),
+		                0,
+		                type};
 		return ret;
 	}
 
@@ -93,8 +96,10 @@ public:
 		SerdNode       prefix;
 		SerdChunk      suffix;
 		if (serd_env_qualify(_c_obj, &uri_node, &prefix, &suffix)) {
-			std::string ret((const char*)prefix.buf, prefix.n_bytes);
-			ret.append(":").append((const char*)suffix.buf, suffix.len);
+			std::string ret(reinterpret_cast<const char*>(prefix.buf),
+			                prefix.n_bytes);
+			ret.append(":").append(reinterpret_cast<const char*>(suffix.buf),
+			                       suffix.len);
 			return ret;
 		}
 		return uri;
@@ -106,8 +111,10 @@ public:
 		SerdChunk uri_prefix;
 		SerdChunk uri_suffix;
 		if (!serd_env_expand(_c_obj, &curie_node, &uri_prefix, &uri_suffix)) {
-			std::string ret((const char*)uri_prefix.buf, uri_prefix.len);
-			ret.append((const char*)uri_suffix.buf, uri_suffix.len);
+			std::string ret(reinterpret_cast<const char*>(uri_prefix.buf),
+			                uri_prefix.len);
+			ret.append(reinterpret_cast<const char*>(uri_suffix.buf),
+			           uri_suffix.len);
 			return ret;
 		}
 		std::cerr << "CURIE `" << curie << "' has unknown prefix." << std::endl;
@@ -164,7 +171,7 @@ public:
 	inline ~Node();
 
 	inline Type type() const {
-		return _c_obj ? (Type)sord_node_get_type(_c_obj) : UNKNOWN;
+		return _c_obj ? static_cast<Type>(sord_node_get_type(_c_obj)) : UNKNOWN;
 	}
 
 	inline const SordNode* get_node() const { return _c_obj; }
@@ -237,10 +244,13 @@ public:
 	inline URI(World& world, const std::string& s)
 		: Node(world, Node::URI, s) {}
 	inline URI(World& world, const std::string& s, const std::string& base)
-		: Node(world, sord_new_relative_uri(world.world(),
-		                                    (const uint8_t*)s.c_str(),
-		                                    (const uint8_t*)base.c_str()))
-	{}
+	    : Node(world,
+	           sord_new_relative_uri(
+	               world.world(),
+	               reinterpret_cast<const uint8_t*>(s.c_str()),
+	               reinterpret_cast<const uint8_t*>(base.c_str())))
+	{
+	}
 };
 
 class Curie : public Node {
@@ -257,7 +267,7 @@ public:
 	static inline Node decimal(World& world, double d, unsigned frac_digits) {
 		const SerdNode val  = serd_node_new_decimal(d, frac_digits);
 		const SerdNode type = serd_node_from_string(
-			SERD_URI, (const uint8_t*)SORD_NS_XSD "decimal");
+			SERD_URI, reinterpret_cast<const uint8_t*>(SORD_NS_XSD "decimal"));
 
 		return Node(
 			world,
@@ -269,7 +279,7 @@ public:
 	static inline Node integer(World& world, int64_t i) {
 		const SerdNode val  = serd_node_new_integer(i);
 		const SerdNode type = serd_node_from_string(
-			SERD_URI, (const uint8_t*)SORD_NS_XSD "integer");
+			SERD_URI, reinterpret_cast<const uint8_t*>(SORD_NS_XSD "integer"));
 
 		return Node(
 			world,
@@ -285,16 +295,21 @@ Node::Node(World& world, Type type, const std::string& s)
 {
 	switch (type) {
 	case URI:
-		_c_obj = sord_new_uri(
-			world.world(), (const unsigned char*)s.c_str());
+		_c_obj =
+		    sord_new_uri(world.world(),
+		                 reinterpret_cast<const unsigned char*>(s.c_str()));
 		break;
 	case LITERAL:
-		_c_obj = sord_new_literal(
-			world.world(), nullptr, (const unsigned char*)s.c_str(), nullptr);
+		_c_obj =
+		    sord_new_literal(world.world(),
+		                     nullptr,
+		                     reinterpret_cast<const unsigned char*>(s.c_str()),
+		                     nullptr);
 		break;
 	case BLANK:
-		_c_obj = sord_new_blank(
-			world.world(), (const unsigned char*)s.c_str());
+		_c_obj =
+		    sord_new_blank(world.world(),
+		                   reinterpret_cast<const unsigned char*>(s.c_str()));
 		break;
 	default:
 		_c_obj = nullptr;
@@ -348,13 +363,14 @@ Node::~Node()
 inline std::string
 Node::to_string() const
 {
-	return _c_obj ? (const char*)sord_node_get_string(_c_obj) : "";
+	return _c_obj ? reinterpret_cast<const char*>(sord_node_get_string(_c_obj))
+	              : "";
 }
 
 inline const char*
 Node::to_c_string() const
 {
-	return (const char*)sord_node_get_string(_c_obj);
+	return reinterpret_cast<const char*>(sord_node_get_string(_c_obj));
 }
 
 inline const uint8_t*
@@ -368,9 +384,11 @@ Node::is_literal_type(const char* type_uri) const
 {
 	if (_c_obj && sord_node_get_type(_c_obj) == SORD_LITERAL) {
 		const SordNode* datatype = sord_node_get_datatype(_c_obj);
-		if (datatype && !strcmp((const char*)sord_node_get_string(datatype),
-		                        type_uri))
+		if (datatype && !strcmp(reinterpret_cast<const char*>(
+		                            sord_node_get_string(datatype)),
+		                        type_uri)) {
 			return true;
+		}
 	}
 	return false;
 }
@@ -380,21 +398,26 @@ Node::to_int() const
 {
 	assert(is_int());
 	char* endptr;
-	return strtol((const char*)sord_node_get_string(_c_obj), &endptr, 10);
+	return strtol(reinterpret_cast<const char*>(sord_node_get_string(_c_obj)),
+	              &endptr,
+	              10);
 }
 
 inline float
 Node::to_float() const
 {
 	assert(is_float());
-	return serd_strtod((const char*)sord_node_get_string(_c_obj), nullptr);
+	return serd_strtod(reinterpret_cast<const char*>(
+	                       sord_node_get_string(_c_obj)),
+	                   nullptr);
 }
 
 inline bool
 Node::to_bool() const
 {
 	assert(is_bool());
-	return !strcmp((const char*)sord_node_get_string(_c_obj), "true");
+	return !strcmp(reinterpret_cast<const char*>(sord_node_get_string(_c_obj)),
+	               "true");
 }
 
 struct Iter : public Wrapper<SordIter*> {
@@ -455,16 +478,18 @@ public:
 	inline SerdStatus write_to_file(
 		const std::string& uri,
 		SerdSyntax         syntax = SERD_TURTLE,
-		SerdStyle          style  = (SerdStyle)(SERD_STYLE_ABBREVIATED
-		                                        |SERD_STYLE_CURIED
-		                                        |SERD_STYLE_RESOLVED));
+		SerdStyle          style  = static_cast<SerdStyle>(
+			SERD_STYLE_ABBREVIATED
+			|SERD_STYLE_CURIED
+			|SERD_STYLE_RESOLVED));
 
 	inline std::string write_to_string(
 		const std::string& base_uri,
 		SerdSyntax         syntax = SERD_TURTLE,
-		SerdStyle          style  = (SerdStyle)(SERD_STYLE_ABBREVIATED
-		                                        |SERD_STYLE_CURIED
-		                                        |SERD_STYLE_RESOLVED));
+		SerdStyle          style  = static_cast<SerdStyle>(
+			SERD_STYLE_ABBREVIATED
+			|SERD_STYLE_CURIED
+			|SERD_STYLE_RESOLVED));
 
 	inline void add_statement(const Node& subject,
 	                          const Node& predicate,
@@ -506,7 +531,7 @@ Model::load_string(SerdEnv*           env,
                    const std::string& /*base_uri*/)
 {
 	SerdReader* reader = sord_new_reader(_c_obj, env, syntax, nullptr);
-	serd_reader_read_string(reader, (const uint8_t*)str);
+	serd_reader_read_string(reader, reinterpret_cast<const uint8_t*>(str));
 	serd_reader_free(reader);
 }
 
@@ -521,7 +546,9 @@ Model::load_file(SerdEnv*           env,
                  const std::string& data_uri,
                  const std::string& /*base_uri*/)
 {
-	uint8_t* path = serd_file_uri_parse((const uint8_t*)data_uri.c_str(), nullptr);
+	uint8_t* path =
+	    serd_file_uri_parse(reinterpret_cast<const uint8_t*>(data_uri.c_str()),
+	                        nullptr);
 	if (!path) {
 		fprintf(stderr, "Failed to parse file URI <%s>\n", data_uri.c_str());
 		return;
@@ -537,13 +564,15 @@ Model::load_file(SerdEnv*           env,
 inline SerdStatus
 Model::write_to_file(const std::string& uri, SerdSyntax syntax, SerdStyle style)
 {
-	uint8_t* path = serd_file_uri_parse((const uint8_t*)uri.c_str(), nullptr);
+	uint8_t* path =
+	    serd_file_uri_parse(reinterpret_cast<const uint8_t*>(uri.c_str()),
+	                        nullptr);
 	if (!path) {
 		fprintf(stderr, "Failed to parse file URI <%s>\n", uri.c_str());
 		return SERD_ERR_BAD_ARG;
 	}
 
-	FILE* const fd = fopen((const char*)path, "w");
+	FILE* const fd = fopen(reinterpret_cast<const char*>(path), "w");
 	if (!fd) {
 		fprintf(stderr, "Failed to open file %s\n", path);
 		serd_free(path);
@@ -552,7 +581,8 @@ Model::write_to_file(const std::string& uri, SerdSyntax syntax, SerdStyle style)
 	serd_free(path);
 
 	SerdURI base_uri = SERD_URI_NULL;
-	if (serd_uri_parse((const uint8_t*)uri.c_str(), &base_uri)) {
+	if (serd_uri_parse(reinterpret_cast<const uint8_t*>(uri.c_str()),
+	                   &base_uri)) {
 		fprintf(stderr, "Invalid base URI <%s>\n", uri.c_str());
 		fclose(fd);
 		return SERD_ERR_BAD_ARG;
@@ -566,7 +596,7 @@ Model::write_to_file(const std::string& uri, SerdSyntax syntax, SerdStyle style)
 	                                     fd);
 
 	serd_env_foreach(_world.prefixes().c_obj(),
-	                 (SerdPrefixSink)serd_writer_set_prefix,
+	                 reinterpret_cast<SerdPrefixSink>(serd_writer_set_prefix),
 	                 writer);
 
 	sord_write(_c_obj, writer, nullptr);
@@ -582,8 +612,8 @@ static size_t
 string_sink(const void* buf, size_t len, void* stream)
 {
 	try {
-		std::string* str = (std::string*)stream;
-		str->append((const char*)buf, len);
+		std::string* str = static_cast<std::string*>(stream);
+		str->append(static_cast<const char*>(buf), len);
 		return len;
 	} catch (...) {
 		return 0;
@@ -598,7 +628,8 @@ Model::write_to_string(const std::string& base_uri_str,
                        SerdStyle          style)
 {
 	SerdURI base_uri = SERD_URI_NULL;
-	if (serd_uri_parse((const uint8_t*)base_uri_str.c_str(), &base_uri)) {
+	if (serd_uri_parse(reinterpret_cast<const uint8_t*>(base_uri_str.c_str()),
+	                   &base_uri)) {
 		fprintf(stderr, "Invalid base URI <%s>\n", base_uri_str.c_str());
 		return "";
 	}
@@ -613,11 +644,11 @@ Model::write_to_string(const std::string& base_uri_str,
 	                                     &ret);
 
 	const SerdNode base_uri_node = serd_node_from_string(
-		SERD_URI, (const uint8_t*)base_uri_str.c_str());
+		SERD_URI, reinterpret_cast<const uint8_t*>(base_uri_str.c_str()));
 	serd_writer_set_base_uri(writer, &base_uri_node);
 
 	serd_env_foreach(_world.prefixes().c_obj(),
-	                 (SerdPrefixSink)serd_writer_set_prefix,
+	                 reinterpret_cast<SerdPrefixSink>(serd_writer_set_prefix),
 	                 writer);
 
 	sord_write(_c_obj, writer, nullptr);

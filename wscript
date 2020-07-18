@@ -104,12 +104,10 @@ def configure(conf):
             'gcc': [
                 '-Wno-effc++',
                 '-Wno-multiple-inheritance',
-                '-Wno-old-style-cast',
             ],
             'clang': [
                 '-Wno-deprecated-copy-dtor',
                 '-Wno-implicit-float-conversion',
-                '-Wno-old-style-cast',
             ],
             'msvc': [
                 '/wd4571',  # catch semantics changed

@@ -21,6 +21,7 @@
 #ifndef SORD_SORD_H
 #define SORD_SORD_H
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -46,8 +47,6 @@
 
 #ifdef __cplusplus
 extern "C" {
-#else
-#    include <stdbool.h>
 #endif
 
 /**

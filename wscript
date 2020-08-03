@@ -106,7 +106,6 @@ def configure(conf):
                 '-Wno-multiple-inheritance',
             ],
             'clang': [
-                '-Wno-deprecated-copy-dtor',
                 '-Wno-implicit-float-conversion',
             ],
             'msvc': [

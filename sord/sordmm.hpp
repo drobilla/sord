@@ -423,7 +423,17 @@ Node::to_bool() const
 struct Iter : public Wrapper<SordIter*> {
 	inline Iter(World& world, SordIter* c_obj)
 		: Wrapper<SordIter*>(c_obj), _world(world) {}
+
+	Iter(const Iter&) = delete;
+	Iter& operator=(const Iter&) = delete;
+
+	inline Iter(Iter&& iter)
+		: Wrapper<SordIter*>(iter)
+		, _world(iter._world)
+	{}
+
 	inline ~Iter() { sord_iter_free(_c_obj); }
+
 	inline bool end()  const { return sord_iter_end(_c_obj); }
 	inline bool next() const { return sord_iter_next(_c_obj); }
 	inline Iter& operator++() {

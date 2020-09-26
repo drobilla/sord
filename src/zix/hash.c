@@ -1,5 +1,5 @@
 /*
-  Copyright 2011-2014 David Robillard <http://drobilla.net>
+  Copyright 2011-2018 David Robillard <http://drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -14,12 +14,11 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+#include "zix/hash.h"
+
 #include <assert.h>
-#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include "zix/hash.h"
 
 /**
    Primes, each slightly less than twice its predecessor, and as far away
@@ -76,6 +75,10 @@ zix_hash_new(ZixHashFunc  hash_func,
 ZIX_API void
 zix_hash_free(ZixHash* hash)
 {
+	if (!hash) {
+		return;
+	}
+
 	for (unsigned b = 0; b < *hash->n_buckets; ++b) {
 		ZixHashEntry* bucket = hash->buckets[b];
 		for (ZixHashEntry* e = bucket; e;) {
@@ -141,7 +144,7 @@ find_entry(const ZixHash* hash,
 	return NULL;
 }
 
-ZIX_API const void*
+ZIX_API void*
 zix_hash_find(const ZixHash* hash, const void* value)
 {
 	const unsigned h_nomod = hash->hash_func(value);
@@ -151,7 +154,7 @@ zix_hash_find(const ZixHash* hash, const void* value)
 }
 
 ZIX_API ZixStatus
-zix_hash_insert(ZixHash* hash, const void* value, const void** inserted)
+zix_hash_insert(ZixHash* hash, const void* value, void** inserted)
 {
 	unsigned h_nomod = hash->hash_func(value);
 	unsigned h       = h_nomod % *hash->n_buckets;

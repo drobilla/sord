@@ -982,7 +982,7 @@ static SordNode*
 sord_insert_node(SordWorld* world, const SordNode* key, bool copy)
 {
 	SordNode* node = NULL;
-	ZixStatus st   = zix_hash_insert(world->nodes, key, (const void**)&node);
+	ZixStatus st   = zix_hash_insert(world->nodes, key, (void**)&node);
 	switch (st) {
 	case ZIX_STATUS_EXISTS:
 		++node->refs;

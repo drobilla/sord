@@ -594,8 +594,10 @@ zix_btree_remove(ZixBTree* const      t,
 					                            n->children[1]->n_vals};
 
 					n = zix_btree_merge(t, n, 0);
-					ti->stack[ti->level].node = n;
-					ti->stack[ti->level].index = counts[i];
+					if (ti) {
+						ti->stack[ti->level].node = n;
+						ti->stack[ti->level].index = counts[i];
+					}
 				} else {
 					// Both child's siblings are minimal, merge them
 					if (i < n->n_vals) {
@@ -659,6 +661,9 @@ zix_btree_lower_bound(const ZixBTree* const t,
 	if (!t) {
 		*ti = NULL;
 		return ZIX_STATUS_BAD_ARG;
+	} else if (!t->root) {
+		*ti = NULL;
+		return ZIX_STATUS_SUCCESS;
 	}
 
 	ZixBTreeNode* n           = t->root;
@@ -760,7 +765,7 @@ zix_btree_iter_copy(const ZixBTreeIter* const i)
 ZIX_API bool
 zix_btree_iter_is_end(const ZixBTreeIter* const i)
 {
-	return !i || (i->level == 0 && i->stack[0].node == NULL);
+	return !i || i->stack[0].node == NULL;
 }
 
 ZIX_API bool
@@ -768,14 +773,16 @@ zix_btree_iter_equals(const ZixBTreeIter* const lhs, const ZixBTreeIter* const r
 {
 	if (zix_btree_iter_is_end(lhs) && zix_btree_iter_is_end(rhs)) {
 		return true;
-	} else if (!lhs || !rhs || lhs->n_levels != rhs->n_levels) {
+	} else if (zix_btree_iter_is_end(lhs) || zix_btree_iter_is_end(rhs)) {
+		return false;
+	} else if (!lhs || !rhs || lhs->level != rhs->level) {
 		return false;
 	}
 
 	return !memcmp(lhs,
 	               rhs,
 	               sizeof(ZixBTreeIter) +
-	                       lhs->n_levels * sizeof(ZixBTreeIterFrame));
+	                   (lhs->level + 1) * sizeof(ZixBTreeIterFrame));
 }
 
 ZIX_API void

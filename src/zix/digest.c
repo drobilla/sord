@@ -1,5 +1,5 @@
 /*
-  Copyright 2012-2014 David Robillard <http://drobilla.net>
+  Copyright 2012-2020 David Robillard <http://drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -20,23 +20,29 @@
 #    include <smmintrin.h>
 #endif
 
+#include <assert.h>
+#include <stdint.h>
+
+#ifdef __SSE4_2__
+
+// SSE 4.2 CRC32
+
 ZIX_API uint32_t
 zix_digest_start(void)
 {
-#ifdef __SSE4_2__
-	return 1;  // CRC32 initial value
-#else
-	return 5381;  // DJB hash initial value
-#endif
+	return 1;
 }
 
 ZIX_API uint32_t
 zix_digest_add(uint32_t hash, const void* const buf, const size_t len)
 {
 	const uint8_t* str = (const uint8_t*)buf;
-#ifdef __SSE4_2__
-	// SSE 4.2 CRC32
-	for (size_t i = 0; i < (len / sizeof(uint32_t)); ++i) {
+
+	for (size_t i = 0; i < (len / sizeof(uint64_t)); ++i) {
+		hash = (uint32_t)_mm_crc32_u64(hash, *(const uint64_t*)str);
+		str += sizeof(uint64_t);
+	}
+	if (len & sizeof(uint32_t)) {
 		hash = _mm_crc32_u32(hash, *(const uint32_t*)str);
 		str += sizeof(uint32_t);
 	}
@@ -47,11 +53,71 @@ zix_digest_add(uint32_t hash, const void* const buf, const size_t len)
 	if (len & sizeof(uint8_t)) {
 		hash = _mm_crc32_u8(hash, *(const uint8_t*)str);
 	}
-#else
-	// Classic DJB hash
-	for (size_t i = 0; i < len; ++i) {
-		hash = (hash << 5) + hash + str[i];
-	}
-#endif
+
 	return hash;
 }
+
+ZIX_API uint32_t
+zix_digest_add_64(uint32_t hash, const void* const buf, const size_t len)
+{
+	assert((uintptr_t)buf % sizeof(uint64_t) == 0);
+	assert(len % sizeof(uint64_t) == 0);
+
+	const uint64_t* ptr = (const uint64_t*)buf;
+
+	for (size_t i = 0; i < (len / sizeof(uint64_t)); ++i) {
+		hash = (uint32_t)_mm_crc32_u64(hash, *ptr);
+		++ptr;
+	}
+
+	return hash;
+}
+
+ZIX_API uint32_t
+zix_digest_add_ptr(const uint32_t hash, const void* const ptr)
+{
+#if UINTPTR_MAX == UINT64_MAX
+	return (uint32_t)_mm_crc32_u64(hash, (uintptr_t)ptr);
+#else
+	return _mm_crc32_u32(hash, (uintptr_t)ptr);
+#endif
+}
+
+#else
+
+// Classic DJB hash
+
+ZIX_API uint32_t
+zix_digest_start(void)
+{
+	return 5381;
+}
+
+ZIX_API uint32_t
+zix_digest_add(uint32_t hash, const void* const buf, const size_t len)
+{
+	const uint8_t* str = (const uint8_t*)buf;
+
+	for (size_t i = 0; i < len; ++i) {
+		hash = (hash << 5u) + hash + str[i];
+	}
+
+	return hash;
+}
+
+ZIX_API uint32_t
+zix_digest_add_64(uint32_t hash, const void* const buf, const size_t len)
+{
+	assert((uintptr_t)buf % sizeof(uint64_t) == 0);
+	assert(len % sizeof(uint64_t) == 0);
+
+	return zix_digest_add(hash, buf, len);
+}
+
+ZIX_API uint32_t
+zix_digest_add_ptr(const uint32_t hash, const void* const ptr)
+{
+	return zix_digest_add(hash, &ptr, sizeof(ptr));
+}
+
+#endif

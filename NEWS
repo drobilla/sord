@@ -1,3 +1,10 @@
+sord (0.16.6) stable;
+
+  * Fix potential crash or incorrectness issues with GCC 10
+  * Fix various minor warnings and other code quality issues
+
+ -- David Robillard <d@drobilla.net>  Sun, 27 Sep 2020 11:08:18 +0000
+
 sord (0.16.4) stable;
 
   * Update build system

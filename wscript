@@ -300,8 +300,6 @@ def build(bld):
     bld.install_files('${MANDIR}/man1', bld.path.ant_glob('doc/*.1'))
 
     bld.add_post_fun(autowaf.run_ldconfig)
-    if bld.env.DOCS:
-        bld.add_post_fun(fix_docs)
 
 def lint(ctx):
     "checks code for style issues"
@@ -317,10 +315,6 @@ def lint(ctx):
            "-readability-else-after-return\" " +
            "../src/*.c")
     subprocess.call(cmd, cwd='build', shell=True)
-
-def fix_docs(ctx):
-    if ctx.cmd == 'build':
-        autowaf.make_simple_dox(APPNAME)
 
 def upload_docs(ctx):
     os.system('rsync -ravz --delete -e ssh build/doc/html/ drobilla@drobilla.net:~/drobilla.net/docs/sord/')

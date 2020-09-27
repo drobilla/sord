@@ -62,17 +62,22 @@ def configure(conf):
     if Options.options.ultra_strict:
         autowaf.add_compiler_flags(conf.env, '*', {
             'gcc': [
+                '-Wno-cast-align',
                 '-Wno-cast-qual',
                 '-Wno-conversion',
+                '-Wno-inline',
                 '-Wno-padded',
                 '-Wno-sign-conversion',
                 '-Wno-stack-protector',
+                '-Wno-suggest-attribute=const',
+                '-Wno-suggest-attribute=pure',
                 '-Wno-switch-enum',
                 '-Wno-unused-macros',
                 '-Wno-unused-parameter',
                 '-Wno-vla',
             ],
             'clang': [
+                '-Wno-cast-align',
                 '-Wno-cast-qual',
                 '-Wno-extra-semi-stmt',
                 '-Wno-format-nonliteral',

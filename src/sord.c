@@ -840,7 +840,24 @@ sord_find(SordModel* model, const SordQuad pat)
 
 	ZixBTree* const db  = model->indices[index_order];
 	ZixBTreeIter*   cur = NULL;
-	zix_btree_lower_bound(db, pat, &cur);
+
+	if (mode == FILTER_ALL) {
+		// No prefix shared with an index at all, linear search (worst case)
+		cur = zix_btree_begin(db);
+	} else if (mode == FILTER_RANGE) {
+		/* Some prefix, but filtering still required.  Build a search pattern
+		   with only the prefix to find the lower bound in log time. */
+		SordQuad         prefix_pat = { NULL, NULL, NULL, NULL };
+		const int* const ordering   = orderings[index_order];
+		for (int i = 0; i < n_prefix; ++i) {
+			prefix_pat[ordering[i]] = pat[ordering[i]];
+		}
+		zix_btree_lower_bound(db, prefix_pat, &cur);
+	} else {
+		// Ideal case, pattern matches an index with no filtering required
+		zix_btree_lower_bound(db, pat, &cur);
+	}
+
 	if (zix_btree_iter_is_end(cur)) {
 		SORD_FIND_LOG("No match found\n");
 		zix_btree_iter_free(cur);

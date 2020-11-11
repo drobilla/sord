@@ -149,9 +149,9 @@ def configure(conf):
 
     # Set up environment for building/using as a subproject
     autowaf.set_lib_env(conf, 'sord', SORD_VERSION)
-    conf.env.SORD_VALIDATE = [
-        os.path.abspath(str(conf.path.get_bld().make_node('sord_validate')))
-    ]
+    sord_validate_node = conf.path.get_bld().make_node('sord_validate')
+    if sord_validate_node is not None:
+        conf.env.SORD_VALIDATE = [sord_validate_node.abspath()]
 
     conf.write_config_header('sord_config.h', remove=False)
 

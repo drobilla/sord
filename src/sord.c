@@ -253,7 +253,7 @@ sord_node_compare(const SordNode* a, const SordNode* b)
 		if (cmp == 0) {
 			// Note: Can't use sord_node_compare here since it does wildcards
 			if (!a->meta.lit.datatype || !b->meta.lit.datatype) {
-				cmp = a->meta.lit.datatype - b->meta.lit.datatype;
+				cmp = (a->meta.lit.datatype < b->meta.lit.datatype) ? -1 : 1;
 			} else {
 				cmp = strcmp((const char*)a->meta.lit.datatype->node.buf,
 				             (const char*)b->meta.lit.datatype->node.buf);

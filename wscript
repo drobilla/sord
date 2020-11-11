@@ -147,7 +147,12 @@ def configure(conf):
     if all or 'write' in dump:
         conf.define('SORD_DEBUG_WRITE', 1)
 
+    # Set up environment for building/using as a subproject
     autowaf.set_lib_env(conf, 'sord', SORD_VERSION)
+    conf.env.SORD_VALIDATE = [
+        os.path.abspath(str(conf.path.get_bld().make_node('sord_validate')))
+    ]
+
     conf.write_config_header('sord_config.h', remove=False)
 
     autowaf.display_summary(

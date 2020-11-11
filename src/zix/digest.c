@@ -27,13 +27,13 @@
 
 // SSE 4.2 CRC32
 
-ZIX_API uint32_t
+uint32_t
 zix_digest_start(void)
 {
 	return 1;
 }
 
-ZIX_API uint32_t
+uint32_t
 zix_digest_add(uint32_t hash, const void* const buf, const size_t len)
 {
 	const uint8_t* str = (const uint8_t*)buf;
@@ -57,7 +57,7 @@ zix_digest_add(uint32_t hash, const void* const buf, const size_t len)
 	return hash;
 }
 
-ZIX_API uint32_t
+uint32_t
 zix_digest_add_64(uint32_t hash, const void* const buf, const size_t len)
 {
 	assert((uintptr_t)buf % sizeof(uint64_t) == 0);
@@ -73,7 +73,7 @@ zix_digest_add_64(uint32_t hash, const void* const buf, const size_t len)
 	return hash;
 }
 
-ZIX_API uint32_t
+uint32_t
 zix_digest_add_ptr(const uint32_t hash, const void* const ptr)
 {
 #if UINTPTR_MAX == UINT64_MAX
@@ -87,13 +87,13 @@ zix_digest_add_ptr(const uint32_t hash, const void* const ptr)
 
 // Classic DJB hash
 
-ZIX_API uint32_t
+uint32_t
 zix_digest_start(void)
 {
 	return 5381;
 }
 
-ZIX_API uint32_t
+uint32_t
 zix_digest_add(uint32_t hash, const void* const buf, const size_t len)
 {
 	const uint8_t* str = (const uint8_t*)buf;
@@ -105,7 +105,7 @@ zix_digest_add(uint32_t hash, const void* const buf, const size_t len)
 	return hash;
 }
 
-ZIX_API uint32_t
+uint32_t
 zix_digest_add_64(uint32_t hash, const void* const buf, const size_t len)
 {
 	assert((uintptr_t)buf % sizeof(uint64_t) == 0);
@@ -114,7 +114,7 @@ zix_digest_add_64(uint32_t hash, const void* const buf, const size_t len)
 	return zix_digest_add(hash, buf, len);
 }
 
-ZIX_API uint32_t
+uint32_t
 zix_digest_add_ptr(const uint32_t hash, const void* const ptr)
 {
 	return zix_digest_add(hash, &ptr, sizeof(ptr));

@@ -108,7 +108,7 @@ zix_btree_node_new(const bool leaf)
 	return node;
 }
 
-ZIX_API ZixBTree*
+ZixBTree*
 zix_btree_new(const ZixComparator  cmp,
               const void* const    cmp_data,
               const ZixDestroyFunc destroy)
@@ -147,7 +147,7 @@ zix_btree_free_rec(ZixBTree* const t, ZixBTreeNode* const n)
 	}
 }
 
-ZIX_API void
+void
 zix_btree_free(ZixBTree* const t)
 {
 	if (t) {
@@ -156,7 +156,7 @@ zix_btree_free(ZixBTree* const t)
 	}
 }
 
-ZIX_API size_t
+size_t
 zix_btree_size(const ZixBTree* const t)
 {
 	return t->size;
@@ -292,7 +292,7 @@ zix_btree_node_find(const ZixBTree* const     t,
 	return first;
 }
 
-ZIX_API ZixStatus
+ZixStatus
 zix_btree_insert(ZixBTree* const t, void* const e)
 {
 	ZixBTreeNode* parent = NULL;     // Parent of n
@@ -504,7 +504,7 @@ zix_btree_remove_max(ZixBTree* const t, ZixBTreeNode* n)
 	return n->vals[--n->n_vals];
 }
 
-ZIX_API ZixStatus
+ZixStatus
 zix_btree_remove(ZixBTree* const      t,
                  const void* const    e,
                  void** const         out,
@@ -622,7 +622,7 @@ zix_btree_remove(ZixBTree* const      t,
 	return ZIX_STATUS_ERROR;
 }
 
-ZIX_API ZixStatus
+ZixStatus
 zix_btree_find(const ZixBTree* const t,
                const void* const     e,
                ZixBTreeIter** const  ti)
@@ -653,7 +653,7 @@ zix_btree_find(const ZixBTree* const t,
 	return ZIX_STATUS_NOT_FOUND;
 }
 
-ZIX_API ZixStatus
+ZixStatus
 zix_btree_lower_bound(const ZixBTree* const t,
                       const void* const     e,
                       ZixBTreeIter** const  ti)
@@ -709,7 +709,7 @@ zix_btree_lower_bound(const ZixBTree* const t,
 	return ZIX_STATUS_SUCCESS;
 }
 
-ZIX_API void*
+void*
 zix_btree_get(const ZixBTreeIter* const ti)
 {
 	const ZixBTreeIterFrame* const frame = &ti->stack[ti->level];
@@ -718,7 +718,7 @@ zix_btree_get(const ZixBTreeIter* const ti)
 	return frame->node->vals[frame->index];
 }
 
-ZIX_API ZixBTreeIter*
+ZixBTreeIter*
 zix_btree_begin(const ZixBTree* const t)
 {
 	ZixBTreeIter* const i = zix_btree_iter_new(t);
@@ -741,13 +741,13 @@ zix_btree_begin(const ZixBTree* const t)
 	return i;
 }
 
-ZIX_API ZixBTreeIter*
+ZixBTreeIter*
 zix_btree_end(const ZixBTree* const t)
 {
 	return zix_btree_iter_new(t);
 }
 
-ZIX_API ZixBTreeIter*
+ZixBTreeIter*
 zix_btree_iter_copy(const ZixBTreeIter* const i)
 {
 	if (!i) {
@@ -762,20 +762,19 @@ zix_btree_iter_copy(const ZixBTreeIter* const i)
 	return j;
 }
 
-ZIX_API bool
+bool
 zix_btree_iter_is_end(const ZixBTreeIter* const i)
 {
 	return !i || i->stack[0].node == NULL;
 }
 
-ZIX_API bool
+bool
 zix_btree_iter_equals(const ZixBTreeIter* const lhs, const ZixBTreeIter* const rhs)
 {
 	if (zix_btree_iter_is_end(lhs) && zix_btree_iter_is_end(rhs)) {
 		return true;
-	} else if (zix_btree_iter_is_end(lhs) || zix_btree_iter_is_end(rhs)) {
-		return false;
-	} else if (!lhs || !rhs || lhs->level != rhs->level) {
+	} else if (zix_btree_iter_is_end(lhs) || zix_btree_iter_is_end(rhs) ||
+	           lhs->level != rhs->level) {
 		return false;
 	}
 
@@ -785,7 +784,7 @@ zix_btree_iter_equals(const ZixBTreeIter* const lhs, const ZixBTreeIter* const r
 	                   (lhs->level + 1) * sizeof(ZixBTreeIterFrame));
 }
 
-ZIX_API void
+void
 zix_btree_iter_increment(ZixBTreeIter* const i)
 {
 	ZixBTreeIterFrame* f = &i->stack[i->level];
@@ -826,7 +825,7 @@ zix_btree_iter_increment(ZixBTreeIter* const i)
 	}
 }
 
-ZIX_API void
+void
 zix_btree_iter_free(ZixBTreeIter* const i)
 {
 	free(i);

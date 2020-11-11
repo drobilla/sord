@@ -73,7 +73,7 @@ zix_hash_free(ZixHash* hash);
 /**
    Return the number of elements in `hash`.
 */
-ZIX_API size_t
+ZIX_PURE_API size_t
 zix_hash_size(const ZixHash* hash);
 
 /**

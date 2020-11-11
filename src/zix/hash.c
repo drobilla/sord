@@ -51,7 +51,7 @@ zix_hash_value(ZixHashEntry* entry)
 	return entry + 1;
 }
 
-ZIX_API ZixHash*
+ZixHash*
 zix_hash_new(ZixHashFunc  hash_func,
              ZixEqualFunc equal_func,
              size_t       value_size)
@@ -72,7 +72,7 @@ zix_hash_new(ZixHashFunc  hash_func,
 	return hash;
 }
 
-ZIX_API void
+void
 zix_hash_free(ZixHash* hash)
 {
 	if (!hash) {
@@ -92,7 +92,7 @@ zix_hash_free(ZixHash* hash)
 	free(hash);
 }
 
-ZIX_API size_t
+size_t
 zix_hash_size(const ZixHash* hash)
 {
 	return hash->count;
@@ -144,7 +144,7 @@ find_entry(const ZixHash* hash,
 	return NULL;
 }
 
-ZIX_API void*
+void*
 zix_hash_find(const ZixHash* hash, const void* value)
 {
 	const unsigned h_nomod = hash->hash_func(value);
@@ -153,7 +153,7 @@ zix_hash_find(const ZixHash* hash, const void* value)
 	return entry ? zix_hash_value(entry) : 0;
 }
 
-ZIX_API ZixStatus
+ZixStatus
 zix_hash_insert(ZixHash* hash, const void* value, void** inserted)
 {
 	unsigned h_nomod = hash->hash_func(value);
@@ -191,7 +191,7 @@ zix_hash_insert(ZixHash* hash, const void* value, void** inserted)
 	return ZIX_STATUS_SUCCESS;
 }
 
-ZIX_API ZixStatus
+ZixStatus
 zix_hash_remove(ZixHash* hash, const void* value)
 {
 	const unsigned h_nomod = hash->hash_func(value);
@@ -221,7 +221,7 @@ zix_hash_remove(ZixHash* hash, const void* value)
 	return ZIX_STATUS_NOT_FOUND;
 }
 
-ZIX_API void
+void
 zix_hash_foreach(ZixHash*         hash,
                  ZixHashVisitFunc f,
                  void*            user_data)

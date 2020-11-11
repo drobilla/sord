@@ -68,7 +68,7 @@ zix_btree_free(ZixBTree* t);
 /**
    Return the number of elements in `t`.
 */
-ZIX_API size_t
+ZIX_PURE_API size_t
 zix_btree_size(const ZixBTree* t);
 
 /**
@@ -113,7 +113,7 @@ zix_btree_lower_bound(const ZixBTree* t, const void* e, ZixBTreeIter** ti);
 /**
    Return the data associated with the given tree item.
 */
-ZIX_API void*
+ZIX_PURE_API void*
 zix_btree_get(const ZixBTreeIter* ti);
 
 /**
@@ -121,7 +121,7 @@ zix_btree_get(const ZixBTreeIter* ti);
 
    The returned iterator must be freed with zix_btree_iter_free().
 */
-ZIX_API ZixBTreeIter*
+ZIX_PURE_API ZixBTreeIter*
 zix_btree_begin(const ZixBTree* t);
 
 /**
@@ -141,13 +141,13 @@ zix_btree_iter_copy(const ZixBTreeIter* i);
 /**
    Return true iff `lhs` is equal to `rhs`.
 */
-ZIX_API bool
+ZIX_PURE_API bool
 zix_btree_iter_equals(const ZixBTreeIter* lhs, const ZixBTreeIter* rhs);
 
 /**
    Return true iff `i` is an iterator to the end of its tree.
 */
-ZIX_API bool
+ZIX_PURE_API bool
 zix_btree_iter_is_end(const ZixBTreeIter* i);
 
 /**

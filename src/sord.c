@@ -239,7 +239,7 @@ sord_node_compare(const SordNode* a, const SordNode* b)
 	if (a == b || !a || !b) {
 		return 0;  // Exact or wildcard match
 	} else if (a->node.type != b->node.type) {
-		return a->node.type - b->node.type;
+		return (a->node.type < b->node.type) ? -1 : 1;
 	}
 
 	int cmp = 0;

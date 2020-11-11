@@ -232,6 +232,42 @@ sord_world_set_error_sink(SordWorld*    world,
 	world->error_handle = handle;
 }
 
+static inline int
+sord_node_compare_literal(const SordNode* a, const SordNode* b)
+{
+	const int cmp = strcmp((const char*)sord_node_get_string(a),
+	                       (const char*)sord_node_get_string(b));
+	if (cmp != 0) {
+		return cmp;
+	}
+
+	const bool a_has_lang     = a->meta.lit.lang[0];
+	const bool b_has_lang     = b->meta.lit.lang[0];
+	const bool a_has_datatype = a->meta.lit.datatype;
+	const bool b_has_datatype = b->meta.lit.datatype;
+	const bool a_has_meta     = a_has_lang || a_has_datatype;
+	const bool b_has_meta     = b_has_lang || b_has_datatype;
+
+	assert(!(a_has_lang && a_has_datatype));
+	assert(!(b_has_lang && b_has_datatype));
+
+	if (!a_has_meta && !b_has_meta) {
+		return 0;
+	} else if (!a_has_meta || (a_has_lang && b_has_datatype)) {
+		return -1;
+	} else if (!b_has_meta || (a_has_datatype && b_has_lang)) {
+		return 1;
+	} else if (a_has_lang) {
+		assert(b_has_lang);
+		return strcmp(a->meta.lit.lang, b->meta.lit.lang);
+	}
+
+	assert(a_has_datatype);
+	assert(b_has_datatype);
+	return strcmp((const char*)a->meta.lit.datatype->node.buf,
+	              (const char*)b->meta.lit.datatype->node.buf);
+}
+
 /** Compare nodes, considering NULL a wildcard match. */
 static inline int
 sord_node_compare(const SordNode* a, const SordNode* b)
@@ -248,20 +284,7 @@ sord_node_compare(const SordNode* a, const SordNode* b)
 	case SERD_BLANK:
 		return strcmp((const char*)a->node.buf, (const char*)b->node.buf);
 	case SERD_LITERAL:
-		cmp = strcmp((const char*)sord_node_get_string(a),
-		             (const char*)sord_node_get_string(b));
-		if (cmp == 0) {
-			// Note: Can't use sord_node_compare here since it does wildcards
-			if (!a->meta.lit.datatype || !b->meta.lit.datatype) {
-				cmp = (a->meta.lit.datatype < b->meta.lit.datatype) ? -1 : 1;
-			} else {
-				cmp = strcmp((const char*)a->meta.lit.datatype->node.buf,
-				             (const char*)b->meta.lit.datatype->node.buf);
-			}
-		}
-		if (cmp == 0) {
-			cmp = strcmp(a->meta.lit.lang, b->meta.lit.lang);
-		}
+		cmp = sord_node_compare_literal(a, b);
 		break;
 	default:
 		break;

@@ -81,6 +81,7 @@ def configure(conf):
                 '-Wno-cast-qual',
                 '-Wno-extra-semi-stmt',
                 '-Wno-format-nonliteral',
+                '-Wno-nullability-extension',
                 '-Wno-padded',
                 '-Wno-reserved-id-macro',
                 '-Wno-shorten-64-to-32',

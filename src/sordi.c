@@ -132,11 +132,15 @@ main(int argc, char** argv)
 		return print_usage(argv[0], true);
 	}
 
-	const uint8_t* input = (const uint8_t*)argv[a++];
+	uint8_t*       input_path = NULL;
+	const uint8_t* input      = (const uint8_t*)argv[a++];
 	if (from_file) {
 		in_name = in_name ? in_name : input;
 		if (!in_fd) {
-			input = serd_uri_to_path(in_name);
+			if (!strncmp((const char*)input, "file:", 5)) {
+				input_path = serd_file_uri_parse(input, NULL);
+				input      = input_path;
+			}
 			if (!input || !(in_fd = fopen((const char*)input, "rb"))) {
 				return 1;
 			}
@@ -192,6 +196,7 @@ main(int argc, char** argv)
 	serd_env_free(env);
 	serd_env_free(write_env);
 	serd_node_free(&base);
+	free(input_path);
 
 	sord_free(sord);
 	sord_world_free(world);

@@ -712,9 +712,11 @@ main(int argc, char** argv)
 	SerdReader* reader = sord_new_reader(model, env, SERD_TURTLE, NULL);
 
 	for (; a < argc; ++a) {
-		const uint8_t* input   = (const uint8_t*)argv[a];
-		uint8_t*       in_path = absolute_path(serd_uri_to_path(input));
+		const uint8_t* input       = (const uint8_t*)argv[a];
+		uint8_t*       rel_in_path = serd_file_uri_parse(input, NULL);
+		uint8_t*       in_path     = absolute_path(rel_in_path);
 
+		free(rel_in_path);
 		if (!in_path) {
 			fprintf(stderr, "Skipping file %s\n", input);
 			continue;

@@ -714,6 +714,9 @@ sord_node_free_internal(SordWorld* world, SordNode* node)
 {
 	assert(node->refs == 0);
 
+	// If you hit this, the world has probably been destroyed too early
+	assert(world);
+
 	// Cache pointer to buffer to free after node removal and destruction
 	const uint8_t* const buf = node->node.buf;
 

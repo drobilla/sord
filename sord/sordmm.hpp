@@ -48,14 +48,17 @@
 
 namespace Sord {
 
-/** Utility base class to prevent copying. */
+/** Utility base class to prevent copying or moving. */
 class Noncopyable {
-protected:
-	Noncopyable() {}
-	~Noncopyable() {}
-private:
-	Noncopyable(const Noncopyable&);
-	const Noncopyable& operator=(const Noncopyable&);
+public:
+	Noncopyable()  = default;
+	~Noncopyable() = default;
+
+	Noncopyable(const Noncopyable&) = delete;
+	const Noncopyable& operator=(const Noncopyable&) = delete;
+
+	Noncopyable(Noncopyable&&) = delete;
+	Noncopyable& operator=(Noncopyable&&) = delete;
 };
 
 /** C++ wrapper for a Sord object. */
@@ -429,8 +432,8 @@ struct Iter : public Wrapper<SordIter*> {
 	Iter(const Iter&) = delete;
 	Iter& operator=(const Iter&) = delete;
 
-	inline Iter(Iter&& iter)
-		: Wrapper<SordIter*>(iter)
+	inline Iter(Iter&& iter) noexcept
+		: Wrapper<SordIter>(iter)
 		, _world(iter._world)
 	{}
 

@@ -447,17 +447,17 @@ struct Iter : public Wrapper<SordIter> {
 		next();
 		return *this;
 	}
-	inline const Node get_subject() const {
+	inline Node get_subject() const {
 		SordQuad quad;
 		sord_iter_get(_c_obj, quad);
 		return Node(_world, quad[SORD_SUBJECT]);
 	}
-	inline const Node get_predicate() const {
+	inline Node get_predicate() const {
 		SordQuad quad;
 		sord_iter_get(_c_obj, quad);
 		return Node(_world, quad[SORD_PREDICATE]);
 	}
-	inline const Node get_object() const {
+	inline Node get_object() const {
 		SordQuad quad;
 		sord_iter_get(_c_obj, quad);
 		return Node(_world, quad[SORD_OBJECT]);

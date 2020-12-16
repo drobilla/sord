@@ -628,7 +628,7 @@ static size_t
 string_sink(const void* buf, size_t len, void* stream)
 {
 	try {
-		std::string* str = static_cast<std::string*>(stream);
+		auto* str = static_cast<std::string*>(stream);
 		str->append(static_cast<const char*>(buf), len);
 		return len;
 	} catch (...) {

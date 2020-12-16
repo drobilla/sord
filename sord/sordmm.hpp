@@ -228,7 +228,7 @@ public:
 	inline float to_float() const;
 	inline bool  to_bool()  const;
 
-	inline static Node blank_id(World& world, const std::string base="b") {
+	inline static Node blank_id(World& world, const std::string& base="b") {
 		const uint64_t num = world.blank_id();
 		std::ostringstream ss;
 		ss << base << num;

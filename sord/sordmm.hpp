@@ -111,7 +111,7 @@ public:
 	}
 
 	inline std::string expand(const std::string& curie) const {
-		assert(curie.find(":") != std::string::npos);
+		assert(curie.find(':') != std::string::npos);
 		SerdNode  curie_node = string_to_node(SERD_CURIE, curie);
 		SerdChunk uri_prefix;
 		SerdChunk uri_suffix;

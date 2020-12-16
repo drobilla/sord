@@ -347,7 +347,7 @@ Node::Node(World& world, SordNode* node, bool copy)
 }
 
 inline
-Node::Node(const Node& other)
+Node::Node(const Node& other) // NOLINT(bugprone-copy-constructor-init)
 	: Wrapper<SordNode>()
 	, _world(other._world)
 {

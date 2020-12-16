@@ -403,7 +403,7 @@ inline int
 Node::to_int() const
 {
 	assert(is_int());
-	char* endptr;
+	char* endptr = nullptr;
 	return strtol(reinterpret_cast<const char*>(sord_node_get_string(_c_obj)),
 	              &endptr,
 	              10);

@@ -65,19 +65,19 @@ public:
 template <typename T>
 class Wrapper {
 public:
-	inline Wrapper(T c_obj = nullptr) : _c_obj(c_obj) {}
+	inline Wrapper(T* c_obj = nullptr) : _c_obj(c_obj) {}
 
-	inline T       c_obj()       { return _c_obj; }
-	inline const T c_obj() const { return _c_obj; }
+	inline T*       c_obj()       { return _c_obj; }
+	inline const T* c_obj() const { return _c_obj; }
 
 protected:
-	T _c_obj;
+	T* _c_obj;
 };
 
 /** Collection of RDF namespaces with prefixes. */
-class Namespaces : public Wrapper<SerdEnv*> {
+class Namespaces : public Wrapper<SerdEnv> {
 public:
-	Namespaces() : Wrapper<SerdEnv*>(serd_env_new(nullptr)) {}
+	Namespaces() : Wrapper<SerdEnv>(serd_env_new(nullptr)) {}
 	~Namespaces() { serd_env_free(_c_obj); }
 
 	static inline SerdNode string_to_node(SerdType type, const std::string& s) {
@@ -128,7 +128,7 @@ public:
 };
 
 /** Sord library state. */
-class World : public Noncopyable, public Wrapper<SordWorld*> {
+class World : public Noncopyable, public Wrapper<SordWorld> {
 public:
 	inline World()
 		: _next_blank_id(0)
@@ -147,6 +147,7 @@ public:
 	}
 
 	inline const Namespaces& prefixes() const { return _prefixes; }
+	inline Namespaces&       prefixes()       { return _prefixes; }
 	inline SordWorld*        world()          { return _c_obj; }
 
 private:
@@ -157,7 +158,7 @@ private:
 
 /** An RDF Node (resource, literal, etc)
  */
-class Node : public Wrapper<SordNode*> {
+class Node : public Wrapper<SordNode> {
 public:
 	enum Type {
 		UNKNOWN  = 0,
@@ -166,7 +167,7 @@ public:
 		LITERAL  = SORD_LITERAL
 	};
 
-	inline Node() : Wrapper<SordNode*>(nullptr), _world(nullptr) {}
+	inline Node() : Wrapper<SordNode>(nullptr), _world(nullptr) {}
 
 	inline Node(World& world, Type t, const std::string& s);
 	inline Node(World& world);
@@ -347,7 +348,7 @@ Node::Node(World& world, SordNode* node, bool copy)
 
 inline
 Node::Node(const Node& other)
-	: Wrapper<SordNode*>()
+	: Wrapper<SordNode>()
 	, _world(other._world)
 {
 	if (_world) {
@@ -425,9 +426,9 @@ Node::to_bool() const
 	               "true");
 }
 
-struct Iter : public Wrapper<SordIter*> {
+struct Iter : public Wrapper<SordIter> {
 	inline Iter(World& world, SordIter* c_obj)
-		: Wrapper<SordIter*>(c_obj), _world(world) {}
+		: Wrapper<SordIter>(c_obj), _world(world) {}
 
 	Iter(const Iter&) = delete;
 	Iter& operator=(const Iter&) = delete;
@@ -466,7 +467,7 @@ struct Iter : public Wrapper<SordIter*> {
 
 /** An RDF Model (collection of triples).
  */
-class Model : public Noncopyable, public Wrapper<SordModel*> {
+class Model : public Noncopyable, public Wrapper<SordModel> {
 public:
 	inline Model(World&             world,
 	             const std::string& base_uri,

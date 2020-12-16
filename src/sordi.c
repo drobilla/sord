@@ -14,17 +14,19 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#include <assert.h>
-#include <stdlib.h>
-#include <string.h>
+#include "serd/serd.h"
+#include "sord/sord.h"
+#include "sord_config.h"
 
 #ifdef _WIN32
 #    include <windows.h>
 #endif
 
-#include "serd/serd.h"
-#include "sord/sord.h"
-#include "sord_config.h"
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define SORDI_ERROR(msg)       fprintf(stderr, "sordi: " msg);
 #define SORDI_ERRORF(fmt, ...) fprintf(stderr, "sordi: " fmt, __VA_ARGS__);

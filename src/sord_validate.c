@@ -17,14 +17,6 @@
 #define _BSD_SOURCE     1  // for realpath
 #define _DEFAULT_SOURCE 1  // for realpath
 
-#include <assert.h>
-#include <stdlib.h>
-#include <string.h>
-
-#ifdef _WIN32
-#    include <windows.h>
-#endif
-
 #include "serd/serd.h"
 #include "sord/sord.h"
 #include "sord_config.h"
@@ -32,6 +24,16 @@
 #ifdef HAVE_PCRE
 #    include <pcre.h>
 #endif
+#ifdef _WIN32
+#    include <windows.h>
+#endif
+
+#include <stdarg.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #ifdef __GNUC__
 #    define SORD_LOG_FUNC(fmt, arg1) __attribute__((format(printf, fmt, arg1)))

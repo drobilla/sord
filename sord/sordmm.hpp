@@ -22,14 +22,6 @@
 #ifndef SORD_SORDMM_HPP
 #define SORD_SORDMM_HPP
 
-#include <cassert>
-#include <cstring>
-#include <cstdlib>
-#include <iostream>
-#include <set>
-#include <string>
-#include <sstream>
-
 #if defined(__clang__)
 #    pragma clang diagnostic push
 #    pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
@@ -41,6 +33,16 @@
 #if defined(__clang__)
 #    pragma clang diagnostic pop
 #endif
+
+#include <cassert>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <iostream>
+#include <set>
+#include <sstream>
+#include <string>
 
 #define SORD_NS_XSD "http://www.w3.org/2001/XMLSchema#"
 

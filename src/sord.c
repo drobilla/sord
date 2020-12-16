@@ -14,21 +14,27 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-// C99
+#include "sord_config.h" // IWYU pragma: keep
+#include "sord_internal.h"
+
+#include "serd/serd.h"
+#include "sord/sord.h"
+
+#define ZIX_INLINE
+#include "zix/btree.c"
+#include "zix/btree.h"
+#include "zix/common.h"
+#include "zix/digest.c"
+#include "zix/hash.c"
+#include "zix/hash.h"
+
 #include <assert.h>
-#include <errno.h>
+#include <stdarg.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#define ZIX_INLINE
-#include "zix/digest.c"
-#include "zix/hash.c"
-#include "zix/btree.c"
-
-#include "sord_config.h"
-#include "sord_internal.h"
 
 #ifdef __GNUC__
 #    define SORD_LOG_FUNC(fmt, arg1) __attribute__((format(printf, fmt, arg1)))

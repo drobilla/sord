@@ -14,13 +14,16 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+#include "serd/serd.h"
+#include "sord/sord.h"
+
 #include <inttypes.h>
 #include <stdarg.h>
+#include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include "sord/sord.h"
 
 #ifdef __GNUC__
 #    define SORD_LOG_FUNC(fmt, arg1) __attribute__((format(printf, fmt, arg1)))

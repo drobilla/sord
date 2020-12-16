@@ -14,14 +14,13 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#include <assert.h>
+#include "serd/serd.h"
+#include "sord/sord.h"
+
+#include <stdbool.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include "serd/serd.h"
-
-#include "sord_config.h"
-#include "sord_internal.h"
 
 struct SordInserterImpl {
 	SordModel* model;

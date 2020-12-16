@@ -42,7 +42,6 @@ Checks: >
   -hicpp-signed-bitwise,
   -hicpp-special-member-functions,
   -llvm-header-guard,
-  -llvm-include-order,
   -llvmlibc-*,
   -misc-no-recursion,
   -misc-unused-parameters,

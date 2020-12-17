@@ -79,7 +79,6 @@ def configure(conf):
             'clang': [
                 '-Wno-cast-align',
                 '-Wno-cast-qual',
-                '-Wno-extra-semi-stmt',
                 '-Wno-format-nonliteral',
                 '-Wno-nullability-extension',
                 '-Wno-padded',

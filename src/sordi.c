@@ -28,8 +28,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define SORDI_ERROR(msg)       fprintf(stderr, "sordi: " msg);
-#define SORDI_ERRORF(fmt, ...) fprintf(stderr, "sordi: " fmt, __VA_ARGS__);
+#define SORDI_ERROR(msg)       fprintf(stderr, "sordi: " msg)
+#define SORDI_ERRORF(fmt, ...) fprintf(stderr, "sordi: " fmt, __VA_ARGS__)
 
 typedef struct {
 	SerdWriter* writer;

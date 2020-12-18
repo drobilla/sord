@@ -341,7 +341,7 @@ def test(tst):
     sordi = './sordi_static'
     base = 'http://example.org/'
     snippet = '<{0}s> <{0}p> <{0}o> .\n'.format(base)
-    manifest = 'file://%s/tests/manifest.ttl' % srcdir
+    manifest = 'file://%s/tests/manifest.ttl' % srcdir.replace('\\', '/')
 
     with tst.group('Unit') as check:
         check(['./sord_test'])

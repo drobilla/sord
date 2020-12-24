@@ -147,7 +147,9 @@ def configure(conf):
         conf.define('SORD_DEBUG_WRITE', 1)
 
     # Set up environment for building/using as a subproject
-    autowaf.set_lib_env(conf, 'sord', SORD_VERSION)
+    autowaf.set_lib_env(conf, 'sord', SORD_VERSION,
+                        include_path=str(conf.path.find_node('include')))
+
     if conf.env.BUILD_UTILS and conf.env.HAVE_PCRE:
         sord_validate_node = conf.path.get_bld().make_node('sord_validate')
         conf.env.SORD_VALIDATE = [sord_validate_node.abspath()]
@@ -187,8 +189,8 @@ def build(bld):
     if bld.env.BUILD_SHARED:
         obj = bld(features        = 'c cshlib',
                   source          = source,
-                  includes        = ['include', './src'],
-                  export_includes = ['include'],
+                  includes        = ['.', 'include', './src'],
+                  export_includes = ['.', 'include'],
                   name            = 'libsord',
                   target          = 'sord-%s' % SORD_MAJOR_VERSION,
                   vnum            = SORD_VERSION,
@@ -202,8 +204,8 @@ def build(bld):
     if bld.env.BUILD_STATIC:
         obj = bld(features        = 'c cstlib',
                   source          = source,
-                  includes        = ['include', './src'],
-                  export_includes = ['include'],
+                  includes        = ['.', 'include', './src'],
+                  export_includes = ['.', 'include'],
                   name            = 'libsord_static',
                   target          = 'sord-%s' % SORD_MAJOR_VERSION,
                   vnum            = SORD_VERSION,
@@ -223,7 +225,7 @@ def build(bld):
         # Profiled static library for test coverage
         obj = bld(features     = 'c cstlib',
                   source       = source,
-                  includes     = ['include', './src'],
+                  includes     = ['.', 'include', './src'],
                   name         = 'libsord_profiled',
                   target       = 'sord_profiled',
                   install_path = '',
@@ -236,7 +238,7 @@ def build(bld):
         # Unit test program
         obj = bld(features     = 'c cprogram',
                   source       = 'src/sord_test.c',
-                  includes     = ['include', './src'],
+                  includes     = ['.', 'include', './src'],
                   use          = 'libsord_profiled',
                   lib          = test_libs,
                   target       = 'sord_test',
@@ -249,7 +251,7 @@ def build(bld):
         # Static profiled sordi for tests
         obj = bld(features     = 'c cprogram',
                   source       = 'src/sordi.c',
-                  includes     = ['include', './src'],
+                  includes     = ['.', 'include', './src'],
                   use          = 'libsord_profiled',
                   lib          = test_libs,
                   target       = 'sordi_static',
@@ -263,7 +265,7 @@ def build(bld):
         if bld.env.COMPILER_CXX:
             obj = bld(features     = 'cxx cxxprogram',
                       source       = 'src/sordmm_test.cpp',
-                      includes     = ['include', './src'],
+                      includes     = ['.', 'include', './src'],
                       use          = 'libsord_profiled',
                       lib          = test_libs,
                       target       = 'sordmm_test',
@@ -281,7 +283,7 @@ def build(bld):
         for i in utils:
             obj = bld(features     = 'c cprogram',
                       source       = 'src/%s.c' % i,
-                      includes     = ['include', './src'],
+                      includes     = ['.', 'include', './src'],
                       use          = 'libsord',
                       lib          = libs,
                       uselib       = 'SERD',

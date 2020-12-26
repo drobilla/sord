@@ -28,20 +28,20 @@
 #include <stdint.h>
 
 #ifdef SORD_SHARED
-#    ifdef _WIN32
-#        define SORD_LIB_IMPORT __declspec(dllimport)
-#        define SORD_LIB_EXPORT __declspec(dllexport)
-#    else
-#        define SORD_LIB_IMPORT __attribute__((visibility("default")))
-#        define SORD_LIB_EXPORT __attribute__((visibility("default")))
-#    endif
-#    ifdef SORD_INTERNAL
-#        define SORD_API SORD_LIB_EXPORT
-#    else
-#        define SORD_API SORD_LIB_IMPORT
-#    endif
+#  ifdef _WIN32
+#    define SORD_LIB_IMPORT __declspec(dllimport)
+#    define SORD_LIB_EXPORT __declspec(dllexport)
+#  else
+#    define SORD_LIB_IMPORT __attribute__((visibility("default")))
+#    define SORD_LIB_EXPORT __attribute__((visibility("default")))
+#  endif
+#  ifdef SORD_INTERNAL
+#    define SORD_API SORD_LIB_EXPORT
+#  else
+#    define SORD_API SORD_LIB_IMPORT
+#  endif
 #else
-#    define SORD_API
+#  define SORD_API
 #endif
 
 #ifdef __cplusplus
@@ -105,31 +105,31 @@ typedef const SordNode* SordQuad[4];
    Index into a SordQuad.
 */
 typedef enum {
-	SORD_SUBJECT   = 0,  /**< Subject */
-	SORD_PREDICATE = 1,  /**< Predicate ("key") */
-	SORD_OBJECT    = 2,  /**< Object    ("value") */
-	SORD_GRAPH     = 3   /**< Graph     ("context") */
+  SORD_SUBJECT   = 0, /**< Subject */
+  SORD_PREDICATE = 1, /**< Predicate ("key") */
+  SORD_OBJECT    = 2, /**< Object    ("value") */
+  SORD_GRAPH     = 3  /**< Graph     ("context") */
 } SordQuadIndex;
 
 /**
    Type of a node.
 */
 typedef enum {
-	SORD_URI     = 1,  /**< URI */
-	SORD_BLANK   = 2,  /**< Blank node identifier */
-	SORD_LITERAL = 3   /**< Literal (string with optional lang or datatype) */
+  SORD_URI     = 1, /**< URI */
+  SORD_BLANK   = 2, /**< Blank node identifier */
+  SORD_LITERAL = 3  /**< Literal (string with optional lang or datatype) */
 } SordNodeType;
 
 /**
    Indexing option.
 */
 typedef enum {
-	SORD_SPO = 1,       /**< Subject,   Predicate, Object */
-	SORD_SOP = 1 << 1,  /**< Subject,   Object,    Predicate */
-	SORD_OPS = 1 << 2,  /**< Object,    Predicate, Subject */
-	SORD_OSP = 1 << 3,  /**< Object,    Subject,   Predicate */
-	SORD_PSO = 1 << 4,  /**< Predicate, Subject,   Object */
-	SORD_POS = 1 << 5   /**< Predicate, Object,    Subject */
+  SORD_SPO = 1,      /**< Subject,   Predicate, Object */
+  SORD_SOP = 1 << 1, /**< Subject,   Object,    Predicate */
+  SORD_OPS = 1 << 2, /**< Object,    Predicate, Subject */
+  SORD_OSP = 1 << 3, /**< Object,    Subject,   Predicate */
+  SORD_PSO = 1 << 4, /**< Predicate, Subject,   Object */
+  SORD_POS = 1 << 5  /**< Predicate, Object,    Subject */
 } SordIndexOption;
 
 /**
@@ -301,8 +301,7 @@ sord_node_is_inline_object(const SordNode* node);
 */
 SORD_API
 bool
-sord_node_equals(const SordNode* a,
-                 const SordNode* b);
+sord_node_equals(const SordNode* a, const SordNode* b);
 
 /**
    Return a SordNode as a SerdNode.
@@ -345,9 +344,7 @@ sord_node_from_serd_node(SordWorld*      world,
 */
 SORD_API
 SordModel*
-sord_new(SordWorld* world,
-         unsigned  indices,
-         bool      graphs);
+sord_new(SordWorld* world, unsigned indices, bool graphs);
 
 /**
    Close and free `model`.
@@ -496,8 +493,7 @@ sord_erase(SordModel* model, SordIter* iter);
 */
 SORD_API
 SordInserter*
-sord_inserter_new(SordModel* model,
-                  SerdEnv*   env);
+sord_inserter_new(SordModel* model, SerdEnv* env);
 
 /**
    Free an inserter.
@@ -513,8 +509,7 @@ sord_inserter_free(SordInserter* inserter);
 */
 SORD_API
 SerdStatus
-sord_inserter_set_base_uri(SordInserter*   inserter,
-                           const SerdNode* uri);
+sord_inserter_set_base_uri(SordInserter* inserter, const SerdNode* uri);
 
 /**
    Set a namespace prefix for writing to the model.
@@ -631,9 +626,7 @@ sord_new_reader(SordModel* model,
 */
 SORD_API
 bool
-sord_write(SordModel*  model,
-           SerdWriter* writer,
-           SordNode*   graph);
+sord_write(SordModel* model, SerdWriter* writer, SordNode* graph);
 
 /**
    Write a range to a writer.
@@ -642,8 +635,7 @@ sord_write(SordModel*  model,
 */
 SORD_API
 bool
-sord_write_iter(SordIter*   iter,
-                SerdWriter* writer);
+sord_write_iter(SordIter* iter, SerdWriter* writer);
 
 /**
    @}
@@ -651,7 +643,7 @@ sord_write_iter(SordIter*   iter,
 */
 
 #ifdef __cplusplus
-}  /* extern "C" */
+} /* extern "C" */
 #endif
 
-#endif  /* SORD_SORD_H */
+#endif /* SORD_SORD_H */

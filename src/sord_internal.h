@@ -23,31 +23,31 @@
 #include <stddef.h>
 
 #if defined(__GNUC__) && __GNUC__ > 4
-#    define SORD_UNREACHABLE() __builtin_unreachable()
+#  define SORD_UNREACHABLE() __builtin_unreachable()
 #else
-#    include <assert.h>
-#    define SORD_UNREACHABLE() assert(0)
+#  include <assert.h>
+#  define SORD_UNREACHABLE() assert(0)
 #endif
 
 /** Resource node metadata */
 typedef struct {
-	size_t refs_as_obj;  ///< References as a quad object
+  size_t refs_as_obj; ///< References as a quad object
 } SordResourceMetadata;
 
 /** Literal node metadata */
 typedef struct {
-	SordNode* datatype;  ///< Optional literal data type URI
-	char      lang[16];  ///< Optional language tag
+  SordNode* datatype; ///< Optional literal data type URI
+  char      lang[16]; ///< Optional language tag
 } SordLiteralMetadata;
 
 /** Node */
 struct SordNodeImpl {
-	SerdNode node;  ///< Serd node
-	size_t   refs;  ///< Reference count (# of containing quads)
-	union {
-		SordResourceMetadata res;
-		SordLiteralMetadata  lit;
-	} meta;
+  SerdNode node; ///< Serd node
+  size_t   refs; ///< Reference count (# of containing quads)
+  union {
+    SordResourceMetadata res;
+    SordLiteralMetadata  lit;
+  } meta;
 };
 
 #endif /* SORD_SORD_INTERNAL_H */

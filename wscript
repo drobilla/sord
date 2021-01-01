@@ -154,7 +154,7 @@ def configure(conf):
         sord_validate_node = conf.path.get_bld().make_node('sord_validate')
         conf.env.SORD_VALIDATE = [sord_validate_node.abspath()]
 
-    conf.write_config_header('sord_config.h', remove=False)
+    conf.define('SORD_NO_DEFAULT_CONFIG', 1)
 
     autowaf.display_summary(
         conf,

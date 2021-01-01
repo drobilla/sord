@@ -3,8 +3,9 @@ sord (0.16.7) unstable;
   * Clean up code
   * Fix potential undefined behavior
   * Fix potentially incorrect search results
+  * Remove the need for a generated configuration header
 
- -- David Robillard <d@drobilla.net>  Wed, 11 Nov 2020 21:04:28 +0000
+ -- David Robillard <d@drobilla.net>  Fri, 01 Jan 2021 16:59:03 +0000
 
 sord (0.16.6) stable;
 

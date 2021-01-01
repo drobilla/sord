@@ -1,5 +1,5 @@
 /*
-  Copyright 2012-2017 David Robillard <http://drobilla.net>
+  Copyright 2012-2021 David Robillard <http://drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -21,9 +21,10 @@
 #include "sord/sord.h"
 #include "sord_config.h"
 
-#ifdef HAVE_PCRE
+#if USE_PCRE
 #  include <pcre.h>
 #endif
+
 #ifdef _WIN32
 #  include <windows.h>
 #endif
@@ -190,7 +191,7 @@ is_descendant_of(SordModel*      model,
 static bool
 regexp_match(const uint8_t* pat, const char* str)
 {
-#ifdef HAVE_PCRE
+#if USE_PCRE
   // Append a $ to the pattern so we only match if the entire string matches
   const size_t len  = strlen((const char*)pat);
   char* const  regx = (char*)malloc(len + 2);
@@ -211,7 +212,7 @@ regexp_match(const uint8_t* pat, const char* str)
   const bool ret = pcre_exec(re, NULL, str, strlen(str), 0, 0, NULL, 0) >= 0;
   pcre_free(re);
   return ret;
-#endif // HAVE_PCRE
+#endif // USE_PCRE
   return true;
 }
 
@@ -785,7 +786,7 @@ main(int argc, char** argv)
   URI(xsd, pattern);
   URI(xsd, string);
 
-#ifndef HAVE_PCRE
+#if !USE_PCRE
   fprintf(stderr, "warning: Built without PCRE, datatypes not checked.\n");
 #endif
 

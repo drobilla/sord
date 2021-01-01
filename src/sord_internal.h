@@ -22,7 +22,7 @@
 
 #include <stddef.h>
 
-#if defined(__GNUC__) && __GNUC__ > 4
+#if defined(__clang__) || (defined(__GNUC__) && __GNUC__ > 4)
 #  define SORD_UNREACHABLE() __builtin_unreachable()
 #else
 #  include <assert.h>

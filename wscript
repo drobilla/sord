@@ -197,7 +197,7 @@ def build(bld):
                   install_path    = '${LIBDIR}',
                   libs            = libs,
                   uselib          = 'SERD',
-                  defines         = defines + ['SORD_SHARED', 'SORD_INTERNAL'],
+                  defines         = defines + ['SORD_INTERNAL'],
                   cflags          = libflags)
 
     # Static Library
@@ -212,7 +212,7 @@ def build(bld):
                   install_path    = '${LIBDIR}',
                   libs            = libs,
                   uselib          = 'SERD',
-                  defines         = ['SORD_INTERNAL'])
+                  defines         = ['SORD_STATIC', 'SORD_INTERNAL'])
 
     if bld.env.BUILD_TESTS:
         test_libs      = libs
@@ -229,7 +229,7 @@ def build(bld):
                   name         = 'libsord_profiled',
                   target       = 'sord_profiled',
                   install_path = '',
-                  defines      = defines,
+                  defines      = defines + ['SORD_STATIC', 'SORD_INTERNAL'],
                   cflags       = test_cflags,
                   linkflags    = test_linkflags,
                   lib          = test_libs,
@@ -243,7 +243,7 @@ def build(bld):
                   lib          = test_libs,
                   target       = 'sord_test',
                   install_path = '',
-                  defines      = defines,
+                  defines      = defines + ['SORD_STATIC'],
                   cflags       = test_cflags,
                   linkflags    = test_linkflags,
                   uselib       = 'SERD')
@@ -256,7 +256,7 @@ def build(bld):
                   lib          = test_libs,
                   target       = 'sordi_static',
                   install_path = '',
-                  defines      = defines,
+                  defines      = defines + ['SORD_STATIC'],
                   cflags       = test_cflags,
                   linkflags    = test_linkflags,
                   uselib       = 'SERD')
@@ -270,7 +270,7 @@ def build(bld):
                       lib          = test_libs,
                       target       = 'sordmm_test',
                       install_path = '',
-                      defines      = defines,
+                      defines      = defines + ['SORD_STATIC'],
                       cxxflags     = test_cflags,
                       linkflags    = test_linkflags,
                       uselib       = 'SERD')

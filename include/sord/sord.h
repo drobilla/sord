@@ -27,19 +27,12 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#ifdef SORD_SHARED
-#  ifdef _WIN32
-#    define SORD_LIB_IMPORT __declspec(dllimport)
-#    define SORD_LIB_EXPORT __declspec(dllexport)
-#  else
-#    define SORD_LIB_IMPORT __attribute__((visibility("default")))
-#    define SORD_LIB_EXPORT __attribute__((visibility("default")))
-#  endif
-#  ifdef SORD_INTERNAL
-#    define SORD_API SORD_LIB_EXPORT
-#  else
-#    define SORD_API SORD_LIB_IMPORT
-#  endif
+#if defined(_WIN32) && !defined(SORD_STATIC) && defined(SORD_INTERNAL)
+#  define SORD_API __declspec(dllexport)
+#elif defined(_WIN32) && !defined(SORD_STATIC)
+#  define SORD_API __declspec(dllimport)
+#elif defined(__GNUC__)
+#  define SORD_API __attribute__((visibility("default")))
 #else
 #  define SORD_API
 #endif

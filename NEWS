@@ -1,11 +1,11 @@
-sord (0.16.7) unstable;
+sord (0.16.8) stable;
 
   * Clean up code
   * Fix potential undefined behavior
   * Fix potentially incorrect search results
   * Remove the need for a generated configuration header
 
- -- David Robillard <d@drobilla.net>  Fri, 01 Jan 2021 16:59:03 +0000
+ -- David Robillard <d@drobilla.net>  Thu, 07 Jan 2021 21:33:53 +0000
 
 sord (0.16.6) stable;
 

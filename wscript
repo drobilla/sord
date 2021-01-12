@@ -11,7 +11,7 @@ from waflib.extras import autowaf
 # major increment <=> incompatible changes
 # minor increment <=> compatible changes (additions)
 # micro increment <=> no interface changes
-SORD_VERSION       = '0.16.8'
+SORD_VERSION       = '0.16.9'
 SORD_MAJOR_VERSION = '0'
 
 # Mandatory waf variables

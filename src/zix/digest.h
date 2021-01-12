@@ -29,7 +29,8 @@ extern "C" {
 /**
    Return an initial empty digest value.
 */
-ZIX_CONST_API uint32_t
+ZIX_CONST_API
+uint32_t
 zix_digest_start(void);
 
 /**
@@ -37,7 +38,8 @@ zix_digest_start(void);
 
    This can be used for any size or alignment.
 */
-ZIX_PURE_API uint32_t
+ZIX_PURE_API
+uint32_t
 zix_digest_add(uint32_t hash, const void* buf, size_t len);
 
 /**
@@ -45,7 +47,8 @@ zix_digest_add(uint32_t hash, const void* buf, size_t len);
 
    Both `buf` and `len` must be evenly divisible by 8 (64 bits).
 */
-ZIX_PURE_API uint32_t
+ZIX_PURE_API
+uint32_t
 zix_digest_add_64(uint32_t hash, const void* buf, size_t len);
 
 /**
@@ -53,11 +56,12 @@ zix_digest_add_64(uint32_t hash, const void* buf, size_t len);
 
    This hashes the value of the pointer itself, and does not dereference `ptr`.
 */
-ZIX_CONST_API uint32_t
+ZIX_CONST_API
+uint32_t
 zix_digest_add_ptr(uint32_t hash, const void* ptr);
 
 #ifdef __cplusplus
-}  /* extern "C" */
+} /* extern "C" */
 #endif
 
-#endif  /* ZIX_DIGEST_H */
+#endif /* ZIX_DIGEST_H */

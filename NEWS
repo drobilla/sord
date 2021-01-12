@@ -1,3 +1,9 @@
+sord (0.16.9) unstable;
+
+  * Fix potential crash or incorrectness issue with GCC 10 again
+
+ -- David Robillard <d@drobilla.net>  Tue, 12 Jan 2021 14:17:39 +0000
+
 sord (0.16.8) stable;
 
   * Clean up code

@@ -1,5 +1,5 @@
 /*
-  Copyright 2011-2016 David Robillard <d@drobilla.net>
+  Copyright 2011-2020 David Robillard <d@drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -54,27 +54,29 @@ typedef struct ZixBTreeIterImpl ZixBTreeIter;
 /**
    Create a new (empty) B-Tree.
 */
-ZIX_API ZixBTree*
-zix_btree_new(ZixComparator  cmp,
-              const void*    cmp_data,
-              ZixDestroyFunc destroy);
+ZIX_API
+ZixBTree*
+zix_btree_new(ZixComparator cmp, const void* cmp_data, ZixDestroyFunc destroy);
 
 /**
    Free `t`.
 */
-ZIX_API void
+ZIX_API
+void
 zix_btree_free(ZixBTree* t);
 
 /**
    Return the number of elements in `t`.
 */
-ZIX_PURE_API size_t
+ZIX_PURE_API
+size_t
 zix_btree_size(const ZixBTree* t);
 
 /**
    Insert the element `e` into `t`.
 */
-ZIX_API ZixStatus
+ZIX_API
+ZixStatus
 zix_btree_insert(ZixBTree* t, void* e);
 
 /**
@@ -90,14 +92,16 @@ zix_btree_insert(ZixBTree* t, void* e);
    also non-NULL, the iterator is reused, otherwise a new one is allocated.  To
    reuse an iterator, no items may have been added since its creation.
 */
-ZIX_API ZixStatus
+ZIX_API
+ZixStatus
 zix_btree_remove(ZixBTree* t, const void* e, void** out, ZixBTreeIter** next);
 
 /**
    Set `ti` to an element equal to `e` in `t`.
    If no such item exists, `ti` is set to NULL.
 */
-ZIX_API ZixStatus
+ZIX_API
+ZixStatus
 zix_btree_find(const ZixBTree* t, const void* e, ZixBTreeIter** ti);
 
 /**
@@ -107,13 +111,15 @@ zix_btree_find(const ZixBTree* t, const void* e, ZixBTreeIter** ti);
    values in the tree, `ti` will be set to the least such element.  The search
    key `e` is always passed as the second argument to the comparator.
 */
-ZIX_API ZixStatus
+ZIX_API
+ZixStatus
 zix_btree_lower_bound(const ZixBTree* t, const void* e, ZixBTreeIter** ti);
 
 /**
    Return the data associated with the given tree item.
 */
-ZIX_PURE_API void*
+ZIX_PURE_API
+void*
 zix_btree_get(const ZixBTreeIter* ti);
 
 /**
@@ -121,7 +127,8 @@ zix_btree_get(const ZixBTreeIter* ti);
 
    The returned iterator must be freed with zix_btree_iter_free().
 */
-ZIX_PURE_API ZixBTreeIter*
+ZIX_PURE_API
+ZixBTreeIter*
 zix_btree_begin(const ZixBTree* t);
 
 /**
@@ -129,37 +136,43 @@ zix_btree_begin(const ZixBTree* t);
 
    The returned iterator must be freed with zix_btree_iter_free().
 */
-ZIX_API ZixBTreeIter*
+ZIX_API
+ZixBTreeIter*
 zix_btree_end(const ZixBTree* t);
 
 /**
    Return a new copy of `i`.
 */
-ZIX_API ZixBTreeIter*
+ZIX_API
+ZixBTreeIter*
 zix_btree_iter_copy(const ZixBTreeIter* i);
 
 /**
    Return true iff `lhs` is equal to `rhs`.
 */
-ZIX_PURE_API bool
+ZIX_PURE_API
+bool
 zix_btree_iter_equals(const ZixBTreeIter* lhs, const ZixBTreeIter* rhs);
 
 /**
    Return true iff `i` is an iterator to the end of its tree.
 */
-ZIX_PURE_API bool
+ZIX_PURE_API
+bool
 zix_btree_iter_is_end(const ZixBTreeIter* i);
 
 /**
    Increment `i` to point to the next element in the tree.
 */
-ZIX_API void
+ZIX_API
+void
 zix_btree_iter_increment(ZixBTreeIter* i);
 
 /**
    Free `i`.
 */
-ZIX_API void
+ZIX_API
+void
 zix_btree_iter_free(ZixBTreeIter* i);
 
 /**
@@ -168,7 +181,7 @@ zix_btree_iter_free(ZixBTreeIter* i);
 */
 
 #ifdef __cplusplus
-}  /* extern "C" */
+} /* extern "C" */
 #endif
 
-#endif  /* ZIX_BTREE_H */
+#endif /* ZIX_BTREE_H */

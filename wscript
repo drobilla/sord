@@ -35,6 +35,7 @@ def options(ctx):
         {'no-utils':     'do not build command line utilities',
          'static':       'build static library',
          'no-shared':    'do not build shared library',
+         'no-threads':   'disable threads',
          'static-progs': 'build programs as static binaries'})
 
     opt.add_option('--dump', type='string', default='', dest='dump',
@@ -55,6 +56,7 @@ def configure(conf):
 
     conf.env.BUILD_UTILS  = not Options.options.no_utils
     conf.env.BUILD_SHARED = not Options.options.no_shared
+    conf.env.ENABLE_THREADS = not Options.options.no_threads
     conf.env.STATIC_PROGS = Options.options.static_progs
     conf.env.BUILD_STATIC = (Options.options.static or
                              Options.options.static_progs)
@@ -124,7 +126,7 @@ def configure(conf):
     conf.check_pkg('serd-0 >= 0.30.0', uselib_store='SERD')
     conf.check_pkg('libpcre', uselib_store='PCRE', mandatory=False)
 
-    if conf.env.HAVE_PCRE:
+    if conf.env.HAVE_PCRE and conf.env.ENABLE_THREADS:
         if conf.check(cflags=['-pthread'], mandatory=False):
             conf.env.PTHREAD_CFLAGS    = ['-pthread']
             if conf.env.CC_NAME != 'clang':
@@ -160,6 +162,7 @@ def configure(conf):
         conf,
         {'Static library': bool(conf.env.BUILD_STATIC),
          'Shared library': bool(conf.env.BUILD_SHARED),
+         'Threads':        bool(conf.env.ENABLE_THREADS),
          'Utilities':      bool(conf.env.BUILD_UTILS),
          'Unit tests':     bool(conf.env.BUILD_TESTS),
          'Debug dumping':  dump})

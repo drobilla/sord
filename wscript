@@ -276,7 +276,7 @@ def build(bld):
                       lib          = test_libs,
                       target       = 'sordmm_test',
                       install_path = '',
-                      defines      = defines + ['SORD_STATIC', 'ZIX_STATIIC'],
+                      defines      = defines + ['SORD_STATIC', 'ZIX_STATIC'],
                       cxxflags     = test_cflags,
                       linkflags    = test_linkflags,
                       uselib       = 'SERD')

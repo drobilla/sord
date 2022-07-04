@@ -751,6 +751,8 @@ sord_node_free_internal(SordWorld* world, SordNode* node)
 static void
 sord_add_quad_ref(SordModel* model, const SordNode* node, SordQuadIndex i)
 {
+  (void)model;
+
   if (node) {
     assert(node->refs > 0);
     ++((SordNode*)node)->refs;

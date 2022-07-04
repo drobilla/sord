@@ -371,6 +371,8 @@ test_read(SordWorld* world, SordModel* sord, SordNode* g, const size_t n_quads)
 static SerdStatus
 unexpected_error(void* handle, const SerdError* error)
 {
+  (void)handle;
+
   fprintf(stderr, "unexpected error: ");
   vfprintf(stderr, error->fmt, *error->args);
   return SERD_SUCCESS;
@@ -379,6 +381,8 @@ unexpected_error(void* handle, const SerdError* error)
 static SerdStatus
 expected_error(void* handle, const SerdError* error)
 {
+  (void)handle;
+
   fprintf(stderr, "expected error: ");
   vfprintf(stderr, error->fmt, *error->args);
   ++n_expected_errors;
@@ -394,7 +398,7 @@ finished(SordWorld* world, SordModel* sord, int status)
 }
 
 int
-main(int argc, char** argv)
+main(void)
 {
   static const size_t n_quads = 300;
 

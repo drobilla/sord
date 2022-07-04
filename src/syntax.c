@@ -66,6 +66,8 @@ sord_inserter_write_statement(SordInserter*      inserter,
                               const SerdNode*    object_datatype,
                               const SerdNode*    object_lang)
 {
+  (void)flags;
+
   SordWorld* world = sord_get_world(inserter->model);
   SerdEnv*   env   = inserter->env;
 

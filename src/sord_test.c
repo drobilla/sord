@@ -30,8 +30,8 @@
 #  define SORD_LOG_FUNC(fmt, arg1)
 #endif
 
-static const int      DIGITS        = 3;
-static const unsigned n_objects_per = 2;
+#define DIGITS 3
+#define N_OBJECTS_PER 2U
 
 static int n_expected_errors = 0;
 
@@ -73,24 +73,24 @@ generate(SordWorld* world, SordModel* sord, size_t n_quads, SordNode* graph)
   fprintf(stderr,
           "Generating %zu (S P *) quads with %u objects each\n",
           n_quads,
-          n_objects_per);
+          N_OBJECTS_PER);
 
   for (size_t i = 0; i < n_quads; ++i) {
-    int num = (i * n_objects_per) + 1;
+    int num = (i * N_OBJECTS_PER) + 1;
 
-    SordNode* ids[2 + n_objects_per];
-    for (unsigned j = 0; j < 2 + n_objects_per; ++j) {
+    SordNode* ids[2 + N_OBJECTS_PER];
+    for (unsigned j = 0; j < 2 + N_OBJECTS_PER; ++j) {
       ids[j] = uri(world, num++);
     }
 
-    for (unsigned j = 0; j < n_objects_per; ++j) {
+    for (unsigned j = 0; j < N_OBJECTS_PER; ++j) {
       SordQuad tup = {ids[0], ids[1], ids[2 + j], graph};
       if (!sord_add(sord, tup)) {
         return test_fail("Fail: Failed to add quad\n");
       }
     }
 
-    for (unsigned j = 0; j < 2 + n_objects_per; ++j) {
+    for (unsigned j = 0; j < 2 + N_OBJECTS_PER; ++j) {
       sord_node_free(world, ids[j]);
     }
   }
@@ -219,7 +219,7 @@ test_read(SordWorld* world, SordModel* sord, SordNode* g, const size_t n_quads)
 #define NUM_PATTERNS 18
 
   QueryTest patterns[NUM_PATTERNS] = {
-    {{0, 0, 0}, (int)(n_quads * n_objects_per) + 12},
+    {{0, 0, 0}, (int)(n_quads * N_OBJECTS_PER) + 12},
     {{uri(world, 1), 0, 0}, 2},
     {{uri(world, 9), uri(world, 9), uri(world, 9)}, 0},
     {{uri(world, 1), uri(world, 2), uri(world, 4)}, 1},
@@ -343,12 +343,12 @@ test_read(SordWorld* world, SordModel* sord, SordNode* g, const size_t n_quads)
       ++num_sub_results;
     }
     sord_iter_free(subiter);
-    if (num_sub_results != n_objects_per) {
+    if (num_sub_results != N_OBJECTS_PER) {
       return test_fail("Fail: Nested query " TUP_FMT " failed"
                        " (%u results, expected %u)\n",
                        TUP_FMT_ARGS(subpat),
                        num_sub_results,
-                       n_objects_per);
+                       N_OBJECTS_PER);
     }
 
     uint64_t count = sord_count(sord, id[0], 0, 0, 0);

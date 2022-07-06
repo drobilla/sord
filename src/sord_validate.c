@@ -29,9 +29,9 @@
 #  include <windows.h>
 #endif
 
+#include <inttypes.h>
 #include <stdarg.h>
 #include <stdbool.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -209,7 +209,8 @@ regexp_match(const uint8_t* pat, const char* str)
     return false;
   }
 
-  const bool ret = pcre_exec(re, NULL, str, strlen(str), 0, 0, NULL, 0) >= 0;
+  const bool ret =
+    pcre_exec(re, NULL, str, (int)strlen(str), 0, 0, NULL, 0) >= 0;
   pcre_free(re);
   return ret;
 #endif // USE_PCRE
@@ -496,18 +497,19 @@ check_properties(SordModel* model, URIs* uris)
 
     if (is_FunctionalProperty) {
       SordIter*      o = sord_search(model, subj, pred, NULL, NULL);
-      const unsigned n = count_non_blanks(o, SORD_OBJECT);
+      const uint64_t n = count_non_blanks(o, SORD_OBJECT);
       if (n > 1) {
-        st = errorf(quad, "Functional property with %u objects", n);
+        st = errorf(quad, "Functional property with %" PRIu64 " objects", n);
       }
       sord_iter_free(o);
     }
 
     if (is_InverseFunctionalProperty) {
       SordIter*      s = sord_search(model, NULL, pred, obj, NULL);
-      const unsigned n = count_non_blanks(s, SORD_SUBJECT);
+      const uint64_t n = count_non_blanks(s, SORD_SUBJECT);
       if (n > 1) {
-        st = errorf(quad, "Inverse functional property with %u subjects", n);
+        st = errorf(
+          quad, "Inverse functional property with %" PRIu64 " subjects", n);
       }
       sord_iter_free(s);
     }
@@ -564,7 +566,8 @@ check_instance(SordModel*      model,
     return 0;
   }
 
-  const unsigned values = sord_count(model, instance, prop, NULL, NULL);
+  const unsigned values =
+    (unsigned)sord_count(model, instance, prop, NULL, NULL);
 
   // Check exact cardinality
   const SordNode* card =

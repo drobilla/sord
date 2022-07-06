@@ -1351,7 +1351,7 @@ sord_erase(SordModel* model, SordIter* iter)
       if (zix_btree_remove(model->indices[i],
                            tup,
                            (void**)&quad,
-                           i == iter->order ? &iter->cur : NULL)) {
+                           (SordOrder)i == iter->order ? &iter->cur : NULL)) {
         return (i == 0) ? SERD_ERR_NOT_FOUND : SERD_ERR_INTERNAL;
       }
     }

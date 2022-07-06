@@ -43,15 +43,14 @@ typedef struct {
 #define USTR(s) ((const uint8_t*)(s))
 
 static SordNode*
-uri(SordWorld* world, int num)
+uri(SordWorld* world, unsigned num)
 {
   if (num == 0) {
     return 0;
   }
 
-  char  str[]   = "eg:000";
-  char* uri_num = str + 3; // First `0'
-  snprintf(uri_num, DIGITS + 1, "%0*d", DIGITS, num);
+  char str[16];
+  snprintf(str, sizeof(str), "eg:%0*u", DIGITS, num);
   return sord_new_uri(world, (const uint8_t*)str);
 }
 
@@ -68,15 +67,15 @@ test_fail(const char* fmt, ...)
 }
 
 static int
-generate(SordWorld* world, SordModel* sord, size_t n_quads, SordNode* graph)
+generate(SordWorld* world, SordModel* sord, unsigned n_quads, SordNode* graph)
 {
   fprintf(stderr,
-          "Generating %zu (S P *) quads with %u objects each\n",
+          "Generating %u (S P *) quads with %u objects each\n",
           n_quads,
           N_OBJECTS_PER);
 
-  for (size_t i = 0; i < n_quads; ++i) {
-    int num = (i * N_OBJECTS_PER) + 1;
+  for (unsigned i = 0; i < n_quads; ++i) {
+    unsigned num = (i * N_OBJECTS_PER) + 1;
 
     SordNode* ids[2 + N_OBJECTS_PER];
     for (unsigned j = 0; j < 2 + N_OBJECTS_PER; ++j) {
@@ -400,7 +399,7 @@ finished(SordWorld* world, SordModel* sord, int status)
 int
 main(void)
 {
-  static const size_t n_quads = 300;
+  static const unsigned n_quads = 300U;
 
   sord_free(NULL); // Shouldn't crash
 

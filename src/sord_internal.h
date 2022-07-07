@@ -24,9 +24,10 @@
 
 #if defined(__clang__) || (defined(__GNUC__) && __GNUC__ > 4)
 #  define SORD_UNREACHABLE() __builtin_unreachable()
+#elif defined(_MSC_VER)
+#  define SORD_UNREACHABLE() __assume(0)
 #else
-#  include <assert.h>
-#  define SORD_UNREACHABLE() assert(0)
+#  define SORD_UNREACHABLE()
 #endif
 
 /** Resource node metadata */

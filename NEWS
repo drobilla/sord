@@ -1,4 +1,4 @@
-sord (0.16.11) unstable;
+sord (0.16.12) stable;
 
   * Fix various warnings
   * Switch to meson build system

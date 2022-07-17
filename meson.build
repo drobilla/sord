@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: CC0-1.0 OR ISC
 
 project('sord', ['c'],
-        version: '0.16.11',
+        version: '0.16.12',
         license: 'ISC',
         meson_version: '>= 0.56.0',
         default_options: [

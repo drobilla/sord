@@ -20,7 +20,7 @@
 #include "serd/serd.h"
 #include "sord/sord.h"
 
-#define ZIX_INLINE
+#define ZIX_STATIC
 #include "zix/btree.c"
 #include "zix/btree.h"
 #include "zix/common.h"

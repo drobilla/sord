@@ -1,8 +1,9 @@
 sord (0.16.11) unstable;
 
   * Fix various warnings
+  * Switch to meson build system
 
- -- David Robillard <d@drobilla.net>  Sun, 17 Jul 2022 21:21:11 +0000
+ -- David Robillard <d@drobilla.net>  Sun, 17 Jul 2022 21:22:04 +0000
 
 sord (0.16.10) stable;
 

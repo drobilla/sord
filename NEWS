@@ -1,18 +1,18 @@
-sord (0.16.12) stable;
+sord (0.16.12) stable; urgency=medium
 
   * Fix various warnings
   * Switch to meson build system
 
  -- David Robillard <d@drobilla.net>  Sun, 17 Jul 2022 21:22:04 +0000
 
-sord (0.16.10) stable;
+sord (0.16.10) stable; urgency=medium
 
   * Fix Windows build
   * Fix potential crash or incorrectness issue with GCC 10 again
 
  -- David Robillard <d@drobilla.net>  Thu, 26 May 2022 23:22:39 +0000
 
-sord (0.16.8) stable;
+sord (0.16.8) stable; urgency=medium
 
   * Clean up code
   * Fix potential undefined behavior
@@ -21,20 +21,20 @@ sord (0.16.8) stable;
 
  -- David Robillard <d@drobilla.net>  Thu, 07 Jan 2021 21:33:53 +0000
 
-sord (0.16.6) stable;
+sord (0.16.6) stable; urgency=medium
 
   * Fix potential crash or incorrectness issues with GCC 10
   * Fix various minor warnings and other code quality issues
 
  -- David Robillard <d@drobilla.net>  Sun, 27 Sep 2020 11:08:18 +0000
 
-sord (0.16.4) stable;
+sord (0.16.4) stable; urgency=medium
 
   * Update build system
 
  -- David Robillard <d@drobilla.net>  Sun, 10 Nov 2019 21:26:16 +0000
 
-sord (0.16.2) stable;
+sord (0.16.2) stable; urgency=medium
 
   * sord_validate: Add support for maximum cardinality
   * sord_validate: Fix restriction count reporting
@@ -44,7 +44,7 @@ sord (0.16.2) stable;
 
  -- David Robillard <d@drobilla.net>  Sun, 22 Jul 2018 18:38:03 +0000
 
-sord (0.16.0) stable;
+sord (0.16.0) stable; urgency=medium
 
   * Add sord_node_get_string_measured() to get both byte and character counts
   * Fix construction and comparison of URIs with UTF-8 characters
@@ -59,7 +59,7 @@ sord (0.16.0) stable;
 
  -- David Robillard <d@drobilla.net>  Tue, 20 Sep 2016 02:23:17 +0000
 
-sord (0.14.0) stable;
+sord (0.14.0) stable; urgency=medium
 
   * Add sord_erase() for erasing statements via an iterator
   * Fix bugs with stores that contain both graphs and default graph statements
@@ -78,7 +78,7 @@ sord (0.14.0) stable;
 
  -- David Robillard <d@drobilla.net>  Thu, 08 Oct 2015 19:37:36 +0000
 
-sord (0.12.2) stable;
+sord (0.12.2) stable; urgency=medium
 
   * Fix iteration over an entire graph (* * * graph)
   * Update to waf 1.7.16
@@ -86,7 +86,7 @@ sord (0.12.2) stable;
 
  -- David Robillard <d@drobilla.net>  Fri, 08 Aug 2014 22:03:02 +0000
 
-sord (0.12.0) stable;
+sord (0.12.0) stable; urgency=medium
 
   * Add sord_get() for easily getting single property values
   * Update to waf 1.7.9 and autowaf r90 (install docs to versioned directory)
@@ -98,7 +98,7 @@ sord (0.12.0) stable;
 
  -- David Robillard <d@drobilla.net>  Mon, 18 Feb 2013 16:05:59 +0000
 
-sord (0.10.4) stable;
+sord (0.10.4) stable; urgency=medium
 
   * Disable timestamps in HTML documentation for reproducible build
   * Fix memory leaks in sord_validate
@@ -108,7 +108,7 @@ sord (0.10.4) stable;
 
  -- David Robillard <d@drobilla.net>  Sun, 14 Oct 2012 22:23:55 +0000
 
-sord (0.10.0) stable;
+sord (0.10.0) stable; urgency=medium
 
   * Add error callback to world for custom error reporting
   * Add option to build utilities as static binaries
@@ -126,7 +126,7 @@ sord (0.10.0) stable;
 
  -- David Robillard <d@drobilla.net>  Thu, 23 Aug 2012 04:19:51 +0000
 
-sord (0.8.0) stable;
+sord (0.8.0) stable; urgency=medium
 
   * Add SordInserter for writing to a model via Serd sink functions.
   * Add convenient sord_search(), sord_ask(), and sord_count()
@@ -143,7 +143,7 @@ sord (0.8.0) stable;
 
  -- David Robillard <d@drobilla.net>  Tue, 17 Apr 2012 22:24:53 +0000
 
-sord (0.5.0) stable;
+sord (0.5.0) stable; urgency=medium
 
   * Add ability to build static library
   * Add function sord_contains for checking for a triple pattern
@@ -153,7 +153,7 @@ sord (0.5.0) stable;
 
  -- David Robillard <d@drobilla.net>  Thu, 29 Sep 2011 04:00:00 +0000
 
-sord (0.4.2) stable;
+sord (0.4.2) stable; urgency=medium
 
   * Bump Serd dependency to 0.4.0
   * Fix build system Python 3 compatibility
@@ -161,7 +161,7 @@ sord (0.4.2) stable;
 
  -- David Robillard <d@drobilla.net>  Wed, 25 May 2011 23:00:00 +0000
 
-sord (0.4.0) stable;
+sord (0.4.0) stable; urgency=medium
 
   * Initial release
 

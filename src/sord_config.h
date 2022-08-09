@@ -29,7 +29,7 @@
 #define SORD_CONFIG_H
 
 // Define version unconditionally so a warning will catch a mismatch
-#define SORD_VERSION "0.16.12"
+#define SORD_VERSION "0.16.13"
 
 #if !defined(SORD_NO_DEFAULT_CONFIG)
 

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: CC0-1.0 OR ISC
 
 project('sord', ['c'],
-        version: '0.16.12',
+        version: '0.16.13',
         license: 'ISC',
         meson_version: '>= 0.56.0',
         default_options: [
@@ -114,14 +114,18 @@ if not get_option('tools').disabled()
                      install: true,
                      dependencies: sord_dep)
 
+  meson.override_find_program('sordi', sordi)
+
   pcre_dep = dependency('libpcre', required: false)
 
   if pcre_dep.found()
-    sordi = executable('sord_validate',
-                       files('src/sord_validate.c'),
-                       c_args: c_suppressions,
-                       install: true,
-                       dependencies: [sord_dep, pcre_dep])
+    sord_validate = executable('sord_validate',
+                               files('src/sord_validate.c'),
+                               c_args: c_suppressions,
+                               install: true,
+                               dependencies: [sord_dep, pcre_dep])
+
+    meson.override_find_program('sord_validate', sord_validate)
   endif
 
   if not get_option('docs').disabled()

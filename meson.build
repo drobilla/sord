@@ -42,7 +42,7 @@ endif
 m_dep = cc.find_library('m', required: false)
 
 serd_dep = dependency('serd-0',
-                      version: '>= 0.30.9',
+                      version: '>= 0.30.10',
                       fallback: ['serd', 'serd_dep'])
 
 ###########

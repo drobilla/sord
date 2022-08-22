@@ -1,5 +1,3 @@
-autoship = find_program('autoship', required: false)
-
 unit_tests = [
   'sord',
 ]
@@ -17,6 +15,10 @@ foreach unit : unit_tests
   )
 endforeach
 
-if autoship.found()
-  test('autoship', autoship, args: ['test', sord_src_root], suite: 'data')
+if get_option('strict') and not meson.is_subproject()
+  # Check release metadata
+  autoship = find_program('autoship', required: false)
+  if autoship.found()
+    test('autoship', autoship, args: ['test', sord_src_root], suite: 'data')
+  endif
 endif

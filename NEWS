@@ -1,8 +1,9 @@
 sord (0.16.13) unstable; urgency=medium
 
+  * Adopt REUSE machine-readable licensing standard
   * Allow programs to be used from subproject
 
- -- David Robillard <d@drobilla.net>  Tue, 09 Aug 2022 13:35:21 +0000
+ -- David Robillard <d@drobilla.net>  Thu, 01 Sep 2022 23:19:58 +0000
 
 sord (0.16.12) stable; urgency=medium
 

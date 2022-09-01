@@ -1,3 +1,6 @@
+<!-- Copyright 2011-2013 David Robillard <d@drobilla.net> -->
+<!-- SPDX-License-Identifier: ISC -->
+
 Sord
 ====
 

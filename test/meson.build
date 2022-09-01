@@ -1,3 +1,30 @@
+# Copyright 2021-2022 David Robillard <d@drobilla.net>
+# SPDX-License-Identifier: CC0-1.0 OR ISC
+
+####################
+# Project Metadata #
+####################
+
+# Check release metadata
+if get_option('strict') and not meson.is_subproject()
+  autoship = find_program('autoship', required: false)
+  if autoship.found()
+    test('autoship', autoship, args: ['test', sord_src_root], suite: 'data')
+  endif
+endif
+
+# Check licensing metadata
+reuse = find_program('reuse', required: false)
+if reuse.found()
+  test('REUSE', reuse,
+       args: ['--root', sord_src_root, 'lint'],
+       suite: 'data')
+endif
+
+##############
+# Unit Tests #
+##############
+
 unit_tests = [
   'sord',
 ]
@@ -14,11 +41,3 @@ foreach unit : unit_tests
     suite: 'unit',
   )
 endforeach
-
-if get_option('strict') and not meson.is_subproject()
-  # Check release metadata
-  autoship = find_program('autoship', required: false)
-  if autoship.found()
-    test('autoship', autoship, args: ['test', sord_src_root], suite: 'data')
-  endif
-endif

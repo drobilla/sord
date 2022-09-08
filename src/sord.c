@@ -7,7 +7,7 @@
 #include "serd/serd.h"
 #include "sord/sord.h"
 
-#define ZIX_STATIC
+#define ZIX_API
 #include "zix/btree.c"
 #include "zix/btree.h"
 #include "zix/common.h"

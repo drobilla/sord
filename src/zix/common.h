@@ -12,14 +12,16 @@
 */
 
 /** @cond */
-#if defined(_WIN32) && !defined(ZIX_STATIC) && defined(ZIX_INTERNAL)
-#  define ZIX_API __declspec(dllexport)
-#elif defined(_WIN32) && !defined(ZIX_STATIC)
-#  define ZIX_API __declspec(dllimport)
-#elif defined(__GNUC__)
-#  define ZIX_API __attribute__((visibility("default")))
-#else
-#  define ZIX_API
+#ifndef ZIX_API
+#  if defined(_WIN32) && !defined(ZIX_STATIC) && defined(ZIX_INTERNAL)
+#    define ZIX_API __declspec(dllexport)
+#  elif defined(_WIN32) && !defined(ZIX_STATIC)
+#    define ZIX_API __declspec(dllimport)
+#  elif defined(__GNUC__)
+#    define ZIX_API __attribute__((visibility("default")))
+#  else
+#    define ZIX_API
+#  endif
 #endif
 
 #ifdef __GNUC__

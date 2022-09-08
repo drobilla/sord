@@ -11,9 +11,9 @@ License: BSD-3-Clause
 Files: AUTHORS NEWS
 Copyright: 2011-2022 David Robillard <d@drobilla.net>
 Comment: Contributed to the Commons as a representation of simple facts
-License: CC0-1.0 OR ISC
+License: 0BSD OR ISC
 
 Files: .clant.json .includes.imp
 Copyright: 2020 David Robillard <d@drobilla.net>
 Comment: Contributed to the Commons as a tool configuration
-License: CC0-1.0 OR ISC
+License: 0BSD OR ISC

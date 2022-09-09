@@ -1,10 +1,10 @@
-sord (0.16.13) unstable; urgency=medium
+sord (0.16.14) stable; urgency=medium
 
   * Adopt REUSE machine-readable licensing standard
   * Allow programs to be used from subproject
   * Fix accidentally exposed internal zix symbols
 
- -- David Robillard <d@drobilla.net>  Thu, 08 Sep 2022 13:01:44 +0000
+ -- David Robillard <d@drobilla.net>  Fri, 09 Sep 2022 03:07:46 +0000
 
 sord (0.16.12) stable; urgency=medium
 

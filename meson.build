@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: 0BSD OR ISC
 
 project('sord', ['c'],
-        version: '0.16.14',
+        version: '0.16.15',
         license: 'ISC',
         meson_version: '>= 0.56.0',
         default_options: [
@@ -94,6 +94,7 @@ pkg.generate(
   extra_cflags: extra_c_args,
   filebase: versioned_name,
   name: 'Sord',
+  requires: ['serd-0'],
   subdirs: [versioned_name],
   version: meson.project_version(),
 )

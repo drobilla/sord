@@ -41,9 +41,7 @@ endif
 
 m_dep = cc.find_library('m', required: false)
 
-serd_dep = dependency('serd-0',
-                      version: '>= 0.30.10',
-                      fallback: ['serd', 'serd_dep'])
+serd_dep = dependency('serd-0', version: '>= 0.30.10')
 
 ###########
 # Library #
@@ -98,6 +96,9 @@ pkg.generate(
   subdirs: [versioned_name],
   version: meson.project_version(),
 )
+
+# Override pkg-config dependency for internal meson dependants
+meson.override_dependency(versioned_name, sord_dep)
 
 # Install headers to a versioned include directory
 install_headers(c_headers, subdir: versioned_name / 'sord')

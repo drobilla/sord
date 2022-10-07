@@ -8,8 +8,9 @@
 #include "sord/sord.h"
 #include "sord_config.h"
 
-#if USE_PCRE
-#  include <pcre.h>
+#if USE_PCRE2
+#  define PCRE2_CODE_UNIT_WIDTH 8
+#  include <pcre2.h>
 #endif
 
 #ifdef _WIN32
@@ -176,31 +177,43 @@ is_descendant_of(SordModel*      model,
 }
 
 static bool
-regexp_match(const uint8_t* pat, const char* str)
+regexp_match(const uint8_t* const pattern, const char* const str)
 {
-#if USE_PCRE
-  // Append a $ to the pattern so we only match if the entire string matches
-  const size_t len  = strlen((const char*)pat);
-  char* const  regx = (char*)malloc(len + 2);
-  memcpy(regx, pat, len);
-  regx[len]     = '$';
-  regx[len + 1] = '\0';
+#if USE_PCRE2
+  static const uint32_t options = PCRE2_ANCHORED | PCRE2_ENDANCHORED;
 
-  const char* err;
-  int         erroffset;
-  pcre*       re = pcre_compile(regx, PCRE_ANCHORED, &err, &erroffset, NULL);
-  free(regx);
+  int    err       = 0;
+  size_t erroffset = 0U;
+
+  pcre2_code* const re = pcre2_compile(
+    pattern, PCRE2_ZERO_TERMINATED, options, &err, &erroffset, NULL);
+
   if (!re) {
-    fprintf(
-      stderr, "Error in pattern `%s' at offset %d (%s)\n", pat, erroffset, err);
+    fprintf(stderr,
+            "Error in pattern `%s' at offset %lu (%d)\n",
+            pattern,
+            erroffset,
+            err);
     return false;
   }
 
-  const bool ret =
-    pcre_exec(re, NULL, str, (int)strlen(str), 0, 0, NULL, 0) >= 0;
-  pcre_free(re);
-  return ret;
-#endif // USE_PCRE
+  pcre2_match_data* const match_data =
+    pcre2_match_data_create_from_pattern(re, NULL);
+
+  const int rc = pcre2_match(re,
+                             (const uint8_t*)str,
+                             PCRE2_ZERO_TERMINATED,
+                             0,
+                             options,
+                             match_data,
+                             NULL);
+
+  pcre2_match_data_free(match_data);
+
+  pcre2_code_free(re);
+  return rc > 0;
+#endif // USE_PCRE2
+
   return true;
 }
 
@@ -776,8 +789,8 @@ main(int argc, char** argv)
   URI(xsd, pattern);
   URI(xsd, string);
 
-#if !USE_PCRE
-  fprintf(stderr, "warning: Built without PCRE, datatypes not checked.\n");
+#if !USE_PCRE2
+  fprintf(stderr, "warning: Built without PCRE2, datatypes not checked.\n");
 #endif
 
   const int prop_st = check_properties(model, &uris);

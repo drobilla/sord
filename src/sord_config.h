@@ -20,11 +20,11 @@
 
 #if !defined(SORD_NO_DEFAULT_CONFIG)
 
-// The validator uses PCRE for literal pattern matching
-#  ifndef HAVE_PCRE
+// The validator uses PCRE2 for literal pattern matching
+#  ifndef HAVE_PCRE2
 #    ifdef __has_include
-#      if __has_include(<pcre.h>)
-#        define HAVE_PCRE 1
+#      if __has_include(<pcre2.h>)
+#        define HAVE_PCRE2 1
 #      endif
 #    endif
 #  endif
@@ -39,10 +39,10 @@
   if the build system defines them all.
 */
 
-#ifdef HAVE_PCRE
-#  define USE_PCRE 1
+#ifdef HAVE_PCRE2
+#  define USE_PCRE2 1
 #else
-#  define USE_PCRE 0
+#  define USE_PCRE2 0
 #endif
 
 #endif // SORD_CONFIG_H

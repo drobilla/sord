@@ -117,14 +117,14 @@ if not get_option('tools').disabled()
 
   meson.override_find_program('sordi', sordi)
 
-  pcre_dep = dependency('libpcre', required: false)
+  pcre2_dep = dependency('libpcre2-8', required: false)
 
-  if pcre_dep.found()
+  if pcre2_dep.found()
     sord_validate = executable('sord_validate',
                                files('src/sord_validate.c'),
                                c_args: c_suppressions,
                                install: true,
-                               dependencies: [sord_dep, pcre_dep])
+                               dependencies: [sord_dep, pcre2_dep])
 
     meson.override_find_program('sord_validate', sord_validate)
   endif

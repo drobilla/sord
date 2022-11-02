@@ -41,6 +41,7 @@ endif
 
 m_dep = cc.find_library('m', required: false)
 
+zix_dep = dependency('zix-0', version: '>= 0.3.0')
 serd_dep = dependency('serd-0', version: '>= 0.30.10')
 
 ###########
@@ -70,7 +71,7 @@ libsord = library(
     '-DSORD_INTERNAL',
     '-DSORD_VERSION="@0@"'.format(meson.project_version()),
   ],
-  dependencies: [m_dep, serd_dep],
+  dependencies: [m_dep, zix_dep, serd_dep],
   gnu_symbol_visibility: 'hidden',
   include_directories: include_directories('include', 'src'),
   install: true,
@@ -80,7 +81,7 @@ libsord = library(
 # Declare dependency for internal meson dependants
 sord_dep = declare_dependency(
   compile_args: extra_c_args,
-  dependencies: [m_dep, serd_dep],
+  dependencies: [m_dep, zix_dep, serd_dep],
   include_directories: include_directories('include'),
   link_with: libsord,
 )

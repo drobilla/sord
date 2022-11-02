@@ -7,13 +7,13 @@
 #include "serd/serd.h"
 #include "sord/sord.h"
 
-#define ZIX_API
-#include "zix/btree.c"
+#define ZIX_HASH_KEY_TYPE SordNode
+#define ZIX_HASH_RECORD_TYPE SordNode
+#define ZIX_HASH_SEARCH_DATA_TYPE SordWorld
 #include "zix/btree.h"
-#include "zix/common.h"
-#include "zix/digest.c"
-#include "zix/hash.c"
+#include "zix/digest.h"
 #include "zix/hash.h"
+#include "zix/status.h"
 
 #include <assert.h>
 #include <stdarg.h>
@@ -144,7 +144,7 @@ typedef enum {
 /** Iterator over some range of a store */
 struct SordIterImpl {
   const SordModel* sord;        ///< Model being iterated over
-  ZixBTreeIter*    cur;         ///< Current DB cursor
+  ZixBTreeIter     cur;         ///< Current DB cursor
   SordQuad         pat;         ///< Pattern (in ordering order)
   SordOrder        order;       ///< Store order (which index)
   SearchMode       mode;        ///< Iteration mode
@@ -153,32 +153,60 @@ struct SordIterImpl {
   bool             skip_graphs; ///< Iteration should ignore graphs
 };
 
-static uint32_t
-sord_node_hash(const void* n)
+static uint8_t*
+sord_strndup(const uint8_t* str, size_t len)
 {
-  const SordNode* node = (const SordNode*)n;
-  uint32_t        hash = zix_digest_start();
-  hash = zix_digest_add(hash, node->node.buf, node->node.n_bytes);
-  hash = zix_digest_add(hash, &node->node.type, sizeof(node->node.type));
+  uint8_t* dup = (uint8_t*)malloc(len + 1);
+  memcpy(dup, str, len + 1);
+  return dup;
+}
+
+static const SordNode*
+sord_node_record_key(const SordNode* n)
+{
+  return n;
+}
+
+static size_t
+sord_node_hash(const SordNode* const node)
+{
+  size_t hash = 0U;
+
+  hash = zix_digest(hash, node->node.buf, node->node.n_bytes);
+  hash = zix_digest(hash, &node->node.type, sizeof(node->node.type));
   if (node->node.type == SERD_LITERAL) {
-    hash = zix_digest_add(hash, &node->meta.lit, sizeof(node->meta.lit));
+    hash = zix_digest(hash, &node->meta.lit, sizeof(node->meta.lit));
   }
+
   return hash;
 }
 
 static bool
-sord_node_hash_equal(const void* a, const void* b)
+sord_node_hash_equal(const SordNode* const a, const SordNode* const b)
 {
-  const SordNode* a_node = (const SordNode*)a;
-  const SordNode* b_node = (const SordNode*)b;
-  return (a_node == b_node) ||
-         ((a_node->node.type == b_node->node.type) &&
-          (a_node->node.type != SERD_LITERAL ||
-           (a_node->meta.lit.datatype == b_node->meta.lit.datatype &&
-            !strncmp(a_node->meta.lit.lang,
-                     b_node->meta.lit.lang,
-                     sizeof(a_node->meta.lit.lang)))) &&
-          (serd_node_equals(&a_node->node, &b_node->node)));
+  return (a == b) ||
+         ((a->node.type == b->node.type) &&
+          (a->node.type != SERD_LITERAL ||
+           (a->meta.lit.datatype == b->meta.lit.datatype &&
+            !strncmp(
+              a->meta.lit.lang, b->meta.lit.lang, sizeof(a->meta.lit.lang)))) &&
+          (serd_node_equals(&a->node, &b->node)));
+}
+
+static SordNode*
+sord_node_create(const SordNode* const node)
+{
+  SordNode* const copy = node ? (SordNode*)malloc(sizeof(SordNode)) : NULL;
+
+  if (copy) {
+    memcpy(copy, node, sizeof(SordNode));
+    copy->node.buf = sord_strndup(copy->node.buf, copy->node.n_bytes);
+    if (copy->node.type == SERD_LITERAL) {
+      copy->meta.lit.datatype = sord_node_copy(copy->meta.lit.datatype);
+    }
+  }
+
+  return copy;
 }
 
 SORD_LOG_FUNC(3, 4)
@@ -204,26 +232,28 @@ sord_world_new(void)
   world->error_sink   = NULL;
   world->error_handle = NULL;
 
-  world->nodes =
-    zix_hash_new(sord_node_hash, sord_node_hash_equal, sizeof(SordNode));
+  world->nodes = zix_hash_new(
+    NULL, sord_node_record_key, sord_node_hash, sord_node_hash_equal);
 
   return world;
 }
 
 static void
-free_node_entry(void* value, void* user_data)
+free_node_entry(SordNode* const node)
 {
-  SordNode* node = (SordNode*)value;
-  if (node->node.type == SERD_LITERAL) {
-    sord_node_free((SordWorld*)user_data, node->meta.lit.datatype);
-  }
   free((uint8_t*)node->node.buf);
+  free(node);
 }
 
 void
 sord_world_free(SordWorld* world)
 {
-  zix_hash_foreach(world->nodes, free_node_entry, world);
+  for (ZixHashIter i = zix_hash_begin(world->nodes);
+       i != zix_hash_end(world->nodes);
+       i = zix_hash_next(world->nodes, i)) {
+    free_node_entry(zix_hash_get(world->nodes, i));
+  }
+
   zix_hash_free(world->nodes);
   free(world);
 }
@@ -350,13 +380,13 @@ static inline bool
 sord_iter_forward(SordIter* iter)
 {
   if (!iter->skip_graphs) {
-    zix_btree_iter_increment(iter->cur);
+    zix_btree_iter_increment(&iter->cur);
     return zix_btree_iter_is_end(iter->cur);
   }
 
   SordNode**     key     = (SordNode**)zix_btree_get(iter->cur);
   const SordQuad initial = {key[0], key[1], key[2], key[3]};
-  zix_btree_iter_increment(iter->cur);
+  zix_btree_iter_increment(&iter->cur);
   while (!zix_btree_iter_is_end(iter->cur)) {
     key = (SordNode**)zix_btree_get(iter->cur);
     for (int i = 0; i < 3; ++i) {
@@ -365,7 +395,7 @@ sord_iter_forward(SordIter* iter)
       }
     }
 
-    zix_btree_iter_increment(iter->cur);
+    zix_btree_iter_increment(&iter->cur);
   }
 
   return true;
@@ -381,7 +411,7 @@ sord_iter_seek_match(SordIter* iter)
   for (iter->end = true; !zix_btree_iter_is_end(iter->cur);
        sord_iter_forward(iter)) {
     const SordNode** const key = (const SordNode**)zix_btree_get(iter->cur);
-    if (sord_quad_match_inline(key, iter->pat)) {
+    if (key && sord_quad_match_inline(key, iter->pat)) {
       return (iter->end = false);
     }
   }
@@ -418,12 +448,12 @@ sord_iter_seek_match_range(SordIter* iter)
 }
 
 static SordIter*
-sord_iter_new(const SordModel* sord,
-              ZixBTreeIter*    cur,
-              const SordQuad   pat,
-              SordOrder        order,
-              SearchMode       mode,
-              int              n_prefix)
+sord_iter_new(const SordModel*   sord,
+              const ZixBTreeIter cur,
+              const SordQuad     pat,
+              SordOrder          order,
+              SearchMode         mode,
+              int                n_prefix)
 {
   SordIter* iter    = (SordIter*)malloc(sizeof(SordIter));
   iter->sord        = sord;
@@ -570,7 +600,6 @@ sord_iter_free(SordIter* iter)
   SORD_ITER_LOG("%p Free\n", (void*)iter);
   if (iter) {
     --((SordModel*)iter->sord)->n_iters;
-    zix_btree_iter_free(iter->cur);
     free(iter);
   }
 }
@@ -690,10 +719,10 @@ sord_new(SordWorld* world, unsigned indices, bool graphs)
 
     if (indices & (1 << i)) {
       model->indices[i] =
-        zix_btree_new(sord_quad_compare, (void*)ordering, NULL);
+        zix_btree_new(NULL, sord_quad_compare, (void*)ordering);
       if (graphs) {
         model->indices[i + (NUM_ORDERS / 2)] =
-          zix_btree_new(sord_quad_compare, (void*)g_ordering, NULL);
+          zix_btree_new(NULL, sord_quad_compare, (void*)g_ordering);
       } else {
         model->indices[i + (NUM_ORDERS / 2)] = NULL;
       }
@@ -705,11 +734,11 @@ sord_new(SordWorld* world, unsigned indices, bool graphs)
 
   if (!model->indices[DEFAULT_ORDER]) {
     model->indices[DEFAULT_ORDER] =
-      zix_btree_new(sord_quad_compare, (void*)orderings[DEFAULT_ORDER], NULL);
+      zix_btree_new(NULL, sord_quad_compare, (void*)orderings[DEFAULT_ORDER]);
   }
   if (graphs && !model->indices[DEFAULT_GRAPH_ORDER]) {
     model->indices[DEFAULT_GRAPH_ORDER] = zix_btree_new(
-      sord_quad_compare, (void*)orderings[DEFAULT_GRAPH_ORDER], NULL);
+      NULL, sord_quad_compare, (void*)orderings[DEFAULT_GRAPH_ORDER]);
   }
 
   return model;
@@ -723,16 +752,17 @@ sord_node_free_internal(SordWorld* world, SordNode* node)
   // If you hit this, the world has probably been destroyed too early
   assert(world);
 
-  // Cache pointer to buffer to free after node removal and destruction
-  const uint8_t* const buf = node->node.buf;
-
-  // Remove node from hash (which frees the node)
-  if (zix_hash_remove(world->nodes, node)) {
+  // Remove node from the hash table
+  ZixHashRecord* removed = NULL;
+  if (!zix_hash_remove(world->nodes, node, &removed)) {
+    free((uint8_t*)removed->node.buf);
+    if (removed->node.type == SERD_LITERAL) {
+      sord_node_free(world, removed->meta.lit.datatype);
+    }
+    free(removed);
+  } else {
     error(world, SERD_ERR_INTERNAL, "failed to remove node from hash\n");
   }
-
-  // Free buffer
-  free((uint8_t*)buf);
 }
 
 static void
@@ -785,16 +815,15 @@ sord_free(SordModel* model)
   sord_iter_free(i);
 
   // Free quads
-  ZixBTreeIter* t = zix_btree_begin(model->indices[DEFAULT_ORDER]);
-  for (; !zix_btree_iter_is_end(t); zix_btree_iter_increment(t)) {
+  ZixBTreeIter t = zix_btree_begin(model->indices[DEFAULT_ORDER]);
+  for (; !zix_btree_iter_is_end(t); zix_btree_iter_increment(&t)) {
     free(zix_btree_get(t));
   }
-  zix_btree_iter_free(t);
 
   // Free indices
   for (unsigned o = 0; o < NUM_ORDERS; ++o) {
     if (model->indices[o]) {
-      zix_btree_free(model->indices[o]);
+      zix_btree_free(model->indices[o], NULL, NULL);
     }
   }
 
@@ -825,8 +854,8 @@ sord_begin(const SordModel* model)
   if (sord_num_quads(model) == 0) {
     return NULL;
   } else {
-    ZixBTreeIter* cur = zix_btree_begin(model->indices[DEFAULT_ORDER]);
-    SordQuad      pat = {0, 0, 0, 0};
+    const ZixBTreeIter cur = zix_btree_begin(model->indices[DEFAULT_ORDER]);
+    SordQuad           pat = {0, 0, 0, 0};
     return sord_iter_new(model, cur, pat, DEFAULT_ORDER, ALL, 0);
   }
 }
@@ -852,8 +881,9 @@ sord_find(SordModel* model, const SordQuad pat)
     mode = SINGLE; // No duplicate quads (Sord is a set)
   }
 
-  ZixBTree* const db  = model->indices[index_order];
-  ZixBTreeIter*   cur = NULL;
+  const int* const ordering = orderings[index_order];
+  ZixBTree* const  db       = model->indices[index_order];
+  ZixBTreeIter     cur      = zix_btree_end(db);
 
   if (mode == FILTER_ALL) {
     // No prefix shared with an index at all, linear search (worst case)
@@ -861,27 +891,26 @@ sord_find(SordModel* model, const SordQuad pat)
   } else if (mode == FILTER_RANGE) {
     /* Some prefix, but filtering still required.  Build a search pattern
        with only the prefix to find the lower bound in log time. */
-    SordQuad         prefix_pat = {NULL, NULL, NULL, NULL};
-    const int* const ordering   = orderings[index_order];
+    SordQuad prefix_pat = {NULL, NULL, NULL, NULL};
     for (int i = 0; i < n_prefix; ++i) {
       prefix_pat[ordering[i]] = pat[ordering[i]];
     }
-    zix_btree_lower_bound(db, prefix_pat, &cur);
+
+    zix_btree_lower_bound(db, sord_quad_compare, ordering, prefix_pat, &cur);
   } else {
     // Ideal case, pattern matches an index with no filtering required
-    zix_btree_lower_bound(db, pat, &cur);
+    zix_btree_lower_bound(db, sord_quad_compare, ordering, pat, &cur);
   }
 
   if (zix_btree_iter_is_end(cur)) {
     SORD_FIND_LOG("No match found\n");
-    zix_btree_iter_free(cur);
     return NULL;
   }
+
   const SordNode** const key = (const SordNode**)zix_btree_get(cur);
   if (!key || ((mode == RANGE || mode == SINGLE) &&
                !sord_quad_match_inline(pat, key))) {
     SORD_FIND_LOG("No match found\n");
-    zix_btree_iter_free(cur);
     return NULL;
   }
 
@@ -960,14 +989,6 @@ sord_contains(SordModel* model, const SordQuad pat)
   return ret;
 }
 
-static uint8_t*
-sord_strndup(const uint8_t* str, size_t len)
-{
-  uint8_t* dup = (uint8_t*)malloc(len + 1);
-  memcpy(dup, str, len + 1);
-  return dup;
-}
-
 SordNodeType
 sord_node_get_type(const SordNode* node)
 {
@@ -1033,31 +1054,25 @@ sord_node_is_inline_object(const SordNode* node)
 }
 
 static SordNode*
-sord_insert_node(SordWorld* world, const SordNode* key, bool copy)
+sord_insert_node(SordWorld* world, const SordNode* key)
 {
-  SordNode* node = NULL;
-  ZixStatus st   = zix_hash_insert(world->nodes, key, (void**)&node);
-  switch (st) {
-  case ZIX_STATUS_EXISTS:
-    ++node->refs;
-    break;
-  case ZIX_STATUS_SUCCESS:
-    assert(node->refs == 1);
-    if (copy) {
-      node->node.buf = sord_strndup(node->node.buf, node->node.n_bytes);
-    }
-    if (node->node.type == SERD_LITERAL) {
-      node->meta.lit.datatype = sord_node_copy(node->meta.lit.datatype);
-    }
-    return node;
-  default:
-    error(
-      world, SERD_ERR_INTERNAL, "error inserting node `%s'\n", key->node.buf);
+  // "Plan" the insertion (that is, search) with the given constant key
+  const ZixHashInsertPlan plan     = zix_hash_plan_insert(world->nodes, key);
+  SordNode* const         existing = zix_hash_record_at(world->nodes, plan);
+  if (existing) {
+    ++existing->refs;
+    return existing;
   }
 
-  if (!copy) {
-    // Free the buffer we would have copied if a new node was created
-    free((uint8_t*)key->node.buf);
+  // Insert a new node into hash table, transferring ownership
+  SordNode* const node = sord_node_create(key);
+  const ZixStatus st   = zix_hash_insert_at(world->nodes, plan, node);
+  if (st) {
+    free((uint8_t*)node->node.buf);
+    free(node);
+    error(
+      world, SERD_ERR_INTERNAL, "error inserting node `%s'\n", key->node.buf);
+    return NULL;
   }
 
   return node;
@@ -1067,8 +1082,7 @@ static SordNode*
 sord_new_uri_counted(SordWorld*     world,
                      const uint8_t* str,
                      size_t         n_bytes,
-                     size_t         n_chars,
-                     bool           copy)
+                     size_t         n_chars)
 {
   if (!serd_uri_string_has_scheme(str)) {
     error(world, SERD_ERR_BAD_ARG, "attempt to map invalid URI `%s'\n", str);
@@ -1077,14 +1091,14 @@ sord_new_uri_counted(SordWorld*     world,
 
   const SordNode key = {{str, n_bytes, n_chars, 0, SERD_URI}, 1, {{0}}};
 
-  return sord_insert_node(world, &key, copy);
+  return sord_insert_node(world, &key);
 }
 
 SordNode*
 sord_new_uri(SordWorld* world, const uint8_t* uri)
 {
   const SerdNode node = serd_node_from_string(SERD_URI, uri);
-  return sord_new_uri_counted(world, uri, node.n_bytes, node.n_chars, true);
+  return sord_new_uri_counted(world, uri, node.n_bytes, node.n_chars);
 }
 
 SordNode*
@@ -1095,13 +1109,15 @@ sord_new_relative_uri(SordWorld*     world,
   if (serd_uri_string_has_scheme(uri)) {
     return sord_new_uri(world, uri);
   }
+
   SerdURI  buri = SERD_URI_NULL;
   SerdNode base = serd_node_new_uri_from_string(base_uri, NULL, &buri);
   SerdNode node = serd_node_new_uri_from_string(uri, &buri, NULL);
 
   SordNode* ret =
-    sord_new_uri_counted(world, node.buf, node.n_bytes, node.n_chars, false);
+    sord_new_uri_counted(world, node.buf, node.n_bytes, node.n_chars);
 
+  serd_node_free(&node);
   serd_node_free(&base);
   return ret;
 }
@@ -1114,7 +1130,7 @@ sord_new_blank_counted(SordWorld*     world,
 {
   const SordNode key = {{str, n_bytes, n_chars, 0, SERD_BLANK}, 1, {{0}}};
 
-  return sord_insert_node(world, &key, true);
+  return sord_insert_node(world, &key);
 }
 
 SordNode*
@@ -1140,7 +1156,7 @@ sord_new_literal_counted(SordWorld*     world,
     strncpy(key.meta.lit.lang, lang, sizeof(key.meta.lit.lang) - 1);
   }
 
-  return sord_insert_node(world, &key, true);
+  return sord_insert_node(world, &key);
 }
 
 SordNode*
@@ -1186,18 +1202,17 @@ sord_node_from_serd_node(SordWorld*      world,
   case SERD_URI:
     if (serd_uri_string_has_scheme(node->buf)) {
       return sord_new_uri_counted(
-        world, node->buf, node->n_bytes, node->n_chars, true);
+        world, node->buf, node->n_bytes, node->n_chars);
     } else {
       SerdURI base_uri;
       serd_env_get_base_uri(env, &base_uri);
       SerdURI  abs_uri;
       SerdNode abs_uri_node =
         serd_node_new_uri_from_node(node, &base_uri, &abs_uri);
-      ret = sord_new_uri_counted(world,
-                                 abs_uri_node.buf,
-                                 abs_uri_node.n_bytes,
-                                 abs_uri_node.n_chars,
-                                 true);
+
+      ret = sord_new_uri_counted(
+        world, abs_uri_node.buf, abs_uri_node.n_bytes, abs_uri_node.n_chars);
+
       serd_node_free(&abs_uri_node);
       return ret;
     }
@@ -1214,8 +1229,11 @@ sord_node_from_serd_node(SordWorld*      world,
     memcpy(buf, uri_prefix.buf, uri_prefix.len);
     memcpy(buf + uri_prefix.len, uri_suffix.buf, uri_suffix.len);
     buf[uri_len] = '\0';
-    ret          = sord_new_uri_counted(
-      world, buf, uri_len, serd_strlen(buf, NULL, NULL), false);
+
+    ret =
+      sord_new_uri_counted(world, buf, uri_len, serd_strlen(buf, NULL, NULL));
+
+    free(buf);
     return ret;
   }
   case SERD_BLANK:
@@ -1303,7 +1321,8 @@ sord_remove(SordModel* model, const SordQuad tup)
   SordNode* quad = NULL;
   for (unsigned i = 0; i < NUM_ORDERS; ++i) {
     if (model->indices[i] && (i < GSPO || tup[3])) {
-      if (zix_btree_remove(model->indices[i], tup, (void**)&quad, NULL)) {
+      ZixBTreeIter r = zix_btree_end_iter;
+      if (zix_btree_remove(model->indices[i], tup, (void**)&quad, &r)) {
         assert(i == 0); // Assuming index coherency
         return;         // Quad not found, do nothing
       }
@@ -1335,10 +1354,11 @@ sord_erase(SordModel* model, SordIter* iter)
   SordNode* quad = NULL;
   for (unsigned i = 0; i < NUM_ORDERS; ++i) {
     if (model->indices[i] && (i < GSPO || tup[3])) {
+      ZixBTreeIter r = zix_btree_end_iter;
       if (zix_btree_remove(model->indices[i],
                            tup,
                            (void**)&quad,
-                           (SordOrder)i == iter->order ? &iter->cur : NULL)) {
+                           (SordOrder)i == iter->order ? &iter->cur : &r)) {
         return (i == 0) ? SERD_ERR_NOT_FOUND : SERD_ERR_INTERNAL;
       }
     }

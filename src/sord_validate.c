@@ -9,8 +9,17 @@
 #include "sord_config.h"
 
 #if USE_PCRE2
+#  if defined(__clang__)
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wdisabled-macro-expansion"
+#  endif
+
 #  define PCRE2_CODE_UNIT_WIDTH 8
 #  include <pcre2.h>
+
+#  if defined(__clang__)
+#    pragma clang diagnostic pop
+#  endif
 #endif
 
 #ifdef _WIN32

@@ -1,45 +1,108 @@
-.\" # Copyright 2011-2016 David Robillard <d@drobilla.net>
+.\" # Copyright 2011-2022 David Robillard <d@drobilla.net>
 .\" # SPDX-License-Identifier: ISC
-.TH SORDI 1 "17 Jan 2012"
-
-.SH NAME
-.B sordi \- Load and re-serialise RDF data
-
-.SH SYNOPSIS
-sordi [OPTION]... INPUT BASE_URI
-
-.SH OPTIONS
-.TP
-\fB\-h\fR
+.Dd Nov 29, 2022
+.Dt SORDI 1
+.Os Sord 0.30.17
+.Sh NAME
+.Nm sordi
+.Nd load and rewrite RDF data
+.Sh SYNOPSIS
+.Nm sordi
+.Op Fl hv
+.Op Fl i Ar syntax
+.Op Fl o Ar syntax
+.Op Fl s Ar string
+.Ar input
+.Op Ar base_uri
+.Sh DESCRIPTION
+.Nm
+is a command-line utility for loading RDF data into a model,
+and writing it out again.
+.Pp
+.Nm
+is mainly useful for things like removing duplicate statements,
+merging data files,
+or aggressive pretty-printing with statement reordering.
+.Pp
+The options are as follows:
+.Pp
+.Bl -tag -compact -width 3n
+.It Fl h , Fl Fl help
 Print the command line options.
-
-.TP
-\fB\-i SYNTAX\fR
-Read input in SYNTAX (`turtle' or `ntriples').
-
-.TP
-\fB\-o SYNTAX\fR
-Write output in SYNTAX (`turtle' or `ntriples').
-
-.TP
-\fB\-s INPUT\fR
-Parse INPUT as a string (terminates options).
-
-.TP
-\fB\-v\fR
+.Pp
+.It Fl i Ar syntax
+Read input as
+.Ar syntax .
+Case is ignored, valid values are:
+.Dq NQuads ,
+.Dq NTriples ,
+.Dq TriG ,
+.Dq Turtle .
+.Pp
+.It Fl o Ar syntax
+Write output as
+.Ar syntax .
+Case is ignored, valid values are:
+.Dq NQuads ,
+.Dq NTriples ,
+.Dq TriG ,
+.Dq Turtle .
+.Pp
+.It Fl s Ar string
+Parse
+.Ar string
+input instead of a file (terminates options).
+.Pp
+.It Fl v
 Display version information and exit.
-
-.SH AUTHOR
-Sordi was written by David Robillard <d@drobilla.net>
-
-.SH COPYRIGHT
-Copyright \(co 2011-2016 David Robillard.
-.br
-License: <http://www.opensource.org/licenses/isc-license>
-.br
-This is free software; you are free to change and redistribute it.
-.br
-There is NO WARRANTY, to the extent permitted by law.
-
-.SH "SEE ALSO"
-<http://drobilla.net/software/sord>
+.El
+.Sh EXIT STATUS
+.Nm
+exits with a status of 0, or non-zero if an error occurred.
+.Sh SEE ALSO
+.Bl -item -compact
+.It
+.Xr serdi 1
+.It
+.Xr sord_validate 1
+.It
+.Lk http://drobilla.net/software/sord/
+.It
+.Lk http://gitlab.com/drobilla/sord/
+.El
+.Sh STANDARDS
+.Bl -item
+.It
+.Rs
+.%A W3C
+.%T RDF 1.1 NQuads
+.%D February 2014
+.Re
+.Lk https://www.w3.org/TR/n-quads/
+.It
+.Rs
+.%A W3C
+.%D February 2014
+.%T RDF 1.1 NTriples
+.Re
+.Lk https://www.w3.org/TR/n-triples/
+.It
+.Rs
+.%A W3C
+.%T RDF 1.1 TriG
+.%D February 2014
+.Re
+.Lk https://www.w3.org/TR/trig/
+.It
+.Rs
+.%A W3C
+.%D February 2014
+.%T RDF 1.1 Turtle
+.Re
+.Lk https://www.w3.org/TR/turtle/
+.El
+.Sh AUTHORS
+.Nm
+is a part of sord, by
+.An David Robillard
+.Mt d@drobilla.net .

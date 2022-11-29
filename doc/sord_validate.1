@@ -1,59 +1,99 @@
-.\" # Copyright 2012-2016 David Robillard <d@drobilla.net>
+.\" # Copyright 2012-2022 David Robillard <d@drobilla.net>
 .\" # SPDX-License-Identifier: ISC
-.TH SORD_VALIDATE 1 "21 Mar 2012"
-
-.SH NAME
-.B sord_validate \- Validate RDF data
-
-.SH SYNOPSIS
-sord_validate [OPTION]... INPUT...
-
-.SH OPTIONS
-.TP
-\fB\-h\fR
+.Dd Nov 29, 2022
+.Dt SORD_VALIDATE 1
+.Os Sord 0.30.17
+.Sh NAME
+.Nm sord_validate
+.Nd validate RDF data
+.Sh SYNOPSIS
+.Nm sord_validate
+.Op Fl hlv
+.Ar input ...
+.Sh DESCRIPTION
+.Nm
+is a simple validator which checks that all used properties are actually defined,
+and that the domain and range of properties is explicitly correct.
+Note that a validation "error" here doesn't necessarily mean that data is invalid,
+since it isn't, for example, required to explicitly list types in RDF.
+This validator implements a more strict and explicit set of rules,
+based on the realistic needs of simple real-world implementations.
+For example, missing explicit type information may be warned about,
+even though even a simple inference engine would be able to deduce it.
+.Pp
+.Nm
+never retrieves data from the web or special places on the file system,
+it only processes the files passed directly on the command line.
+This means you must pass all used vocabularies to get a useful result.
+.Pp
+If an appropriate schema is available,
+literals are checked against datatype definitions
+(both the explicit datatype of the literal itself,
+as well as any types implied by the corresponding property).
+Three XML Schema Datatypes (XSD) constraints are currently supported:
+regular expressions (xsd:pattern),
+and inclusive ranges (xsd:minimumInclusive and xsd:maximumInclusive).
+Given an appropriate schema,
+this is enough to validate against most of the standard XSD datatypes.
+.Pp
+The options are as follows:
+.Pp
+.Bl -tag -compact -width 3n
+.It Fl h
 Print the command line options.
-
-.TP
-\fB\-l\fR
+.Pp
+.It Fl l
 Print errors on a single line.
-
-.TP
-\fB\-v\fR
+.Pp
+.It Fl v
 Display version information and exit.
-
-.SH DESCRIPTION
-This is a simple validator which checks that all used properties are actually
-defined, and that the domain and range of properties is explicitly correct.
-Note that an "error" from this program does not necessarily mean data is
-invalid, since it is not required to explicitly list types in RDF, however it
-is a good idea to do so.
-
-This program never retrieves data from the web or magical places on the file
-system, it only processes files passed directly on the command line.  This
-means you must pass all used vocabularies to get a useful result.
-
-If an appropriate schema is available, literals are checked against datatype
-definitions (both the explicit datatype of the literal itself as well as any
-types implied by the corresponding property).  Three XML Schema Datatypes (XSD)
-constraints are currently supported: regular expressions (xsd:pattern), and
-inclusive range (xsd:minimumInclusive and xsd:maximumInclusive).  Given an
-appropriate schema, this is enough to validate against most of the standard XSD
-datatypes.
-
-.SH EXAMPLES
-sord_validate `find ~/schemas/ -name '*.ttl'` data.ttl
-
-.SH AUTHOR
-sord_validate was written by David Robillard <d@drobilla.net>
-
-.SH COPYRIGHT
-Copyright \(co 2012-2016 David Robillard.
-.br
-License: <http://www.opensource.org/licenses/isc-license>
-.br
-This is free software; you are free to change and redistribute it.
-.br
-There is NO WARRANTY, to the extent permitted by law.
-
-.SH "SEE ALSO"
-<http://drobilla.net/software/sord>
+.El
+.Sh EXIT STATUS
+.Nm
+exits with a status of 0 if the input data is valid, or non-zero if there are
+issues with the data or if an error occurred.
+.Sh SEE ALSO
+.Bl -item -compact
+.It
+.Xr sordi 1
+.It
+.Lk http://drobilla.net/software/sord/
+.It
+.Lk http://gitlab.com/drobilla/sord/
+.El
+.Sh STANDARDS
+.Bl -item
+.It
+.Rs
+.%A W3C
+.%T RDF 1.1 NQuads
+.%D February 2014
+.Re
+.Lk https://www.w3.org/TR/n-quads/
+.It
+.Rs
+.%A W3C
+.%D February 2014
+.%T RDF 1.1 NTriples
+.Re
+.Lk https://www.w3.org/TR/n-triples/
+.It
+.Rs
+.%A W3C
+.%T RDF 1.1 TriG
+.%D February 2014
+.Re
+.Lk https://www.w3.org/TR/trig/
+.It
+.Rs
+.%A W3C
+.%D February 2014
+.%T RDF 1.1 Turtle
+.Re
+.Lk https://www.w3.org/TR/turtle/
+.El
+.Sh AUTHORS
+.Nm
+is a part of sord, by
+.An David Robillard
+.Mt d@drobilla.net .

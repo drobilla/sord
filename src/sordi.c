@@ -45,11 +45,11 @@ print_usage(const char* name, bool error)
   fprintf(os, "Usage: %s [OPTION]... INPUT [BASE_URI]\n", name);
   fprintf(os, "Load and re-serialise RDF data.\n");
   fprintf(os, "Use - for INPUT to read from standard input.\n\n");
-  fprintf(os, "  -h           Display this help and exit\n");
-  fprintf(os, "  -i SYNTAX    Input syntax (`turtle' or `ntriples')\n");
-  fprintf(os, "  -o SYNTAX    Output syntax (`turtle' or `ntriples')\n");
-  fprintf(os, "  -s INPUT     Parse INPUT as string (terminates options)\n");
-  fprintf(os, "  -v           Display version information and exit\n");
+  fprintf(os, "  -h           Display this help and exit.\n");
+  fprintf(os, "  -i SYNTAX    Input syntax (`turtle' or `ntriples').\n");
+  fprintf(os, "  -o SYNTAX    Output syntax (`turtle' or `ntriples').\n");
+  fprintf(os, "  -s INPUT     Parse INPUT as string (terminates options).\n");
+  fprintf(os, "  -v           Display version information and exit.\n");
   return error ? 1 : 0;
 }
 

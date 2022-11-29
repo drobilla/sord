@@ -107,10 +107,11 @@ print_usage(const char* name, bool error)
   FILE* const os = error ? stderr : stdout;
   fprintf(os, "Usage: %s [OPTION]... INPUT...\n", name);
   fprintf(os, "Validate RDF data\n\n");
-  fprintf(os, "  -h  Display this help and exit\n");
+  fprintf(os, "  -h  Display this help and exit.\n");
   fprintf(os, "  -l  Print errors on a single line.\n");
-  fprintf(os, "  -v  Display version information and exit\n");
+  fprintf(os, "  -v  Display version information and exit.\n");
   fprintf(os,
+          "\n"
           "Validate RDF data.  This is a simple validator which checks\n"
           "that all used properties are actually defined.  It does not do\n"
           "any fancy file retrieval, the files passed on the command line\n"
@@ -714,7 +715,9 @@ main(int argc, char** argv)
 
   int a = 1;
   for (; a < argc && argv[a][0] == '-'; ++a) {
-    if (argv[a][1] == 'l') {
+    if (argv[a][1] == 'h') {
+      return print_usage(argv[0], false);
+    } else if (argv[a][1] == 'l') {
       one_line_errors = true;
     } else if (argv[a][1] == 'v') {
       return print_version();

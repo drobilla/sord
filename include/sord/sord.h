@@ -14,14 +14,17 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#if defined(_WIN32) && !defined(SORD_STATIC) && defined(SORD_INTERNAL)
-#  define SORD_API __declspec(dllexport)
-#elif defined(_WIN32) && !defined(SORD_STATIC)
-#  define SORD_API __declspec(dllimport)
-#elif defined(__GNUC__)
-#  define SORD_API __attribute__((visibility("default")))
-#else
-#  define SORD_API
+// SORD_API must be used to decorate things in the public API
+#ifndef SORD_API
+#  if defined(_WIN32) && !defined(SORD_STATIC) && defined(SORD_INTERNAL)
+#    define SORD_API __declspec(dllexport)
+#  elif defined(_WIN32) && !defined(SORD_STATIC)
+#    define SORD_API __declspec(dllimport)
+#  elif defined(__GNUC__)
+#    define SORD_API __attribute__((visibility("default")))
+#  else
+#    define SORD_API
+#  endif
 #endif
 
 #ifdef __cplusplus

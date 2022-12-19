@@ -1,11 +1,12 @@
 sord (0.16.15) unstable; urgency=medium
 
+  * Allow SORD_API to be defined by the user
   * Fix command line help interface of sord_validate
   * Fix dependencies in pkg-config file
   * Override pkg-config dependency within meson
   * Port sord_validate to pcre2
 
- -- David Robillard <d@drobilla.net>  Tue, 29 Nov 2022 19:50:26 +0000
+ -- David Robillard <d@drobilla.net>  Mon, 19 Dec 2022 23:53:40 +0000
 
 sord (0.16.14) stable; urgency=medium
 

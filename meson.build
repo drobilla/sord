@@ -44,6 +44,20 @@ m_dep = cc.find_library('m', required: false)
 zix_dep = dependency('zix-0', version: '>= 0.3.0')
 serd_dep = dependency('serd-0', version: '>= 0.30.10')
 
+##########################
+# Platform Configuration #
+##########################
+
+# Use versioned name everywhere to support parallel major version installations
+if host_machine.system() == 'windows'
+  if get_option('default_library') == 'both'
+    error('default_library=both is not supported on Windows')
+  endif
+  soversion = ''
+else
+  soversion = meson.project_version().split('.')[0]
+endif
+
 ###########
 # Library #
 ###########
@@ -58,14 +72,13 @@ sources = files(
 
 # Set appropriate arguments for building against the library type
 extra_c_args = []
-subdir('meson/library')
 if get_option('default_library') == 'static'
   extra_c_args = ['-DSORD_STATIC']
 endif
 
 # Build shared and/or static library
 libsord = library(
-  meson.project_name() + library_suffix,
+  versioned_name,
   sources,
   c_args: c_suppressions + extra_c_args + [
     '-DSORD_INTERNAL',
@@ -75,6 +88,7 @@ libsord = library(
   gnu_symbol_visibility: 'hidden',
   include_directories: include_directories('include', 'src'),
   install: true,
+  soversion: soversion,
   version: meson.project_version(),
 )
 

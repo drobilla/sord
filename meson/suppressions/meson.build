@@ -77,6 +77,7 @@ if is_variable('cc')
         '/wd4996', # POSIX name for this item is deprecated
         '/wd4996', # function or variable may be unsafe
         '/wd5045', # will insert Spectre mitigation for memory load
+        '/wd5264', # const variable is not used
       ]
     endif
   endif

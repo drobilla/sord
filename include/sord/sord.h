@@ -88,31 +88,31 @@ typedef const SordNode* SordQuad[4];
    Index into a SordQuad.
 */
 typedef enum {
-  SORD_SUBJECT   = 0, /**< Subject */
-  SORD_PREDICATE = 1, /**< Predicate ("key") */
-  SORD_OBJECT    = 2, /**< Object    ("value") */
-  SORD_GRAPH     = 3  /**< Graph     ("context") */
+  SORD_SUBJECT   = 0U, /**< Subject */
+  SORD_PREDICATE = 1U, /**< Predicate ("key") */
+  SORD_OBJECT    = 2U, /**< Object    ("value") */
+  SORD_GRAPH     = 3U  /**< Graph     ("context") */
 } SordQuadIndex;
 
 /**
    Type of a node.
 */
 typedef enum {
-  SORD_URI     = 1, /**< URI */
-  SORD_BLANK   = 2, /**< Blank node identifier */
-  SORD_LITERAL = 3  /**< Literal (string with optional lang or datatype) */
+  SORD_URI     = 1U, /**< URI */
+  SORD_BLANK   = 2U, /**< Blank node identifier */
+  SORD_LITERAL = 3U  /**< Literal (string with optional lang or datatype) */
 } SordNodeType;
 
 /**
    Indexing option.
 */
 typedef enum {
-  SORD_SPO = 1,      /**< Subject,   Predicate, Object */
-  SORD_SOP = 1 << 1, /**< Subject,   Object,    Predicate */
-  SORD_OPS = 1 << 2, /**< Object,    Predicate, Subject */
-  SORD_OSP = 1 << 3, /**< Object,    Subject,   Predicate */
-  SORD_PSO = 1 << 4, /**< Predicate, Subject,   Object */
-  SORD_POS = 1 << 5  /**< Predicate, Object,    Subject */
+  SORD_SPO = 1U,       /**< Subject,   Predicate, Object */
+  SORD_SOP = 1U << 1U, /**< Subject,   Object,    Predicate */
+  SORD_OPS = 1U << 2U, /**< Object,    Predicate, Subject */
+  SORD_OSP = 1U << 3U, /**< Object,    Subject,   Predicate */
+  SORD_PSO = 1U << 4U, /**< Predicate, Subject,   Object */
+  SORD_POS = 1U << 5U  /**< Predicate, Object,    Subject */
 } SordIndexOption;
 
 /**

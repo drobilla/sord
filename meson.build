@@ -25,9 +25,6 @@ pkg = import('pkgconfig')
 cc = meson.get_compiler('c')
 
 # Set global warning flags
-if get_option('strict') and not meson.is_subproject()
-  subdir('meson/warnings')
-endif
 subdir('meson/suppressions')
 
 # Build as C++ with MSVC

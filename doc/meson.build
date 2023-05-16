@@ -35,5 +35,5 @@ if not get_option('docs').disabled()
 endif
 
 if not meson.is_subproject()
-  summary('API Documentation', build_docs, bool_yn: true)
+  summary('API Documentation', build_docs, bool_yn: true, section: 'Components')
 endif

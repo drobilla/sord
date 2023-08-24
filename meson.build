@@ -38,7 +38,7 @@ endif
 
 m_dep = cc.find_library('m', required: false)
 
-zix_dep = dependency('zix-0', version: '>= 0.3.0')
+zix_dep = dependency('zix-0', version: '>= 0.4.0')
 serd_dep = dependency('serd-0', version: '>= 0.30.10')
 
 ##########################

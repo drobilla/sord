@@ -15,6 +15,7 @@ if cc.get_id() in ['clang', 'emscripten']
   if warning_level == 'everything'
     c_suppressions += [
       '-Wno-cast-align',
+      '-Wno-cast-function-type-strict',
       '-Wno-cast-qual',
       '-Wno-conversion',
       '-Wno-declaration-after-statement',
@@ -25,6 +26,7 @@ if cc.get_id() in ['clang', 'emscripten']
       '-Wno-reserved-id-macro',
       '-Wno-sign-conversion',
       '-Wno-switch-enum',
+      '-Wno-unsafe-buffer-usage',
       '-Wno-unused-macros',
     ]
 

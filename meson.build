@@ -1,15 +1,18 @@
 # Copyright 2021-2022 David Robillard <d@drobilla.net>
 # SPDX-License-Identifier: 0BSD OR ISC
 
-project('sord', ['c'],
-        version: '0.16.15',
-        license: 'ISC',
-        meson_version: '>= 0.56.0',
-        default_options: [
-          'b_ndebug=if-release',
-          'buildtype=release',
-          'c_std=c99',
-        ])
+project(
+  'sord',
+  ['c'],
+  default_options: [
+    'b_ndebug=if-release',
+    'buildtype=release',
+    'c_std=c99',
+  ],
+  license: 'ISC',
+  meson_version: '>= 0.56.0',
+  version: '0.16.15',
+)
 
 sord_src_root = meson.current_source_dir()
 major_version = meson.project_version().split('.')[0]
@@ -122,22 +125,26 @@ install_headers(cpp_headers, subdir: versioned_name / 'sord')
 
 # Build sordi command line utility
 if not get_option('tools').disabled()
-  sordi = executable('sordi',
-                     files('src/sordi.c'),
-                     c_args: c_suppressions,
-                     install: true,
-                     dependencies: sord_dep)
+  sordi = executable(
+    'sordi',
+    files('src/sordi.c'),
+    c_args: c_suppressions,
+    install: true,
+    dependencies: sord_dep,
+  )
 
   meson.override_find_program('sordi', sordi)
 
   pcre2_dep = dependency('libpcre2-8', include_type: 'system', required: false)
 
   if pcre2_dep.found()
-    sord_validate = executable('sord_validate',
-                               files('src/sord_validate.c'),
-                               c_args: c_suppressions,
-                               install: true,
-                               dependencies: [sord_dep, pcre2_dep])
+    sord_validate = executable(
+      'sord_validate',
+      files('src/sord_validate.c'),
+      c_args: c_suppressions,
+      install: true,
+      dependencies: [sord_dep, pcre2_dep],
+    )
 
     meson.override_find_program('sord_validate', sord_validate)
   endif
@@ -161,9 +168,9 @@ if not meson.is_subproject()
 
   summary(
     {
-      'Install prefix':  get_option('prefix'),
-      'Headers':  get_option('prefix') / get_option('includedir'),
-      'Libraries':  get_option('prefix') / get_option('libdir'),
+      'Install prefix': get_option('prefix'),
+      'Headers': get_option('prefix') / get_option('includedir'),
+      'Libraries': get_option('prefix') / get_option('libdir'),
     },
     section: 'Directories',
   )

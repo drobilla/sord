@@ -1,4 +1,4 @@
-sord (0.16.15) unstable; urgency=medium
+sord (0.16.16) stable; urgency=medium
 
   * Allow SORD_API to be defined by the user
   * Fix command line help interface of sord_validate
@@ -7,7 +7,7 @@ sord (0.16.15) unstable; urgency=medium
   * Port sord_validate to pcre2
   * Switch to external zix dependency
 
- -- David Robillard <d@drobilla.net>  Tue, 05 Sep 2023 22:45:10 +0000
+ -- David Robillard <d@drobilla.net>  Sun, 22 Oct 2023 19:59:16 +0000
 
 sord (0.16.14) stable; urgency=medium
 

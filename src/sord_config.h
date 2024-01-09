@@ -1,4 +1,4 @@
-// Copyright 2021 David Robillard <d@drobilla.net>
+// Copyright 2021-2024 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
 /*
@@ -16,7 +16,7 @@
 #define SORD_CONFIG_H
 
 // Define version unconditionally so a warning will catch a mismatch
-#define SORD_VERSION "0.16.16"
+#define SORD_VERSION "0.16.17"
 
 #if !defined(SORD_NO_DEFAULT_CONFIG)
 

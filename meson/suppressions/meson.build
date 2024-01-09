@@ -21,7 +21,6 @@ if cc.get_id() in ['clang', 'emscripten']
       '-Wno-declaration-after-statement',
       '-Wno-double-promotion',
       '-Wno-format-nonliteral',
-      '-Wno-nullable-to-nonnull-conversion',
       '-Wno-padded',
       '-Wno-reserved-id-macro',
       '-Wno-sign-conversion',

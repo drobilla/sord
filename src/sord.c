@@ -172,7 +172,7 @@ sord_node_hash(const SordNode* const node)
 {
   size_t hash = 0U;
 
-  hash = zix_digest(hash, node->node.buf, node->node.n_bytes);
+  hash = zix_digest(hash, (const uint8_t*)node->node.buf, node->node.n_bytes);
   hash = zix_digest(hash, &node->node.type, sizeof(node->node.type));
   if (node->node.type == SERD_LITERAL) {
     hash = zix_digest(hash, &node->meta.lit, sizeof(node->meta.lit));

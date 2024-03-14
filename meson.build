@@ -84,6 +84,7 @@ libsord = library(
     '-DSORD_INTERNAL',
     '-DSORD_VERSION="@0@"'.format(meson.project_version()),
   ],
+  darwin_versions: [major_version + '.0.0', meson.project_version()],
   dependencies: [m_dep, zix_dep, serd_dep],
   gnu_symbol_visibility: 'hidden',
   include_directories: include_directories('include', 'src'),

@@ -1,8 +1,9 @@
 sord (0.16.17) unstable; urgency=medium
 
   * Enable clang nullability checks
+  * Fix library current_version on MacOS
 
- -- David Robillard <d@drobilla.net>  Tue, 09 Jan 2024 22:40:57 +0000
+ -- David Robillard <d@drobilla.net>  Thu, 14 Mar 2024 17:14:29 +0000
 
 sord (0.16.16) stable; urgency=medium
 

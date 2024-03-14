@@ -4,6 +4,9 @@
 option('docs', type: 'feature', value: 'auto', yield: true,
        description: 'Build documentation')
 
+option('man', type: 'feature', value: 'enabled', yield: true,
+       description: 'Install man pages')
+
 option('tests', type: 'feature', value: 'auto', yield: true,
        description: 'Build tests')
 

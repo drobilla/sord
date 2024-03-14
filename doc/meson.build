@@ -2,11 +2,9 @@
 # SPDX-License-Identifier: 0BSD OR ISC
 
 docdir = get_option('datadir') / 'doc'
-
 doxygen = find_program('doxygen', required: get_option('docs'))
 
 build_docs = doxygen.found()
-
 if build_docs
   config = configuration_data()
   config.set('SORD_VERSION', meson.project_version())
@@ -28,10 +26,6 @@ if build_docs
     install_dir: docdir / versioned_name,
     output: 'html',
   )
-endif
-
-if not get_option('docs').disabled()
-  install_man(files('sord_validate.1', 'sordi.1'))
 endif
 
 if not meson.is_subproject()

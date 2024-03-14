@@ -150,9 +150,8 @@ if not get_option('tools').disabled()
     meson.override_find_program('sord_validate', sord_validate)
   endif
 
-  if not get_option('docs').disabled()
-    install_man(files('doc/sordi.1'))
-    install_man(files('doc/sord_validate.1'))
+  if not get_option('man').disabled()
+    install_man(files('doc/sord_validate.1', 'doc/sordi.1'))
   endif
 endif
 
@@ -195,6 +194,4 @@ if not get_option('tests').disabled()
   subdir('test')
 endif
 
-if not get_option('docs').disabled()
-  subdir('doc')
-endif
+subdir('doc')

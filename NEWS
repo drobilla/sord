@@ -1,9 +1,10 @@
 sord (0.16.17) unstable; urgency=medium
 
+  * Add option to install tool man pages
   * Enable clang nullability checks
   * Fix library current_version on MacOS
 
- -- David Robillard <d@drobilla.net>  Thu, 14 Mar 2024 17:14:29 +0000
+ -- David Robillard <d@drobilla.net>  Thu, 14 Mar 2024 18:12:02 +0000
 
 sord (0.16.16) stable; urgency=medium
 

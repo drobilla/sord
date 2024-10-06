@@ -4,6 +4,9 @@
 option('docs', type: 'feature', yield: true,
        description: 'Build documentation')
 
+option('lint', type: 'boolean', value: false, yield: true,
+       description: 'Run code quality checks')
+
 option('man', type: 'feature', value: 'enabled', yield: true,
        description: 'Install man pages')
 

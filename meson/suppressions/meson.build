@@ -96,15 +96,11 @@ elif cc.get_id() == 'msvc'
   if warning_level == 'everything'
     c_suppressions += [
       '/wd4061', # enumerator in switch is not explicitly handled
-      '/wd4200', # zero-sized array in struct/union
       '/wd4514', # unreferenced inline function has been removed
       '/wd4710', # function not inlined
       '/wd4711', # function selected for automatic inline expansion
-      '/wd4800', # implicit conversion from int to bool
       '/wd4820', # padding added after construct
-      '/wd4996', # POSIX name for this item is deprecated
       '/wd5045', # will insert Spectre mitigation for memory load
-      '/wd5264', # const variable is not used
     ]
   endif
 

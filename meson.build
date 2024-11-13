@@ -30,11 +30,6 @@ cc = meson.get_compiler('c')
 # Set global warning flags
 subdir('meson/suppressions')
 
-# Build as C++ with MSVC
-if cc.get_id() == 'msvc'
-  add_project_arguments(['/TP'], language: ['c'])
-endif
-
 ################
 # Dependencies #
 ################

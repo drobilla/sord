@@ -531,7 +531,7 @@ main(void)
   size_t         n_bytes = 0U;
   size_t         n_chars = 0U;
   const uint8_t* str     = sord_node_get_string_counted(lit_id2, &n_bytes);
-  if (strcmp((const char*)str, "hello")) {
+  if (!!strcmp((const char*)str, "hello")) {
     return test_fail("Literal node corrupt\n");
   } else if (n_bytes != strlen("hello")) {
     return test_fail("ASCII literal byte count incorrect\n");
@@ -540,7 +540,7 @@ main(void)
   str = sord_node_get_string_measured(lit_id2, &n_bytes, &n_chars);
   if (n_bytes != strlen("hello") || n_chars != strlen("hello")) {
     return test_fail("ASCII literal measured length incorrect\n");
-  } else if (strcmp((const char*)str, "hello")) {
+  } else if (!!strcmp((const char*)str, "hello")) {
     return test_fail("ASCII literal string incorrect\n");
   }
 
@@ -549,7 +549,7 @@ main(void)
     return test_fail("Multi-byte literal byte count incorrect\n");
   } else if (n_chars != 2) {
     return test_fail("Multi-byte literal character count incorrect\n");
-  } else if (strcmp((const char*)str, (const char*)ni_hao)) {
+  } else if (!!strcmp((const char*)str, (const char*)ni_hao)) {
     return test_fail("Multi-byte literal string incorrect\n");
   }
 
@@ -582,8 +582,8 @@ main(void)
   // Check relative URI construction
   SordNode* reluri =
     sord_new_relative_uri(world, USTR("a/b"), USTR("http://example.org/"));
-  if (strcmp((const char*)sord_node_get_string(reluri),
-             "http://example.org/a/b")) {
+  if (!!strcmp((const char*)sord_node_get_string(reluri),
+               "http://example.org/a/b")) {
     fprintf(stderr,
             "Fail: Bad relative URI constructed: <%s>\n",
             sord_node_get_string(reluri));
@@ -591,8 +591,8 @@ main(void)
   }
   SordNode* reluri2 = sord_new_relative_uri(
     world, USTR("http://drobilla.net/"), USTR("http://example.org/"));
-  if (strcmp((const char*)sord_node_get_string(reluri2),
-             "http://drobilla.net/")) {
+  if (!!strcmp((const char*)sord_node_get_string(reluri2),
+               "http://drobilla.net/")) {
     fprintf(stderr,
             "Fail: Bad relative URI constructed: <%s>\n",
             sord_node_get_string(reluri));

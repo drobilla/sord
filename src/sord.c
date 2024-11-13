@@ -526,7 +526,7 @@ sord_iter_scan_next(SordIter* iter)
     return true;
   }
 
-  const SordNode** key;
+  const SordNode** key = NULL;
   if (!iter->end) {
     switch (iter->mode) {
     case ALL:
@@ -867,8 +867,8 @@ sord_find(SordModel* model, const SordQuad pat)
     return sord_begin(model);
   }
 
-  SearchMode      mode;
-  int             n_prefix;
+  SearchMode      mode        = ALL;
+  int             n_prefix    = 0;
   const SordOrder index_order = sord_best_index(model, pat, &mode, &n_prefix);
 
   SORD_FIND_LOG("Find " TUP_FMT "  index=%s  mode=%u  n_prefix=%d\n",

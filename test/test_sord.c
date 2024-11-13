@@ -528,9 +528,9 @@ main(void)
   SordNode*     chello   = sord_new_literal(world, NULL, ni_hao, "cmn");
 
   // Test literal length
-  size_t         n_bytes;
-  size_t         n_chars;
-  const uint8_t* str = sord_node_get_string_counted(lit_id2, &n_bytes);
+  size_t         n_bytes = 0U;
+  size_t         n_chars = 0U;
+  const uint8_t* str     = sord_node_get_string_counted(lit_id2, &n_bytes);
   if (strcmp((const char*)str, "hello")) {
     return test_fail("Literal node corrupt\n");
   } else if (n_bytes != strlen("hello")) {
@@ -676,8 +676,8 @@ main(void)
   generate(world, sord, 1, graph43);
 
   // Remove one graph via iterator
-  SerdStatus st;
-  iter = sord_search(sord, NULL, NULL, NULL, graph43);
+  SerdStatus st = SERD_SUCCESS;
+  iter          = sord_search(sord, NULL, NULL, NULL, graph43);
   while (!sord_iter_end(iter)) {
     if ((st = sord_erase(sord, iter))) {
       fprintf(stderr, "Remove by iterator failed (%s)\n", serd_strerror(st));

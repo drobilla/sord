@@ -635,8 +635,8 @@ sord_best_index(SordModel*     sord,
 {
   const bool graph_search = (pat[TUP_G] != 0);
 
-  const unsigned sig = (pat[0] ? 1 : 0) * 0x100 + (pat[1] ? 1 : 0) * 0x010 +
-                       (pat[2] ? 1 : 0) * 0x001;
+  const unsigned sig = (pat[0] ? 1 : 0) * 0x100U + (pat[1] ? 1 : 0) * 0x010U +
+                       (pat[2] ? 1 : 0) * 0x001U;
 
   SordOrder good[2] = {(SordOrder)-1, (SordOrder)-1};
 
@@ -717,7 +717,7 @@ sord_new(SordWorld* world, unsigned indices, bool graphs)
     const int* const ordering   = orderings[i];
     const int* const g_ordering = orderings[i + (NUM_ORDERS / 2)];
 
-    if (indices & (1 << i)) {
+    if (indices & (1U << i)) {
       model->indices[i] =
         zix_btree_new(NULL, sord_quad_compare, (void*)ordering);
       if (graphs) {

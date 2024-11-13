@@ -583,7 +583,7 @@ check_instance(SordModel*      model,
   const SordNode* card =
     sord_get(model, restriction, uris->owl_cardinality, NULL, NULL);
   if (card) {
-    const unsigned c = atoi((const char*)sord_node_get_string(card));
+    const unsigned c = (unsigned)atoi((const char*)sord_node_get_string(card));
     if (values != c) {
       st = errorf(quad,
                   "Property %s on %s has %u != %u values",
@@ -598,7 +598,8 @@ check_instance(SordModel*      model,
   const SordNode* minCard =
     sord_get(model, restriction, uris->owl_minCardinality, NULL, NULL);
   if (minCard) {
-    const unsigned m = atoi((const char*)sord_node_get_string(minCard));
+    const unsigned m =
+      (unsigned)atoi((const char*)sord_node_get_string(minCard));
     if (values < m) {
       st = errorf(quad,
                   "Property %s on %s has %u < %u values",
@@ -613,7 +614,8 @@ check_instance(SordModel*      model,
   const SordNode* maxCard =
     sord_get(model, restriction, uris->owl_maxCardinality, NULL, NULL);
   if (maxCard) {
-    const unsigned m = atoi((const char*)sord_node_get_string(maxCard));
+    const unsigned m =
+      (unsigned)atoi((const char*)sord_node_get_string(maxCard));
     if (values < m) {
       st = errorf(quad,
                   "Property %s on %s has %u > %u values",

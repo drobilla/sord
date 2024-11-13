@@ -614,8 +614,8 @@ main(void)
   static const char* const index_names[6] = {
     "spo", "sop", "ops", "osp", "pso", "pos"};
 
-  for (int i = 0; i < 6; ++i) {
-    sord = sord_new(world, (1 << i), false);
+  for (unsigned i = 0U; i < 6U; ++i) {
+    sord = sord_new(world, (1U << i), false);
     printf("Testing Index `%s'\n", index_names[i]);
     generate(world, sord, n_quads, 0);
     if (test_read(world, sord, 0, n_quads)) {
@@ -627,8 +627,8 @@ main(void)
   static const char* const graph_index_names[6] = {
     "gspo", "gsop", "gops", "gosp", "gpso", "gpos"};
 
-  for (int i = 0; i < 6; ++i) {
-    sord = sord_new(world, (1 << i), true);
+  for (unsigned i = 0U; i < 6U; ++i) {
+    sord = sord_new(world, (1U << i), true);
     printf("Testing Index `%s'\n", graph_index_names[i]);
     SordNode* graph = uri(world, 42);
     generate(world, sord, n_quads, graph);

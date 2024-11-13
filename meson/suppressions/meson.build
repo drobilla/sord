@@ -17,13 +17,11 @@ if cc.get_id() in ['clang', 'emscripten']
       '-Wno-cast-align',
       '-Wno-cast-function-type-strict',
       '-Wno-cast-qual',
-      '-Wno-conversion',
       '-Wno-declaration-after-statement',
       '-Wno-double-promotion',
       '-Wno-format-nonliteral',
       '-Wno-padded',
       '-Wno-reserved-id-macro',
-      '-Wno-sign-conversion',
       '-Wno-switch-default',
       '-Wno-switch-enum',
       '-Wno-unsafe-buffer-usage',
@@ -64,7 +62,6 @@ elif cc.get_id() == 'gcc'
       '-Wno-format-nonliteral',
       '-Wno-inline',
       '-Wno-padded',
-      '-Wno-sign-conversion',
       '-Wno-strict-overflow',
       '-Wno-suggest-attribute=const',
       '-Wno-suggest-attribute=pure',
@@ -100,7 +97,6 @@ elif cc.get_id() == 'msvc'
     c_suppressions += [
       '/wd4061', # enumerator in switch is not explicitly handled
       '/wd4200', # zero-sized array in struct/union
-      '/wd4365', # signed/unsigned mismatch
       '/wd4514', # unreferenced inline function has been removed
       '/wd4710', # function not inlined
       '/wd4711', # function selected for automatic inline expansion

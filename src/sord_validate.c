@@ -132,8 +132,7 @@ absolute_path(const uint8_t* path)
 #endif
 }
 
-SORD_LOG_FUNC(2, 3)
-static int
+SORD_LOG_FUNC(2, 3) static int
 errorf(const SordQuad quad, const char* fmt, ...)
 {
   va_list args;

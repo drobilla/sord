@@ -42,10 +42,10 @@ public:
   Noncopyable()  = default;
   ~Noncopyable() = default;
 
-  Noncopyable(const Noncopyable&) = delete;
+  Noncopyable(const Noncopyable&)                  = delete;
   const Noncopyable& operator=(const Noncopyable&) = delete;
 
-  Noncopyable(Noncopyable&&) = delete;
+  Noncopyable(Noncopyable&&)            = delete;
   Noncopyable& operator=(Noncopyable&&) = delete;
 };
 
@@ -441,7 +441,7 @@ struct Iter : public Wrapper<SordIter> {
     , _world(world)
   {}
 
-  Iter(const Iter&) = delete;
+  Iter(const Iter&)            = delete;
   Iter& operator=(const Iter&) = delete;
 
   inline Iter(Iter&& iter) noexcept

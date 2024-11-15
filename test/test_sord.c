@@ -41,8 +41,7 @@ uri(SordWorld* world, unsigned num)
   return sord_new_uri(world, (const uint8_t*)str);
 }
 
-SORD_LOG_FUNC(1, 2)
-static int
+SORD_LOG_FUNC(1, 2) static int
 test_fail(const char* fmt, ...)
 {
   va_list args;

@@ -79,8 +79,7 @@ sord_inserter_write_statement(SordInserter*      inserter,
   return SERD_SUCCESS;
 }
 
-SORD_API
-SerdReader*
+SORD_API SerdReader*
 sord_new_reader(SordModel* model,
                 SerdEnv*   env,
                 SerdSyntax syntax,

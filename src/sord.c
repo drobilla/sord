@@ -209,8 +209,7 @@ sord_node_create(const SordNode* const node)
   return copy;
 }
 
-SORD_LOG_FUNC(3, 4)
-static void
+SORD_LOG_FUNC(3, 4) static void
 error(SordWorld* world, SerdStatus st, const char* fmt, ...)
 {
   va_list args;

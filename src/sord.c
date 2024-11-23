@@ -1,19 +1,18 @@
 // Copyright 2011-2016 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
-#include "sord_config.h" // IWYU pragma: keep
 #include "sord_internal.h"
 
-#include "serd/serd.h"
-#include "sord/sord.h"
+#include <serd/serd.h>
+#include <sord/sord.h>
 
 #define ZIX_HASH_KEY_TYPE SordNode
 #define ZIX_HASH_RECORD_TYPE SordNode
 #define ZIX_HASH_SEARCH_DATA_TYPE SordWorld
-#include "zix/btree.h"
-#include "zix/digest.h"
-#include "zix/hash.h"
-#include "zix/status.h"
+#include <zix/btree.h>
+#include <zix/digest.h>
+#include <zix/hash.h>
+#include <zix/status.h>
 
 #include <assert.h>
 #include <stdarg.h>

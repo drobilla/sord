@@ -4,8 +4,8 @@
 #ifndef SORD_SORD_INTERNAL_H
 #define SORD_SORD_INTERNAL_H
 
-#include "serd/serd.h"
-#include "sord/sord.h"
+#include <serd/serd.h>
+#include <sord/sord.h>
 
 #include <stddef.h>
 

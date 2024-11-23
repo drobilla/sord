@@ -4,9 +4,10 @@
 #define _BSD_SOURCE 1     // for realpath
 #define _DEFAULT_SOURCE 1 // for realpath
 
-#include "serd/serd.h"
-#include "sord/sord.h"
 #include "sord_config.h"
+
+#include <serd/serd.h>
+#include <sord/sord.h>
 
 #if USE_PCRE2
 #  if defined(__clang__)

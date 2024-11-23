@@ -1,9 +1,10 @@
 // Copyright 2011-2016 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
-#include "serd/serd.h"
-#include "sord/sord.h"
 #include "sord_config.h"
+
+#include <serd/serd.h>
+#include <sord/sord.h>
 
 #ifdef _WIN32
 #  include <windows.h>

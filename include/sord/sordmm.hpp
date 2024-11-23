@@ -14,8 +14,8 @@
 #  pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
 #endif
 
-#include "serd/serd.h"
-#include "sord/sord.h"
+#include <serd/serd.h>
+#include <sord/sord.h>
 
 #if defined(__clang__)
 #  pragma clang diagnostic pop

@@ -106,17 +106,16 @@ print_usage(const char* name, bool error)
 {
   FILE* const os = error ? stderr : stdout;
   fprintf(os, "Usage: %s [OPTION]... INPUT...\n", name);
-  fprintf(os, "Validate RDF data\n\n");
-  fprintf(os, "  -h  Display this help and exit.\n");
-  fprintf(os, "  -l  Print errors on a single line.\n");
-  fprintf(os, "  -v  Display version information and exit.\n");
+  fprintf(os, "Validate RDF data.\n\n");
+  fprintf(os, "  -h  Display this help and exit\n");
+  fprintf(os, "  -l  Print errors on a single line\n");
+  fprintf(os, "  -v  Display version information and exit\n");
   fprintf(os,
           "\n"
           "Validate RDF data.  This is a simple validator which checks\n"
-          "that all used properties are actually defined.  It does not do\n"
-          "any fancy file retrieval, the files passed on the command line\n"
-          "are the only data that is read.  In other words, you must pass\n"
-          "the definition of all vocabularies used on the command line.\n");
+          "that all used properties are actually defined.  It doesn't do\n"
+          "any automatic file retrieval, so all vocabularies must be\n"
+          "passed as command-line arguments.\n");
   return error ? 1 : 0;
 }
 

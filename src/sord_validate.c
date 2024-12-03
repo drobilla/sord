@@ -199,7 +199,7 @@ regexp_match(const uint8_t* const pattern, const char* const str)
 
   if (!re) {
     fprintf(stderr,
-            "Error in pattern `%s' at offset %lu (%d)\n",
+            "Error in pattern `%s' at offset %zu (%d)\n",
             pattern,
             erroffset,
             err);

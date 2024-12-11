@@ -152,9 +152,9 @@ write_statement(SordModel*         sord,
         sord_iter_get(sub_iter, sub_tup);
         st = write_statement(sord, writer, sub_tup, flags);
       }
-      sord_iter_free(sub_iter);
       serd_writer_end_anon(writer, so);
     }
+    sord_iter_free(sub_iter);
   } else {
     st = serd_writer_write_statement(
       writer, flags, NULL, ss, sp, so, sd, &language);

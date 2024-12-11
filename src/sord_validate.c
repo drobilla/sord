@@ -333,7 +333,7 @@ literal_is_valid(SordModel*      model,
 
   // Find restrictions list
   SordIter* rs = sord_search(model, type, uris->owl_withRestrictions, 0, 0);
-  if (sord_iter_end(rs)) {
+  if (!rs) {
     return true; // No restrictions
   }
 

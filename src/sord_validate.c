@@ -8,6 +8,7 @@
 
 #include <serd/serd.h>
 #include <sord/sord.h>
+#include <zix/filesystem.h>
 
 #if USE_PCRE2
 #  if defined(__clang__)
@@ -21,10 +22,6 @@
 #  if defined(__clang__)
 #    pragma clang diagnostic pop
 #  endif
-#endif
-
-#ifdef _WIN32
-#  include <windows.h>
 #endif
 
 #include <inttypes.h>
@@ -118,18 +115,6 @@ print_usage(const char* name, bool error)
           "any automatic file retrieval, so all vocabularies must be\n"
           "passed as command-line arguments.\n");
   return error ? 1 : 0;
-}
-
-static uint8_t*
-absolute_path(const uint8_t* path)
-{
-#ifdef _WIN32
-  char* out = (char*)malloc(MAX_PATH);
-  GetFullPathName((const char*)path, MAX_PATH, out, NULL);
-  return (uint8_t*)out;
-#else
-  return (uint8_t*)realpath((const char*)path, NULL);
-#endif
 }
 
 SORD_LOG_FUNC(2, 3) static int
@@ -734,7 +719,7 @@ main(int argc, char** argv)
   for (; a < argc; ++a) {
     const uint8_t* input       = (const uint8_t*)argv[a];
     uint8_t*       rel_in_path = serd_file_uri_parse(input, NULL);
-    uint8_t*       in_path     = absolute_path(rel_in_path);
+    char*          in_path     = zix_canonical_path(NULL, (char*)rel_in_path);
 
     free(rel_in_path);
     if (!in_path) {
@@ -744,16 +729,17 @@ main(int argc, char** argv)
 
     SerdURI  base_uri;
     SerdNode base_uri_node =
-      serd_node_new_file_uri(in_path, NULL, &base_uri, true);
+      serd_node_new_file_uri((const uint8_t*)in_path, NULL, &base_uri, true);
 
     serd_env_set_base_uri(env, &base_uri_node);
-    const SerdStatus st = serd_reader_read_file(reader, in_path);
+    const SerdStatus st =
+      serd_reader_read_file(reader, (const uint8_t*)in_path);
     if (st) {
       fprintf(stderr, "error reading %s: %s\n", in_path, serd_strerror(st));
     }
 
     serd_node_free(&base_uri_node);
-    free(in_path);
+    zix_free(NULL, in_path);
   }
   serd_reader_free(reader);
   serd_env_free(env);

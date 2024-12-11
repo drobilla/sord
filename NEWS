@@ -4,8 +4,9 @@ sord (0.16.17) unstable; urgency=medium
   * Enable clang nullability checks
   * Fix build as C with MSVC
   * Fix library current_version on MacOS
+  * Replace more platform-specific code with use of zix
 
- -- David Robillard <d@drobilla.net>  Wed, 13 Nov 2024 16:38:32 +0000
+ -- David Robillard <d@drobilla.net>  Wed, 11 Dec 2024 20:13:16 +0000
 
 sord (0.16.16) stable; urgency=medium
 

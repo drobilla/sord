@@ -8,6 +8,7 @@
 
 #include <serd/serd.h>
 #include <sord/sord.h>
+#include <zix/allocator.h>
 #include <zix/filesystem.h>
 
 #if USE_PCRE2

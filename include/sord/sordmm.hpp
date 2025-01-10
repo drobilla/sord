@@ -92,7 +92,7 @@ public:
     serd_env_set_prefix(_c_obj, &name_node, &uri_node);
   }
 
-  inline std::string qualify(std::string uri) const
+  inline std::string qualify(const std::string& uri) const
   {
     const SerdNode uri_node = string_to_node(SERD_URI, uri);
     SerdNode       prefix;

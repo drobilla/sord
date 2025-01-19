@@ -11,7 +11,7 @@ project(
   ],
   license: 'ISC',
   meson_version: '>= 0.56.0',
-  version: '0.16.17',
+  version: '0.16.18',
 )
 
 sord_src_root = meson.current_source_dir()

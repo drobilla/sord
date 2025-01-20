@@ -9,7 +9,7 @@ Comment: Standard test suites from the W3C (only required for testing)
 License: BSD-3-Clause
 
 Files: AUTHORS NEWS
-Copyright: 2011-2022 David Robillard <d@drobilla.net>
+Copyright: 2011-2025 David Robillard <d@drobilla.net>
 Comment: Contributed to the Commons as a representation of simple facts
 License: 0BSD OR ISC
 

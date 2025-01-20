@@ -1,8 +1,9 @@
 sord (0.16.19) unstable; urgency=medium
 
   * Add header warnings test
+  * Fix versions and dates in man pages
 
- -- David Robillard <d@drobilla.net>  Mon, 20 Jan 2025 17:55:44 +0000
+ -- David Robillard <d@drobilla.net>  Mon, 20 Jan 2025 17:58:47 +0000
 
 sord (0.16.18) stable; urgency=medium
 

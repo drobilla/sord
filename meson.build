@@ -11,7 +11,7 @@ project(
   ],
   license: 'ISC',
   meson_version: '>= 0.56.0',
-  version: '0.16.18',
+  version: '0.16.19',
 )
 
 sord_src_root = meson.current_source_dir()
@@ -136,8 +136,8 @@ c_suppressions = cc.get_supported_arguments(c_suppressions)
 
 m_dep = cc.find_library('m', required: false)
 
-zix_dep = dependency('zix-0', version: '>= 0.4.0')
-serd_dep = dependency('serd-0', version: '>= 0.30.10')
+zix_dep = dependency('zix-0', include_type: 'system', version: '>= 0.4.0')
+serd_dep = dependency('serd-0', include_type: 'system', version: '>= 0.30.10')
 
 ##########################
 # Platform Configuration #

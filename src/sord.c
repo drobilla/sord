@@ -635,8 +635,9 @@ sord_best_index(SordModel*     sord,
 {
   const bool graph_search = (pat[TUP_G] != 0);
 
-  const unsigned sig = (pat[0] ? 1 : 0) * 0x100U + (pat[1] ? 1 : 0) * 0x010U +
-                       (pat[2] ? 1 : 0) * 0x001U;
+  const unsigned sig = ((pat[0] ? 1 : 0) * 0x100U) +
+                       ((pat[1] ? 1 : 0) * 0x010U) +
+                       ((pat[2] ? 1 : 0) * 0x001U);
 
   SordOrder good[2] = {(SordOrder)-1, (SordOrder)-1};
 

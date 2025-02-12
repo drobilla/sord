@@ -196,7 +196,7 @@ sord_dep = declare_dependency(
   link_with: libsord,
 )
 
-# Generage pkg-config file for external dependants
+# Generate pkg-config file for external dependants
 pkg.generate(
   libsord,
   description: 'Lightweight C library for storing RDF in memory',

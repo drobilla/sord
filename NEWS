@@ -89,7 +89,7 @@ sord (0.16.0) stable; urgency=medium
   * Return error from sord_inserter_write_statement() if a node can not be
     written (e.g. undefined prefix)
   * Safely return NULL from sord_iter_get() for end iterators
-  * sord_validate: Do proper numeric comparison for propery bounds checking
+  * sord_validate: Do proper numeric comparison for property bounds checking
   * sord_validate: Tolerate xsd:decimal literals for double and float
     properties if literals match pattern
 

@@ -182,6 +182,7 @@ libsord = library(
   darwin_versions: [major_version + '.0.0', meson.project_version()],
   dependencies: [m_dep, zix_dep, serd_dep],
   gnu_symbol_visibility: 'hidden',
+  implicit_include_directories: false,
   include_directories: include_directories('include'),
   install: true,
   soversion: soversion,
@@ -225,8 +226,9 @@ if not get_option('tools').disabled()
     'sordi',
     files('src/sordi.c'),
     c_args: c_suppressions,
-    install: true,
     dependencies: sord_dep,
+    implicit_include_directories: false,
+    install: true,
   )
 
   meson.override_find_program('sordi', sordi)
@@ -238,8 +240,9 @@ if not get_option('tools').disabled()
       'sord_validate',
       files('src/sord_validate.c'),
       c_args: c_suppressions,
-      install: true,
       dependencies: [sord_dep, pcre2_dep],
+      implicit_include_directories: false,
+      install: true,
     )
 
     meson.override_find_program('sord_validate', sord_validate)

@@ -43,6 +43,7 @@ foreach unit : unit_tests
       files('test_@0@.c'.format(unit)),
       c_args: c_suppressions,
       dependencies: sord_dep,
+      implicit_include_directories: false,
     ),
     suite: 'unit',
   )

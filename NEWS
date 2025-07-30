@@ -1,9 +1,10 @@
 sord (0.16.19) unstable; urgency=medium
 
   * Add header warnings test
+  * Avoid over-use of yielding meson options
   * Update man pages
 
- -- David Robillard <d@drobilla.net>  Fri, 31 Jan 2025 02:01:55 +0000
+ -- David Robillard <d@drobilla.net>  Wed, 30 Jul 2025 18:30:30 +0000
 
 sord (0.16.18) stable; urgency=medium
 

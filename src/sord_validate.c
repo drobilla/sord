@@ -208,6 +208,8 @@ regexp_match(const uint8_t* const pattern, const char* const str)
   pcre2_code_free(re);
   return rc > 0;
 #else
+  (void)pattern;
+  (void)str;
   return true;
 #endif // USE_PCRE2
 }

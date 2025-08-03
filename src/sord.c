@@ -185,13 +185,13 @@ sord_node_hash(const SordNode* const node)
 static bool
 sord_node_hash_equal(const SordNode* const a, const SordNode* const b)
 {
-  return (a == b) ||
-         ((a->node.type == b->node.type) &&
-          (a->node.type != SERD_LITERAL ||
-           (a->meta.lit.datatype == b->meta.lit.datatype &&
-            !strncmp(
-              a->meta.lit.lang, b->meta.lit.lang, sizeof(a->meta.lit.lang)))) &&
-          (serd_node_equals(&a->node, &b->node)));
+  return ((a == b) || ((a->node.type == b->node.type) &&
+                       (a->node.type != SERD_LITERAL ||
+                        (a->meta.lit.datatype == b->meta.lit.datatype &&
+                         !strncmp(a->meta.lit.lang,
+                                  b->meta.lit.lang,
+                                  sizeof(a->meta.lit.lang)))) &&
+                       (serd_node_equals(&a->node, &b->node))));
 }
 
 static SordNode*
@@ -343,8 +343,10 @@ sord_id_match(const SordNode* a, const SordNode* b)
 static inline bool
 sord_quad_match_inline(const SordQuad x, const SordQuad y)
 {
-  return sord_id_match(x[0], y[0]) && sord_id_match(x[1], y[1]) &&
-         sord_id_match(x[2], y[2]) && sord_id_match(x[3], y[3]);
+  return (sord_id_match(x[0], y[0]) && //
+          sord_id_match(x[1], y[1]) && //
+          sord_id_match(x[2], y[2]) && //
+          sord_id_match(x[3], y[3]));
 }
 
 bool
@@ -635,9 +637,9 @@ sord_best_index(SordModel*     sord,
 {
   const bool graph_search = (pat[TUP_G] != 0);
 
-  const unsigned sig = ((pat[0] ? 1 : 0) * 0x100U) +
-                       ((pat[1] ? 1 : 0) * 0x010U) +
-                       ((pat[2] ? 1 : 0) * 0x001U);
+  const unsigned sig = (((pat[0] ? 1U : 0U) * 0x100U) + //
+                        ((pat[1] ? 1U : 0U) * 0x010U) + //
+                        ((pat[2] ? 1U : 0U) * 0x001U));
 
   SordOrder good[2] = {(SordOrder)-1, (SordOrder)-1};
 
@@ -1191,13 +1193,15 @@ sord_node_from_serd_node(SordWorld*      world,
     return NULL;
   case SERD_LITERAL:
     datatype_node = sord_node_from_serd_node(world, env, datatype, NULL, NULL);
-    ret           = sord_new_literal_counted(world,
+
+    ret = sord_new_literal_counted(world,
                                    datatype_node,
                                    node->buf,
                                    node->n_bytes,
                                    node->n_chars,
                                    node->flags,
                                    lang ? (const char*)lang->buf : NULL);
+
     sord_node_free(world, datatype_node);
     return ret;
   case SERD_URI:

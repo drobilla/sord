@@ -551,16 +551,16 @@ sord_quad_match(const SordQuad x, const SordQuad y);
    Return a reader that will read into `model`.
 */
 SORD_API SerdReader*
-sord_new_reader(SordModel* model,
-                SerdEnv*   env,
-                SerdSyntax syntax,
-                SordNode*  graph);
+sord_new_reader(SordModel*      model,
+                SerdEnv*        env,
+                SerdSyntax      syntax,
+                const SordNode* graph);
 
 /**
    Write a model to a writer.
 */
 SORD_API bool
-sord_write(SordModel* model, SerdWriter* writer, SordNode* graph);
+sord_write(SordModel* model, SerdWriter* writer, const SordNode* graph);
 
 /**
    Write a range to a writer.

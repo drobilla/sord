@@ -80,10 +80,10 @@ sord_inserter_write_statement(SordInserter*      inserter,
 }
 
 SORD_API SerdReader*
-sord_new_reader(SordModel* model,
-                SerdEnv*   env,
-                SerdSyntax syntax,
-                SordNode*  graph)
+sord_new_reader(SordModel*      model,
+                SerdEnv*        env,
+                SerdSyntax      syntax,
+                const SordNode* graph)
 {
   SordInserter* inserter = sord_inserter_new(model, env);
 
@@ -164,7 +164,7 @@ write_statement(SordModel*         sord,
 }
 
 bool
-sord_write(SordModel* model, SerdWriter* writer, SordNode* graph)
+sord_write(SordModel* model, SerdWriter* writer, const SordNode* graph)
 {
   SordQuad  pat  = {0, 0, 0, graph};
   SordIter* iter = sord_find(model, pat);

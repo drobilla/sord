@@ -394,13 +394,10 @@ check_type(SordModel*      model,
       return literal_is_valid(model, uris, quad, node, type);
     }
   } else if (sord_node_get_type(node) == SORD_URI) {
-    if (sord_node_equals(type, uris->foaf_Document)) {
-      return true; // Questionable...
-    } else if (is_descendant_of(
-                 model, uris, type, uris->xsd_anyURI, uris->owl_onDatatype)) {
-      /* Type is any URI and this is a URI, so pass.  Restrictions on
-         anyURI subtypes are not currently checked (very uncommon). */
-      return true; // Type is anyURI, and this is a URI
+    if (sord_node_equals(type, uris->foaf_Document) || // Questionable...
+        is_descendant_of(
+          model, uris, type, uris->xsd_anyURI, uris->owl_onDatatype)) {
+      return true; // This is a URI, and type is Document or anyUri
     } else {
       SordIter* t = sord_search(model, node, uris->rdf_type, NULL, NULL);
       for (; !sord_iter_end(t); sord_iter_next(t)) {

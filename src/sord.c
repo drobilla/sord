@@ -96,7 +96,7 @@ static const char* const order_names[NUM_ORDERS] = {"spo",
    Quads of indices for each order, from most to least significant
    (array indexed by SordOrder)
 */
-static const int orderings[NUM_ORDERS][TUP_LEN] = {
+static const uint8_t orderings[NUM_ORDERS][TUP_LEN] = {
   {0, 1, 2, 3}, // SPO
   {0, 2, 1, 3}, // SOP
   {2, 1, 0, 3}, // OPS
@@ -363,13 +363,13 @@ sord_quad_match(const SordQuad x, const SordQuad y)
 static int
 sord_quad_compare(const void* x_ptr, const void* y_ptr, const void* user_data)
 {
-  const int* const             ordering = (const int*)user_data;
+  const uint8_t* const         ordering = (const uint8_t*)user_data;
   const SordNode* const* const x        = (const SordNode* const*)x_ptr;
   const SordNode* const* const y        = (const SordNode* const*)y_ptr;
 
   for (int i = 0; i < TUP_LEN; ++i) {
-    const int idx = ordering[i];
-    const int cmp = sord_node_compare(x[idx], y[idx]);
+    const uint8_t idx = ordering[i];
+    const int     cmp = sord_node_compare(x[idx], y[idx]);
     if (cmp) {
       return cmp;
     }
@@ -438,7 +438,7 @@ sord_iter_seek_match_range(SordIter* iter)
     }
 
     for (int i = 0; i < iter->n_prefix; ++i) {
-      const int idx = orderings[iter->order][i];
+      const uint8_t idx = orderings[iter->order][i];
       if (!sord_id_match(key[idx], iter->pat[idx])) {
         iter->end = true; // Reached end of valid range
         return true;
@@ -544,7 +544,7 @@ sord_iter_scan_next(SordIter* iter)
       key = (const SordNode**)zix_btree_get(iter->cur);
       assert(key);
       for (int i = 0; i < iter->n_prefix; ++i) {
-        const int idx = orderings[iter->order][i];
+        const uint8_t idx = orderings[iter->order][i];
         if (!sord_id_match(key[idx], iter->pat[idx])) {
           iter->end = true;
           SORD_ITER_LOG("%p reached non-match end\n", (void*)iter);
@@ -883,9 +883,9 @@ sord_find(SordModel* model, const SordQuad pat)
     mode = SINGLE; // No duplicate quads (Sord is a set)
   }
 
-  const int* const ordering = orderings[index_order];
-  ZixBTree* const  db       = model->indices[index_order];
-  ZixBTreeIter     cur      = zix_btree_end(db);
+  const uint8_t* const ordering = orderings[index_order];
+  ZixBTree* const      db       = model->indices[index_order];
+  ZixBTreeIter         cur      = zix_btree_end(db);
 
   if (mode == FILTER_ALL) {
     // No prefix shared with an index at all, linear search (worst case)

@@ -1,6 +1,9 @@
 # Copyright 2021-2025 David Robillard <d@drobilla.net>
 # SPDX-License-Identifier: 0BSD OR ISC
 
+option('bindings_cpp', type: 'feature',
+       description: 'Build C++ bindings')
+
 option('docs', type: 'feature',
        description: 'Build documentation')
 

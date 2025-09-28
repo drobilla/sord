@@ -48,3 +48,11 @@ foreach unit : unit_tests
     suite: 'unit',
   )
 endforeach
+
+#######
+# C++ #
+#######
+
+if not get_option('bindings_cpp').disabled()
+  subdir('cpp')
+endif

@@ -46,9 +46,8 @@
 #  define SORD_WRITE_LOG(...)
 #endif
 
-#define NUM_ORDERS 12
-#define STATEMENT_LEN 3
-#define TUP_LEN (STATEMENT_LEN + 1)
+#define NUM_ORDERS 12U
+#define TUP_LEN 4U
 #define DEFAULT_ORDER SPO
 #define DEFAULT_GRAPH_ORDER GSPO
 
@@ -58,7 +57,7 @@
   TUP_FMT_ELEM((t)[0]), TUP_FMT_ELEM((t)[1]), TUP_FMT_ELEM((t)[2]), \
     TUP_FMT_ELEM((t)[3])
 
-#define TUP_G 3
+#define TUP_G 3U
 
 /** Triple ordering */
 typedef enum {
@@ -147,7 +146,7 @@ struct SordIterImpl {
   SordQuad         pat;         ///< Pattern (in ordering order)
   SordOrder        order;       ///< Store order (which index)
   SearchMode       mode;        ///< Iteration mode
-  int              n_prefix;    ///< Prefix for RANGE and FILTER_RANGE
+  uint8_t          n_prefix;    ///< Prefix for RANGE and FILTER_RANGE
   bool             end;         ///< True iff reached end
   bool             skip_graphs; ///< Iteration should ignore graphs
 };
@@ -367,7 +366,7 @@ sord_quad_compare(const void* x_ptr, const void* y_ptr, const void* user_data)
   const SordNode* const* const x        = (const SordNode* const*)x_ptr;
   const SordNode* const* const y        = (const SordNode* const*)y_ptr;
 
-  for (int i = 0; i < TUP_LEN; ++i) {
+  for (uint8_t i = 0U; i < TUP_LEN; ++i) {
     const uint8_t idx = ordering[i];
     const int     cmp = sord_node_compare(x[idx], y[idx]);
     if (cmp) {
@@ -437,7 +436,7 @@ sord_iter_seek_match_range(SordIter* iter)
       return false; // Found match
     }
 
-    for (int i = 0; i < iter->n_prefix; ++i) {
+    for (uint8_t i = 0U; i < iter->n_prefix; ++i) {
       const uint8_t idx = orderings[iter->order][i];
       if (!sord_id_match(key[idx], iter->pat[idx])) {
         iter->end = true; // Reached end of valid range
@@ -455,7 +454,7 @@ sord_iter_new(const SordModel*   sord,
               const SordQuad     pat,
               SordOrder          order,
               SearchMode         mode,
-              int                n_prefix)
+              uint8_t            n_prefix)
 {
   SordIter* iter    = (SordIter*)malloc(sizeof(SordIter));
   iter->sord        = sord;
@@ -465,7 +464,7 @@ sord_iter_new(const SordModel*   sord,
   iter->n_prefix    = n_prefix;
   iter->end         = false;
   iter->skip_graphs = order < GSPO;
-  for (int i = 0; i < TUP_LEN; ++i) {
+  for (uint8_t i = 0U; i < TUP_LEN; ++i) {
     iter->pat[i] = pat[i];
   }
 
@@ -509,7 +508,7 @@ void
 sord_iter_get(const SordIter* iter, SordQuad tup)
 {
   SordNode** key = (SordNode**)zix_btree_get(iter->cur);
-  for (int i = 0; i < TUP_LEN; ++i) {
+  for (uint8_t i = 0U; i < TUP_LEN; ++i) {
     tup[i] = key[i];
   }
 }
@@ -543,7 +542,7 @@ sord_iter_scan_next(SordIter* iter)
       // At the end if the MSNs no longer match
       key = (const SordNode**)zix_btree_get(iter->cur);
       assert(key);
-      for (int i = 0; i < iter->n_prefix; ++i) {
+      for (uint8_t i = 0U; i < iter->n_prefix; ++i) {
         const uint8_t idx = orderings[iter->order][i];
         if (!sord_id_match(key[idx], iter->pat[idx])) {
           iter->end = true;
@@ -612,11 +611,14 @@ sord_iter_free(SordIter* iter)
    corresponding order with a G prepended (so G will be the MSN).
 */
 static inline bool
-sord_has_index(SordModel* model, SordOrder* order, int* n_prefix, bool graphs)
+sord_has_index(SordModel* model,
+               SordOrder* order,
+               uint8_t*   n_prefix,
+               bool       graphs)
 {
   if (graphs) {
     *order = (SordOrder)(*order + GSPO);
-    *n_prefix += 1;
+    ++*n_prefix;
   }
 
   return model->indices[*order];
@@ -633,7 +635,7 @@ static inline SordOrder
 sord_best_index(SordModel*     sord,
                 const SordQuad pat,
                 SearchMode*    mode,
-                int*           n_prefix)
+                uint8_t*       n_prefix)
 {
   const bool graph_search = (pat[TUP_G] != 0);
 
@@ -653,12 +655,12 @@ sord_best_index(SordModel*     sord,
 
   // Good orderings that don't require filtering
   *mode     = RANGE;
-  *n_prefix = 0;
+  *n_prefix = 0U;
   switch (sig) {
   case 0x000:
     assert(graph_search);
     *mode     = RANGE;
-    *n_prefix = 1;
+    *n_prefix = 1U;
     return DEFAULT_GRAPH_ORDER;
   case 0x111:
     *mode = SINGLE;
@@ -700,7 +702,7 @@ sord_best_index(SordModel*     sord,
 
   if (graph_search) {
     *mode     = FILTER_RANGE;
-    *n_prefix = 1;
+    *n_prefix = 1U;
     return DEFAULT_GRAPH_ORDER;
   } else {
     *mode = FILTER_ALL;
@@ -810,7 +812,7 @@ sord_free(SordModel* model)
   SordIter* i = sord_begin(model);
   for (; !sord_iter_end(i); sord_iter_next(i)) {
     sord_iter_get(i, tup);
-    for (int t = 0; t < TUP_LEN; ++t) {
+    for (uint8_t t = 0U; t < TUP_LEN; ++t) {
       sord_drop_quad_ref(model, tup[t], (SordQuadIndex)t);
     }
   }
@@ -870,10 +872,10 @@ sord_find(SordModel* model, const SordQuad pat)
   }
 
   SearchMode      mode        = ALL;
-  int             n_prefix    = 0;
+  uint8_t         n_prefix    = 0U;
   const SordOrder index_order = sord_best_index(model, pat, &mode, &n_prefix);
 
-  SORD_FIND_LOG("Find " TUP_FMT "  index=%s  mode=%u  n_prefix=%d\n",
+  SORD_FIND_LOG("Find " TUP_FMT "  index=%s  mode=%u  n_prefix=%u\n",
                 TUP_FMT_ARGS(pat),
                 order_names[index_order],
                 mode,
@@ -894,7 +896,7 @@ sord_find(SordModel* model, const SordQuad pat)
     /* Some prefix, but filtering still required.  Build a search pattern
        with only the prefix to find the lower bound in log time. */
     SordQuad prefix_pat = {NULL, NULL, NULL, NULL};
-    for (int i = 0; i < n_prefix; ++i) {
+    for (uint8_t i = 0U; i < n_prefix; ++i) {
       prefix_pat[ordering[i]] = pat[ordering[i]];
     }
 
@@ -1306,7 +1308,7 @@ sord_add(SordModel* model, const SordQuad tup)
     }
   }
 
-  for (int i = 0; i < TUP_LEN; ++i) {
+  for (uint8_t i = 0U; i < TUP_LEN; ++i) {
     sord_add_quad_ref(model, tup[i], (SordQuadIndex)i);
   }
 
@@ -1335,7 +1337,7 @@ sord_remove(SordModel* model, const SordQuad tup)
 
   free(quad);
 
-  for (int i = 0; i < TUP_LEN; ++i) {
+  for (uint8_t i = 0U; i < TUP_LEN; ++i) {
     sord_drop_quad_ref(model, tup[i], (SordQuadIndex)i);
   }
 
@@ -1372,7 +1374,7 @@ sord_erase(SordModel* model, SordIter* iter)
 
   free(quad);
 
-  for (int i = 0; i < TUP_LEN; ++i) {
+  for (uint8_t i = 0U; i < TUP_LEN; ++i) {
     sord_drop_quad_ref(model, tup[i], (SordQuadIndex)i);
   }
 

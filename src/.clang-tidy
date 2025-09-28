@@ -10,7 +10,6 @@ Checks: >
   -bugprone-branch-clone,
   -bugprone-easily-swappable-parameters,
   -bugprone-multi-level-implicit-pointer-conversion,
-  -bugprone-reserved-identifier,
   -bugprone-switch-missing-default-case,
   -cert-dcl37-c,
   -cert-dcl51-cpp,

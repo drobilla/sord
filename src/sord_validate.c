@@ -1,9 +1,6 @@
 // Copyright 2012-2021 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
-#define _BSD_SOURCE 1     // for realpath
-#define _DEFAULT_SOURCE 1 // for realpath
-
 #include "sord_config.h"
 
 #include <serd/serd.h>

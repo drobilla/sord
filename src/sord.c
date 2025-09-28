@@ -711,27 +711,26 @@ sord_best_index(SordModel*     sord,
 SordModel*
 sord_new(SordWorld* world, unsigned indices, bool graphs)
 {
+  static const unsigned half = (NUM_ORDERS >> 1U);
+
   SordModel* model = (SordModel*)malloc(sizeof(struct SordModelImpl));
   model->world     = world;
   model->n_quads   = 0;
   model->n_iters   = 0;
 
-  for (unsigned i = 0; i < (NUM_ORDERS / 2); ++i) {
-    const int* const ordering   = orderings[i];
-    const int* const g_ordering = orderings[i + (NUM_ORDERS / 2)];
-
+  for (unsigned i = 0; i < half; ++i) {
     if (indices & (1U << i)) {
       model->indices[i] =
-        zix_btree_new(NULL, sord_quad_compare, (void*)ordering);
+        zix_btree_new(NULL, sord_quad_compare, (void*)orderings[i]);
       if (graphs) {
-        model->indices[i + (NUM_ORDERS / 2)] =
-          zix_btree_new(NULL, sord_quad_compare, (void*)g_ordering);
+        model->indices[i + half] =
+          zix_btree_new(NULL, sord_quad_compare, (void*)orderings[i + half]);
       } else {
-        model->indices[i + (NUM_ORDERS / 2)] = NULL;
+        model->indices[i + half] = NULL;
       }
     } else {
-      model->indices[i]                    = NULL;
-      model->indices[i + (NUM_ORDERS / 2)] = NULL;
+      model->indices[i]        = NULL;
+      model->indices[i + half] = NULL;
     }
   }
 

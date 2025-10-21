@@ -611,10 +611,10 @@ sord_iter_free(SordIter* iter)
    corresponding order with a G prepended (so G will be the MSN).
 */
 static inline bool
-sord_has_index(SordModel* model,
-               SordOrder* order,
-               uint8_t*   n_prefix,
-               bool       graphs)
+sord_has_index(const SordModel* model,
+               SordOrder*       order,
+               uint8_t*         n_prefix,
+               bool             graphs)
 {
   if (graphs) {
     *order = (SordOrder)(*order + GSPO);
@@ -632,10 +632,10 @@ sord_has_index(SordModel* model,
    (for `mode` == RANGE and `mode` == FILTER_RANGE)
 */
 static inline SordOrder
-sord_best_index(SordModel*     sord,
-                const SordQuad pat,
-                SearchMode*    mode,
-                uint8_t*       n_prefix)
+sord_best_index(const SordModel* sord,
+                const SordQuad   pat,
+                SearchMode*      mode,
+                uint8_t*         n_prefix)
 {
   const bool graph_search = (pat[TUP_G] != 0);
 
@@ -865,7 +865,7 @@ sord_begin(const SordModel* model)
 }
 
 SordIter*
-sord_find(SordModel* model, const SordQuad pat)
+sord_find(const SordModel* model, const SordQuad pat)
 {
   if (!pat[0] && !pat[1] && !pat[2] && !pat[3]) {
     return sord_begin(model);
@@ -922,22 +922,22 @@ sord_find(SordModel* model, const SordQuad pat)
 }
 
 SordIter*
-sord_search(SordModel*      model,
-            const SordNode* s,
-            const SordNode* p,
-            const SordNode* o,
-            const SordNode* g)
+sord_search(const SordModel* model,
+            const SordNode*  s,
+            const SordNode*  p,
+            const SordNode*  o,
+            const SordNode*  g)
 {
   SordQuad pat = {s, p, o, g};
   return sord_find(model, pat);
 }
 
 SordNode*
-sord_get(SordModel*      model,
-         const SordNode* s,
-         const SordNode* p,
-         const SordNode* o,
-         const SordNode* g)
+sord_get(const SordModel* model,
+         const SordNode*  s,
+         const SordNode*  p,
+         const SordNode*  o,
+         const SordNode*  g)
 {
   if (!!s + !!p + !!o != 2) {
     return NULL;
@@ -958,22 +958,22 @@ sord_get(SordModel*      model,
 }
 
 bool
-sord_ask(SordModel*      model,
-         const SordNode* s,
-         const SordNode* p,
-         const SordNode* o,
-         const SordNode* g)
+sord_ask(const SordModel* model,
+         const SordNode*  s,
+         const SordNode*  p,
+         const SordNode*  o,
+         const SordNode*  g)
 {
   SordQuad pat = {s, p, o, g};
   return sord_contains(model, pat);
 }
 
 uint64_t
-sord_count(SordModel*      model,
-           const SordNode* s,
-           const SordNode* p,
-           const SordNode* o,
-           const SordNode* g)
+sord_count(const SordModel* model,
+           const SordNode*  s,
+           const SordNode*  p,
+           const SordNode*  o,
+           const SordNode*  g)
 {
   SordIter* i = sord_search(model, s, p, o, g);
   uint64_t  n = 0;
@@ -985,7 +985,7 @@ sord_count(SordModel*      model,
 }
 
 bool
-sord_contains(SordModel* model, const SordQuad pat)
+sord_contains(const SordModel* model, const SordQuad pat)
 {
   SordIter* iter = sord_find(model, pat);
   bool      ret  = (iter != NULL);

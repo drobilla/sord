@@ -1,11 +1,11 @@
 sord (0.16.19) unstable; urgency=medium
 
   * Add header warnings test
-  * Add missing const qualifiers to syntax API
+  * Add missing const qualifiers to API
   * Avoid over-use of yielding meson options
   * Update man pages
 
- -- David Robillard <d@drobilla.net>  Thu, 25 Sep 2025 18:45:39 +0000
+ -- David Robillard <d@drobilla.net>  Tue, 21 Oct 2025 17:13:17 +0000
 
 sord (0.16.18) stable; urgency=medium
 

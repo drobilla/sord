@@ -345,18 +345,18 @@ sord_begin(const SordModel* model);
    @return an iterator to the first match, or NULL if no matches found.
 */
 SORD_API SordIter*
-sord_find(SordModel* model, const SordQuad pat);
+sord_find(const SordModel* model, const SordQuad pat);
 
 /**
    Search for statements by nodes.
    @return an iterator to the first match, or NULL if no matches found.
 */
 SORD_API SordIter*
-sord_search(SordModel*      model,
-            const SordNode* s,
-            const SordNode* p,
-            const SordNode* o,
-            const SordNode* g);
+sord_search(const SordModel* model,
+            const SordNode*  s,
+            const SordNode*  p,
+            const SordNode*  o,
+            const SordNode*  g);
 /**
    Search for a single node that matches a pattern.
    Exactly one of `s`, `p`, `o` must be NULL.
@@ -365,31 +365,31 @@ sord_search(SordModel*      model,
    @return the first matching node, or NULL if no matches are found.
 */
 SORD_API SordNode*
-sord_get(SordModel*      model,
-         const SordNode* s,
-         const SordNode* p,
-         const SordNode* o,
-         const SordNode* g);
+sord_get(const SordModel* model,
+         const SordNode*  s,
+         const SordNode*  p,
+         const SordNode*  o,
+         const SordNode*  g);
 
 /**
    Return true iff a statement exists.
 */
 SORD_API bool
-sord_ask(SordModel*      model,
-         const SordNode* s,
-         const SordNode* p,
-         const SordNode* o,
-         const SordNode* g);
+sord_ask(const SordModel* model,
+         const SordNode*  s,
+         const SordNode*  p,
+         const SordNode*  o,
+         const SordNode*  g);
 
 /**
    Return the number of matching statements.
 */
 SORD_API uint64_t
-sord_count(SordModel*      model,
-           const SordNode* s,
-           const SordNode* p,
-           const SordNode* o,
-           const SordNode* g);
+sord_count(const SordModel* model,
+           const SordNode*  s,
+           const SordNode*  p,
+           const SordNode*  o,
+           const SordNode*  g);
 
 /**
    Check if `model` contains a triple pattern.
@@ -397,7 +397,7 @@ sord_count(SordModel*      model,
    @return true if `model` contains a match for `pat`, otherwise false.
 */
 SORD_API bool
-sord_contains(SordModel* model, const SordQuad pat);
+sord_contains(const SordModel* model, const SordQuad pat);
 
 /**
    Add a quad to a model.

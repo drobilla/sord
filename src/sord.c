@@ -501,7 +501,7 @@ sord_iter_new(const SordModel*   sord,
 const SordModel*
 sord_iter_get_model(SordIter* iter)
 {
-  return iter->sord;
+  return iter ? iter->sord : NULL;
 }
 
 void
@@ -581,7 +581,7 @@ sord_iter_scan_next(SordIter* iter)
 bool
 sord_iter_next(SordIter* iter)
 {
-  if (iter->end) {
+  if (!iter || iter->end) {
     return true;
   }
 
@@ -843,7 +843,7 @@ sord_get_world(SordModel* model)
 size_t
 sord_num_quads(const SordModel* model)
 {
-  return model->n_quads;
+  return model ? model->n_quads : 0U;
 }
 
 size_t
@@ -867,7 +867,7 @@ sord_begin(const SordModel* model)
 SordIter*
 sord_find(const SordModel* model, const SordQuad pat)
 {
-  if (!pat[0] && !pat[1] && !pat[2] && !pat[3]) {
+  if (!model || (!pat[0] && !pat[1] && !pat[2] && !pat[3])) {
     return sord_begin(model);
   }
 

@@ -1,4 +1,4 @@
-sord (0.16.19) unstable; urgency=medium
+sord (0.16.20) stable; urgency=medium
 
   * Add header warnings test
   * Add missing const qualifiers to API

@@ -9,7 +9,7 @@
 #ifndef SORD_SORDMM_HPP
 #define SORD_SORDMM_HPP
 
-#if defined(__clang__)
+#ifdef __clang__
 #  pragma clang diagnostic push
 #  pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
 #endif
@@ -17,7 +17,7 @@
 #include <serd/serd.h>
 #include <sord/sord.h>
 
-#if defined(__clang__)
+#ifdef __clang__
 #  pragma clang diagnostic pop
 #endif
 

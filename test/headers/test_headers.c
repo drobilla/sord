@@ -3,7 +3,7 @@
 
 #include <sord/sord.h> // IWYU pragma: keep
 
-#if defined(__GNUC__)
+#ifdef __GNUC__
 __attribute__((const))
 #endif
 int

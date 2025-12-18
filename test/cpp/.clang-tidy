@@ -15,6 +15,7 @@ Checks: >
   -cppcoreguidelines-pro-type-reinterpret-cast,
   -cppcoreguidelines-pro-type-vararg,
   -cppcoreguidelines-special-member-functions,
+  -cppcoreguidelines-use-enum-class,
   -fuchsia-default-arguments-calls,
   -fuchsia-default-arguments-declarations,
   -fuchsia-overloaded-operator,
@@ -37,4 +38,5 @@ Checks: >
 CheckOptions:
   - key:   readability-function-cognitive-complexity.Threshold
     value: '6'
+HeaderFilterRegex: '.*\.hpp$'
 InheritParentConfig: true

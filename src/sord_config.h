@@ -18,7 +18,7 @@
 // Define version unconditionally so a warning will catch a mismatch
 #define SORD_VERSION "0.16.20"
 
-#if !defined(SORD_NO_DEFAULT_CONFIG)
+#ifndef SORD_NO_DEFAULT_CONFIG
 
 // The validator uses PCRE2 for literal pattern matching
 #  ifndef HAVE_PCRE2

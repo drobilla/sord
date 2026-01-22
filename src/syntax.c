@@ -171,13 +171,9 @@ sord_write(SordModel* model, SerdWriter* writer, const SordNode* graph)
   return sord_write_iter(iter, writer);
 }
 
-bool
-sord_write_iter(SordIter* iter, SerdWriter* writer)
+static bool
+sord_write_iter_internal(SordIter* iter, SerdWriter* writer)
 {
-  if (!iter) {
-    return false;
-  }
-
   SordModel* model = (SordModel*)sord_iter_get_model(iter);
   SerdStatus st    = SERD_SUCCESS;
   for (; !st && !sord_iter_end(iter); sord_iter_next(iter)) {
@@ -188,4 +184,10 @@ sord_write_iter(SordIter* iter, SerdWriter* writer)
   sord_iter_free(iter);
 
   return !st;
+}
+
+bool
+sord_write_iter(SordIter* iter, SerdWriter* writer)
+{
+  return iter ? sord_write_iter_internal(iter, writer) : false;
 }

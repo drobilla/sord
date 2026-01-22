@@ -1,4 +1,4 @@
-// Copyright 2011-2016 David Robillard <d@drobilla.net>
+// Copyright 2011-2026 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
 #include "sord_internal.h"
@@ -1014,14 +1014,16 @@ sord_node_get_type(const SordNode* node)
 const uint8_t*
 sord_node_get_string(const SordNode* node)
 {
-  return node->node.buf;
+  const uint8_t* const string = node->node.buf;
+  assert(string);
+  return string;
 }
 
 const uint8_t*
 sord_node_get_string_counted(const SordNode* node, size_t* bytes)
 {
   *bytes = node->node.n_bytes;
-  return node->node.buf;
+  return sord_node_get_string(node);
 }
 
 const uint8_t*
@@ -1031,7 +1033,7 @@ sord_node_get_string_measured(const SordNode* node,
 {
   *bytes = node->node.n_bytes;
   *chars = node->node.n_chars;
-  return node->node.buf;
+  return sord_node_get_string(node);
 }
 
 const char*
@@ -1180,17 +1182,13 @@ sord_new_literal(SordWorld*     world,
     world, datatype, str, n_bytes, n_chars, flags, lang);
 }
 
-SordNode*
-sord_node_from_serd_node(SordWorld*      world,
-                         SerdEnv*        env,
-                         const SerdNode* node,
-                         const SerdNode* datatype,
-                         const SerdNode* lang)
+static SordNode*
+sord_node_from_serd_node_internal(SordWorld*      world,
+                                  SerdEnv*        env,
+                                  const SerdNode* node,
+                                  const SerdNode* datatype,
+                                  const SerdNode* lang)
 {
-  if (!node) {
-    return NULL;
-  }
-
   SordNode* datatype_node = NULL;
   SordNode* ret           = NULL;
   switch (node->type) {
@@ -1251,6 +1249,18 @@ sord_node_from_serd_node(SordWorld*      world,
       world, node->buf, node->n_bytes, node->n_chars);
   }
   return NULL;
+}
+
+SordNode*
+sord_node_from_serd_node(SordWorld*      world,
+                         SerdEnv*        env,
+                         const SerdNode* node,
+                         const SerdNode* datatype,
+                         const SerdNode* lang)
+{
+  return (node && env)
+           ? sord_node_from_serd_node_internal(world, env, node, datatype, lang)
+           : NULL;
 }
 
 const SerdNode*
@@ -1351,6 +1361,10 @@ sord_remove(SordModel* model, const SordQuad tup)
 SerdStatus
 sord_erase(SordModel* model, SordIter* iter)
 {
+  if (!iter) {
+    return SERD_SUCCESS;
+  }
+
   if (model->n_iters > 1) {
     error(model->world, SERD_ERR_BAD_ARG, "erased with many iterators\n");
     return SERD_ERR_BAD_ARG;

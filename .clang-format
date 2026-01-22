@@ -6,6 +6,10 @@ AlignConsecutiveAssignments: true
 AlignConsecutiveDeclarations: true
 AlignEscapedNewlines: Left
 AttributeMacros:
+  - SERD_ALLOCATED
+  - SERD_NONNULL
+  - SERD_NULLABLE
+  - SERD_UNSPECIFIED
   - SORD_API
   - SORD_LOG_FUNC
 BasedOnStyle: Mozilla

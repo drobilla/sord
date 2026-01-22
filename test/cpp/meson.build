@@ -23,6 +23,7 @@ if add_languages(['cpp'], native: false, required: false)
         '-Wno-cast-function-type-strict',
         '-Wno-documentation-unknown-command',
         '-Wno-implicit-float-conversion',
+        '-Wno-nullability-extension',
         '-Wno-poison-system-directories',
         '-Wno-shorten-64-to-32',
         '-Wno-switch-enum',

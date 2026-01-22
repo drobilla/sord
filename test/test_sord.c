@@ -1,4 +1,4 @@
-// Copyright 2011-2016 David Robillard <d@drobilla.net>
+// Copyright 2011-2026 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
 #include <serd/serd.h>
@@ -393,6 +393,7 @@ main(void)
 {
   static const unsigned n_quads = 300U;
 
+  sord_world_free(NULL); // Shouldn't crash
   sord_free(NULL); // Shouldn't crash
 
   SordWorld* world = sord_world_new();

@@ -1,8 +1,9 @@
 sord (0.16.21) unstable; urgency=medium
 
   * Address new warnings in clang and clang-tidy 21
+  * Make more API functions tolerate NULL
 
- -- David Robillard <d@drobilla.net>  Thu, 18 Dec 2025 18:30:15 +0000
+ -- David Robillard <d@drobilla.net>  Thu, 22 Jan 2026 20:25:07 +0000
 
 sord (0.16.20) stable; urgency=medium
 

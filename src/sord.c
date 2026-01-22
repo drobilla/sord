@@ -247,6 +247,10 @@ free_node_entry(SordNode* const node)
 void
 sord_world_free(SordWorld* world)
 {
+  if (!world) {
+    return;
+  }
+
   for (ZixHashIter i = zix_hash_begin(world->nodes);
        i != zix_hash_end(world->nodes);
        i = zix_hash_next(world->nodes, i)) {
@@ -849,7 +853,7 @@ sord_num_quads(const SordModel* model)
 size_t
 sord_num_nodes(const SordWorld* world)
 {
-  return zix_hash_size(world->nodes);
+  return world ? zix_hash_size(world->nodes) : 0U;
 }
 
 SordIter*

@@ -1,10 +1,10 @@
-sord (0.16.21) unstable; urgency=medium
+sord (0.16.22) stable; urgency=medium
 
   * Add clang nullability annotations
   * Address new warnings in clang and clang-tidy 21
   * Make more API functions tolerate NULL
 
- -- David Robillard <d@drobilla.net>  Fri, 23 Jan 2026 15:30:56 +0000
+ -- David Robillard <d@drobilla.net>  Tue, 10 Feb 2026 18:43:50 +0000
 
 sord (0.16.20) stable; urgency=medium
 

@@ -140,7 +140,7 @@ write_statement(SordModel*         sord,
     SordIter* sub_iter = sord_find(sord, sub_pat);
 
     SerdStatementFlags start_flags =
-      flags | ((sub_iter) ? SERD_ANON_O_BEGIN : SERD_EMPTY_O);
+      flags | (sub_iter ? SERD_ANON_O_BEGIN : SERD_EMPTY_O);
 
     st = serd_writer_write_statement(
       writer, start_flags, NULL, ss, sp, so, sd, &language);

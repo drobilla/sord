@@ -1,3 +1,9 @@
+sord (0.16.23) unstable; urgency=medium
+
+  * Address new warnings in clang-tidy 22
+
+ -- David Robillard <d@drobilla.net>  Wed, 08 Apr 2026 00:23:32 +0000
+
 sord (0.16.22) stable; urgency=medium
 
   * Add clang nullability annotations

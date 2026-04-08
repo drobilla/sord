@@ -152,7 +152,7 @@ main(int argc, char** argv)
   SerdEnv*    env    = serd_env_new(&base);
   SerdReader* reader = sord_new_reader(sord, env, input_syntax, NULL);
 
-  SerdStatus status = (from_file)
+  SerdStatus status = from_file
                         ? serd_reader_read_file_handle(reader, in_fd, in_name)
                         : serd_reader_read_string(reader, input);
 

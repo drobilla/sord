@@ -16,6 +16,7 @@ if add_languages(['cpp'], native: false, required: false)
         '-Wno-switch-enum',
       ]
     endif
+
   elif cpp.get_id() == 'clang'
     if warning_level == 'everything'
       cpp_suppressions += [
@@ -23,13 +24,17 @@ if add_languages(['cpp'], native: false, required: false)
         '-Wno-cast-function-type-strict',
         '-Wno-documentation-unknown-command',
         '-Wno-implicit-float-conversion',
-        '-Wno-nullability-extension',
         '-Wno-poison-system-directories',
         '-Wno-shorten-64-to-32',
         '-Wno-switch-enum',
         '-Wno-unsafe-buffer-usage',
       ]
     endif
+
+    if warning_level in ['everything', '3']
+      cpp_suppressions += ['-Wno-nullability-extension']
+    endif
+
   elif cpp.get_id() == 'msvc'
     if warning_level == 'everything'
       cpp_suppressions += [
